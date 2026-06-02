@@ -2,6 +2,10 @@
 
 !/.gitignore
 !/README.md
+!/.nojekyll
+!/index.html
+!/.github/
+!/.github/**
 
 !/stresscheck-system/
 !/stresscheck-system/**
