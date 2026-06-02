@@ -4010,6 +4010,25 @@ textarea {
   display: none;
 }
 
+.analysis-supplement {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px dashed rgba(47, 148, 147, 0.42);
+}
+
+.analysis-supplement span {
+  color: var(--teal-dark);
+  font-weight: 900;
+}
+
+.analysis-supplement textarea {
+  min-height: 94px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
 .analysis-details {
   border-radius: 8px;
   border: 1px solid rgba(15, 23, 42, 0.08);

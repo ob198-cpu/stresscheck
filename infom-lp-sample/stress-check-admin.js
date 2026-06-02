@@ -23,6 +23,7 @@ const printParticipantQrSheet = document.querySelector("#printParticipantQrSheet
 const printPendingQrSheet = document.querySelector("#printPendingQrSheet");
 const participantQrSheet = document.querySelector("#participantQrSheet");
 const googleCsvFile = document.querySelector("#googleCsvFile");
+const basicInfoSource = document.querySelector("#basicInfoSource");
 const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
 const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
@@ -557,6 +558,21 @@ function parseParticipantSource(text) {
   }).filter((row) => row.id);
 }
 
+function parseBasicInfoSource(text) {
+  const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const delimiter = lines[0].includes("\t") ? "\t" : ",";
+  const fields = splitLine(lines[0], delimiter).map(resolveField);
+  return lines.slice(1).map((line) => {
+    const cells = splitLine(line, delimiter);
+    const row = {};
+    fields.forEach((field, index) => {
+      if (field) row[field] = cells[index] || "";
+    });
+    return row;
+  }).filter((row) => Object.values(row).some((value) => cleanText(value)));
+}
+
 function cleanText(value) {
   return String(value ?? "").trim();
 }
@@ -692,8 +708,8 @@ function parseAnswerValue(value) {
   return match ? Number(match[0]) : "";
 }
 
-function buildRosterLookups() {
-  return generatedParticipants.reduce((lookups, row) => {
+function buildRosterLookups(extraRows = []) {
+  return [...generatedParticipants, ...extraRows].reduce((lookups, row) => {
     if (row.id) lookups.byId.set(row.id, row);
     if (row.accessCode) lookups.byCode.set(row.accessCode, row);
     return lookups;
@@ -720,6 +736,26 @@ function enrichGoogleRecord(record, lookups) {
     answers: record.answers || {},
     sourceRowNumber: record.sourceRowNumber,
     matchedRoster: Boolean(roster),
+  };
+}
+
+function mergeSupplementalInfo(record, supplemental) {
+  if (!supplemental) return record;
+  return {
+    ...record,
+    respondentId: cleanText(record.respondentId || supplemental.id || record.participantCode),
+    participantCode: cleanText(record.participantCode || supplemental.accessCode),
+    organization: cleanText(record.organization || supplemental.organization),
+    department: cleanText(record.department || supplemental.department),
+    personName: cleanText(record.personName || supplemental.name),
+    kanaName: cleanText(record.kanaName || supplemental.kana),
+    birthDate: cleanText(record.birthDate || supplemental.birthDate),
+    gender: cleanText(record.gender || supplemental.gender),
+    workplaceCode: cleanText(record.workplaceCode || supplemental.workplaceCode),
+    workplaceName: cleanText(record.workplaceName || supplemental.workplaceName),
+    analysisVariable: cleanText(record.analysisVariable || supplemental.variable || supplemental.department),
+    previousEmployeeId: cleanText(record.previousEmployeeId || supplemental.previousEmployeeId),
+    matchedRoster: record.matchedRoster || Boolean(supplemental.id || supplemental.accessCode),
   };
 }
 
@@ -1147,6 +1183,8 @@ function renderIndividualAnalysisPreview(rows) {
   if (!rows.length) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
+    if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
+    if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
     return;
   }
 
@@ -1223,7 +1261,8 @@ function parseGoogleFormCsv(text) {
 
   const headers = rows[0];
   const fields = headers.map(resolveGoogleResponseField);
-  const lookups = buildRosterLookups();
+  const supplementalRows = basicInfoSource ? parseBasicInfoSource(basicInfoSource.value) : [];
+  const lookups = buildRosterLookups(supplementalRows);
   const records = rows.slice(1).map((cells, index) => {
     const raw = { answers: {}, sourceRowNumber: index + 2 };
     fields.forEach((field, cellIndex) => {
@@ -1235,7 +1274,9 @@ function parseGoogleFormCsv(text) {
         raw[field] = value;
       }
     });
-    return enrichGoogleRecord(raw, lookups);
+    const enriched = enrichGoogleRecord(raw, lookups);
+    if (enriched.matchedRoster || !supplementalRows[index]) return enriched;
+    return mergeSupplementalInfo(enriched, supplementalRows[index]);
   });
 
   const duplicateCounts = countBy(records, googleImportKey);
@@ -1907,6 +1948,9 @@ googleCsvFile.addEventListener("change", () => {
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
   renderIndividualAnalysisPreview([]);
+  if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
+});
+basicInfoSource.addEventListener("input", () => {
   if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
 });
 window.addEventListener("afterprint", () => {

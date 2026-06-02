@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=company-results" />
+  <link rel="stylesheet" href="styles.css?v=basic-info-supplement" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -126,6 +126,10 @@
             <label class="file-field" for="googleCsvFile">
               <span>1. Googleフォーム回答CSV</span>
               <input id="googleCsvFile" type="file" accept=".csv,text/csv" />
+            </label>
+            <label class="analysis-supplement" for="basicInfoSource">
+              <span>任意: 基本情報補完CSV</span>
+              <textarea id="basicInfoSource" rows="4" placeholder="受検者ID,氏名,性別,職場コード,職場名,部署&#10;SC-0001,山田 太郎,男性,D001,営業部,営業部"></textarea>
             </label>
             <div class="participant-actions analysis-actions">
               <button type="button" id="previewGoogleCsv" class="btn btn-outline">2. CSVを確認</button>
@@ -273,6 +277,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=company-results"></script>
+  <script src="stress-check-admin.js?v=basic-info-supplement"></script>
 </body>
 </html>
