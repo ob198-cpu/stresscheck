@@ -28,6 +28,7 @@ const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
+const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
@@ -856,6 +857,126 @@ function buildIndividualAnalysisCsv(rows) {
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function safeFileName(value) {
+  return cleanText(value || "result")
+    .normalize("NFKC")
+    .replace(/[\\/:*?"<>|]/g, "_")
+    .replace(/\s+/g, "_")
+    .slice(0, 80) || "result";
+}
+
+function personalRiskText(analysis) {
+  if (!analysis.canScore) return "回答または基本情報が不足しているため、結果を出力できません。";
+  if (analysis.highStress) {
+    return "今回のストレスチェック結果は、厚労省資料の数値基準例に基づく高ストレス者判定に該当します。医師による面接指導の申出について、実施者からの案内を確認してください。";
+  }
+  return "今回のストレスチェック結果は、厚労省資料の数値基準例に基づく高ストレス者判定には該当しません。結果をセルフケアや働き方の見直しに活用してください。";
+}
+
+function scaleLevelText(point) {
+  const labels = {
+    1: "高いストレス状態",
+    2: "やや高い",
+    3: "普通",
+    4: "やや低い",
+    5: "低い",
+  };
+  return labels[point] || "-";
+}
+
+function buildPersonalResultHtml(record) {
+  const analysis = buildMhlwIndividualAnalysis(record);
+  const titleName = analysis.personName || analysis.respondentId || analysis.participantCode || "受検者";
+  const scaleRows = analysis.scales.map((scale) => `
+    <tr>
+      <td>${escapeHtml(scale.label)}</td>
+      <td>${escapeHtml(scale.domain)}</td>
+      <td>${escapeHtml(scale.rawScore)}</td>
+      <td>${escapeHtml(scale.point)}</td>
+      <td>${escapeHtml(scaleLevelText(scale.point))}</td>
+    </tr>
+  `).join("");
+  const highStressLabel = analysis.highStress ? "該当" : "非該当";
+  const resultClass = analysis.highStress ? "attention" : "stable";
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレスチェック個人結果 - ${escapeHtml(titleName)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111827; background: #eef3f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    main { max-width: 920px; margin: 28px auto; padding: 28px; background: #fff; border: 1px solid #d8e2e8; border-radius: 8px; }
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 1.8rem; }
+    h2 { margin-top: 24px; font-size: 1.18rem; }
+    p { margin: 8px 0 0; }
+    .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+    .meta div, .notice, .box { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .notice { margin-top: 18px; font-weight: 800; }
+    .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
+    .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
+    table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #edf5f7; }
+    .summary { display: grid; gap: 10px; margin-top: 14px; }
+    @media (min-width: 720px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .summary strong, .summary span { display: block; }
+    .summary strong { font-size: 1.6rem; line-height: 1.1; }
+    .fine { color: #5b6678; font-size: 0.88rem; }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ストレスチェック個人結果</h1>
+    <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。</p>
+    <div class="meta">
+      <div><strong>氏名</strong><br>${escapeHtml(analysis.personName || "-")}</div>
+      <div><strong>受検者ID</strong><br>${escapeHtml(analysis.respondentId || "-")}</div>
+      <div><strong>職場</strong><br>${escapeHtml(analysis.workplaceName || analysis.workplaceCode || analysis.department || "-")}</div>
+      <div><strong>性別</strong><br>${escapeHtml(analysis.gender || "-")}</div>
+    </div>
+    <div class="notice ${resultClass}">
+      ${escapeHtml(personalRiskText(analysis))}
+    </div>
+
+    <h2>判定サマリー</h2>
+    <div class="summary">
+      <div class="box"><span>高ストレス者判定</span><strong>${escapeHtml(highStressLabel)}</strong></div>
+      <div class="box"><span>心身のストレス反応6尺度</span><strong>${escapeHtml(analysis.reactionTotal)}</strong><span class="fine">12点以下で条件該当</span></div>
+      <div class="box"><span>要因+サポート12尺度</span><strong>${escapeHtml(analysis.factorSupportTotal)}</strong><span class="fine">26点以下で条件確認</span></div>
+    </div>
+
+    <h2>あなたのストレスプロフィール</h2>
+    <p class="fine">評価点は1〜5点です。1点に近いほどストレス状況がよくない方向、5点に近いほどよい方向を示します。</p>
+    <table>
+      <thead><tr><th>尺度</th><th>領域</th><th>素点</th><th>評価点</th><th>目安</th></tr></thead>
+      <tbody>${scaleRows}</tbody>
+    </table>
+
+    <h2>結果の扱い</h2>
+    <p>この結果は、あなた自身のセルフケアと、必要に応じた医師面接指導のためのものです。職場環境の改善に使う場合も、個人が特定されない範囲で集団分析として扱われます。</p>
+    <p class="fine">算出方法: 職業性ストレス簡易調査票57項目、厚生労働省資料「数値基準に基づいて高ストレス者を選定する方法」の素点換算表方式。</p>
+  </main>
+</body>
+</html>`;
+}
+
+function downloadTextFile(filename, content, type = "text/html;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
 function renderIndividualAnalysisPreview(rows) {
   if (!individualAnalysisPreview) return;
   if (!rows.length) {
@@ -868,9 +989,11 @@ function renderIndividualAnalysisPreview(rows) {
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
+  if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
+    `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果HTMLを保存」で、判定可能な受検者ごとに1人1ファイルを保存できます。" : "本人向け結果を出すには、57項目回答と性別が必要です。"}</span></div>`,
     `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
     ...analyses.slice(0, 12).map((analysis) => {
       const label = analysis.canScore ? (analysis.highStress ? "高ストレス者判定該当" : "非該当") : "判定不可";
@@ -1514,6 +1637,28 @@ function handleDownloadIndividualAnalysisCsv() {
   setGoogleImportMessage("個人分析CSVを保存しました。厚労省57項目の素点換算表方式による評価点と高ストレス者判定を出力しています。", "success");
 }
 
+function handleDownloadPersonalResultHtml() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
+  if (!scoreableRows.length) {
+    setGoogleImportMessage("本人向け結果を出力できる行がありません。57項目回答と性別を確認してください。", "error");
+    return;
+  }
+  scoreableRows.forEach((row, index) => {
+    const analysis = buildMhlwIndividualAnalysis(row);
+    const id = safeFileName(analysis.respondentId || analysis.participantCode || `row-${analysis.sourceRowNumber}`);
+    const name = safeFileName(analysis.personName || "name-missing");
+    const filename = `stress-check-personal-result_${id}_${name}.html`;
+    window.setTimeout(() => {
+      downloadTextFile(filename, buildPersonalResultHtml(row));
+    }, index * 250);
+  });
+  setGoogleImportMessage(`本人向け結果HTMLを ${scoreableRows.length}件保存します。ブラウザが複数ダウンロードの許可を求めた場合は許可してください。`, "success");
+}
+
 async function loadSummary() {
   if (isPublicStaticPage) {
     setMessage("公開サイト上では管理APIを利用できません。ローカルサーバーで開いてください。", "info");
@@ -1560,6 +1705,7 @@ importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
+downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 responseAdminRows.addEventListener("click", (event) => {
@@ -1573,6 +1719,7 @@ googleCsvFile.addEventListener("change", () => {
   importGoogleCsv.disabled = true;
   downloadGoogleImportCheck.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
+  downloadPersonalResultHtml.disabled = true;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
   renderIndividualAnalysisPreview([]);
