@@ -787,7 +787,7 @@ function renderGoogleImportPreview(rows) {
   const blockedRows = rows.filter((row) => importIssues(row).length);
   const warningRows = rows.filter((row) => importWarnings(row).length);
   const matchedRows = rows.filter((row) => row.matchedRoster).length;
-  importGoogleCsv.disabled = Boolean(blockedRows.length);
+  importGoogleCsv.disabled = isPublicStaticPage || Boolean(blockedRows.length);
   downloadGoogleImportCheck.disabled = false;
   const diagnostics = googleImportDiagnostics || {};
   const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
@@ -845,6 +845,12 @@ async function handlePreviewGoogleCsv() {
 }
 
 async function handleImportGoogleCsv() {
+  if (isPublicStaticPage) {
+    setGoogleImportMessage("GitHub Pages版ではサーバー保存はできません。CSV確認と取込チェックCSV保存はこの画面で使えます。回答を保存する場合はローカル版を起動してください。", "info");
+    importGoogleCsv.disabled = true;
+    return;
+  }
+
   if (!googleImportRows.length || googleImportRows.some((row) => importIssues(row).length)) {
     setGoogleImportMessage("保存前にCSVを確認してください。保存不可の行がある場合は修正が必要です。", "error");
     return;
