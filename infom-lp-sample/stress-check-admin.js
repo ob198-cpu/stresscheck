@@ -1284,7 +1284,10 @@ function buildGoogleImportCheckCsv(rows) {
 }
 
 function handleDownloadGoogleImportCheck() {
-  if (!googleImportRows.length) return;
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
   const blob = new Blob([`\uFEFF${buildGoogleImportCheckCsv(googleImportRows)}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -1293,7 +1296,8 @@ function handleDownloadGoogleImportCheck() {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  setGoogleImportMessage("取込チェックCSVを保存しました。ブラウザのダウンロード先を確認してください。", "success");
 }
 
 async function loadSummary() {
