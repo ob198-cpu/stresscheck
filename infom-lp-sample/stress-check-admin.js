@@ -959,16 +959,19 @@ function buildPersonalResultHtml(record) {
     table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
+    .screen-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+    .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
     .summary { display: grid; gap: 10px; margin-top: 14px; }
     @media (min-width: 720px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     .summary strong, .summary span { display: block; }
     .summary strong { font-size: 1.6rem; line-height: 1.1; }
     .fine { color: #5b6678; font-size: 0.88rem; }
-    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } .screen-actions { display: none; } }
   </style>
 </head>
 <body>
   <main>
+    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック個人結果</h1>
     <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。</p>
     <div class="meta">
@@ -1013,6 +1016,14 @@ function downloadTextFile(filename, content, type = "text/html;charset=utf-8") {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+function openHtmlDocument(content) {
+  const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return Boolean(opened);
 }
 
 function groupKeyForGoogleRecord(record) {
@@ -1131,11 +1142,14 @@ function buildCompanyGroupHtml(rows) {
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
     ul { margin: 10px 0 0; }
-    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } }
+    .screen-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+    .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } .screen-actions { display: none; } }
   </style>
 </head>
 <body>
   <main>
+    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック集団分析結果</h1>
     <p class="fine">企業担当者向け資料です。個人名、受検者ID、個人別の高ストレス判定は含めていません。10人未満の集団は個人特定防止のため数値を非表示にしています。</p>
     <div class="summary">
@@ -1282,7 +1296,8 @@ function renderIndividualAnalysisPreview(rows) {
       const scores = analysis.canScore
         ? `B反応6尺度 ${analysis.reactionTotal}点 / A+C 12尺度 ${analysis.factorSupportTotal}点 / 活気 ${scalePointText(analysis, "B_VIGOR")}・不安 ${scalePointText(analysis, "B_ANXIETY")}・抑うつ ${scalePointText(analysis, "B_DEPRESSION")}`
         : analysis.reason;
-      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}</span></div>`;
+      const action = analysis.canScore ? `<button type="button" class="btn btn-outline btn-sm personal-result-action" data-row-index="${index}">本人向け結果を開く</button>` : "";
+      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}</span>${action}</div>`;
     }),
     analyses.length > 12 ? `<div class="suppressed-item">残り ${analyses.length - 12}件は省略表示しています。全件は「個人分析CSVを保存」で確認してください。</div>` : "",
   ].join("");
@@ -1932,16 +1947,13 @@ function handleDownloadPersonalResultHtml() {
     setGoogleImportMessage("本人向け結果を出力できる行がありません。57項目回答と性別を確認してください。", "error");
     return;
   }
-  scoreableRows.forEach((row, index) => {
-    const analysis = buildMhlwIndividualAnalysis(row);
-    const id = safeFileName(analysis.respondentId || analysis.participantCode || `row-${analysis.sourceRowNumber}`);
-    const name = safeFileName(analysis.personName || "name-missing");
-    const filename = `stress-check-personal-result_${id}_${name}.html`;
-    window.setTimeout(() => {
-      downloadTextFile(filename, buildPersonalResultHtml(row));
-    }, index * 250);
-  });
-  setGoogleImportMessage(`本人向け結果HTMLを ${scoreableRows.length}件保存します。ブラウザが複数ダウンロードの許可を求めた場合は許可してください。`, "success");
+  if (scoreableRows.length === 1) {
+    const opened = openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]));
+    setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。下の本人別ボタンからもう一度開いてください。", opened ? "success" : "error");
+    return;
+  }
+  individualAnalysisPreview.scrollIntoView({ behavior: "smooth", block: "start" });
+  setGoogleImportMessage("複数人分があります。下の一覧から本人ごとの「本人向け結果を開く」を押してください。", "info");
 }
 
 function handleDownloadCompanyGroupHtml() {
@@ -1954,8 +1966,8 @@ function handleDownloadCompanyGroupHtml() {
     setGoogleImportMessage("企業向け集団分析を出力できません。判定可能な回答が10人以上必要です。", "error");
     return;
   }
-  downloadTextFile("stress-check-company-group-analysis.html", buildCompanyGroupHtml(googleImportRows));
-  setGoogleImportMessage("企業向け集団分析HTMLを保存しました。個人名・個人IDは含めず、10人未満の集団は数値非表示です。", "success");
+  const opened = openHtmlDocument(buildCompanyGroupHtml(googleImportRows));
+  setGoogleImportMessage(opened ? "企業向け集団分析を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
 }
 
 async function loadSummary() {
@@ -2012,6 +2024,14 @@ responseAdminRows.addEventListener("click", (event) => {
   const button = event.target.closest(".response-status-action");
   if (!button) return;
   void updateResponseStatus(button.dataset.submissionId, button.dataset.nextStatus);
+});
+individualAnalysisPreview.addEventListener("click", (event) => {
+  const button = event.target.closest(".personal-result-action");
+  if (!button) return;
+  const row = googleImportRows[Number(button.dataset.rowIndex)];
+  if (!row) return;
+  const opened = openHtmlDocument(buildPersonalResultHtml(row));
+  setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
 });
 googleCsvFile.addEventListener("change", () => {
   googleImportRows = [];

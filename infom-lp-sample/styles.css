@@ -3809,6 +3809,10 @@ textarea {
   color: var(--muted);
 }
 
+.suppressed-item .btn {
+  margin-top: 10px;
+}
+
 .diagnostic-item {
   display: grid;
   gap: 4px;
