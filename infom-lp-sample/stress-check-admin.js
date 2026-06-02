@@ -31,6 +31,7 @@ const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportC
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
+const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const googleImportPreview = document.querySelector("#googleImportPreview");
@@ -47,6 +48,7 @@ let storedResponses = [];
 let qrAvailable = false;
 let submittedMap = new Map();
 let submittedCodeMap = new Map();
+let operationLog = [];
 
 const questionOrder = [
   ...Array.from({ length: 17 }, (_, index) => `A${index + 1}`),
@@ -584,6 +586,25 @@ function setGoogleImportMessage(text, type = "info") {
   googleImportMessage.textContent = text;
 }
 
+function addOperationLog(action, detail = {}) {
+  operationLog.push({
+    timestamp: new Date().toISOString(),
+    action,
+    totalRows: googleImportRows.length || "",
+    scoreableRows: googleImportRows.filter?.((row) => buildMhlwIndividualAnalysis(row).canScore).length || "",
+    detail: Object.entries(detail).map(([key, value]) => `${key}=${value}`).join(" / "),
+  });
+  if (downloadOperationLogCsv) downloadOperationLogCsv.disabled = !operationLog.length;
+}
+
+function buildOperationLogCsv() {
+  const output = [
+    ["日時", "操作", "読取件数", "判定可能件数", "詳細"],
+    ...operationLog.map((entry) => [entry.timestamp, entry.action, entry.totalRows, entry.scoreableRows, entry.detail]),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
 function parseCsvText(text) {
   const rows = [];
   let row = [];
@@ -922,6 +943,45 @@ function scaleLevelText(point) {
   return labels[point] || "-";
 }
 
+function profileRadarSvg(analysis) {
+  if (!analysis.canScore) return "";
+  const scales = analysis.scales.filter((scale) => scale.domain !== "D");
+  const size = 420;
+  const center = size / 2;
+  const maxRadius = 150;
+  const points = scales.map((scale, index) => {
+    const angle = (-90 + (360 / scales.length) * index) * Math.PI / 180;
+    const radius = maxRadius * (Number(scale.point) / 5);
+    return {
+      x: center + Math.cos(angle) * radius,
+      y: center + Math.sin(angle) * radius,
+      labelX: center + Math.cos(angle) * (maxRadius + 34),
+      labelY: center + Math.sin(angle) * (maxRadius + 34),
+      label: scale.label.replace("心理的な仕事の負担（", "負担").replace("）", ""),
+    };
+  });
+  const rings = [1, 2, 3, 4, 5].map((level) => {
+    const r = maxRadius * (level / 5);
+    return `<circle cx="${center}" cy="${center}" r="${r}" fill="none" stroke="#d8e2e8" stroke-width="1" />`;
+  }).join("");
+  const axes = points.map((point) => `<line x1="${center}" y1="${center}" x2="${point.labelX}" y2="${point.labelY}" stroke="#edf2f7" stroke-width="1" />`).join("");
+  const labelText = points.map((point) => `<text x="${point.labelX}" y="${point.labelY}" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#526173">${escapeHtml(point.label)}</text>`).join("");
+  const polygon = points.map((point) => `${point.x},${point.y}`).join(" ");
+  return `
+    <div class="chart-card">
+      <h2>あなたのストレスプロフィール</h2>
+      <p class="fine">評価点1〜5点をレーダー表示しています。外側に近いほどよい方向、中心に近いほど注意が必要な方向です。</p>
+      <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="ストレスプロフィール">
+        ${rings}
+        ${axes}
+        <polygon points="${polygon}" fill="rgba(47, 148, 147, 0.28)" stroke="#2f9493" stroke-width="3" />
+        ${points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="4" fill="#2f9493" />`).join("")}
+        ${labelText}
+      </svg>
+    </div>
+  `;
+}
+
 function buildPersonalResultHtml(record) {
   const analysis = buildMhlwIndividualAnalysis(record);
   const titleName = analysis.personName || analysis.respondentId || analysis.participantCode || "受検者";
@@ -953,6 +1013,8 @@ function buildPersonalResultHtml(record) {
     p { margin: 8px 0 0; }
     .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
     .meta div, .notice, .box { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .chart-card { margin-top: 24px; padding: 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .chart-card svg { display: block; width: min(100%, 520px); margin: 10px auto 0; }
     .notice { margin-top: 18px; font-weight: 800; }
     .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
     .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
@@ -991,7 +1053,8 @@ function buildPersonalResultHtml(record) {
       <div class="box"><span>要因+サポート12尺度</span><strong>${escapeHtml(analysis.factorSupportTotal)}</strong><span class="fine">26点以下で条件確認</span></div>
     </div>
 
-    <h2>あなたのストレスプロフィール</h2>
+    ${profileRadarSvg(analysis)}
+    <h2>尺度別の結果</h2>
     <p class="fine">評価点は1〜5点です。1点に近いほどストレス状況がよくない方向、5点に近いほどよい方向を示します。</p>
     <table>
       <thead><tr><th>尺度</th><th>領域</th><th>素点</th><th>評価点</th><th>目安</th></tr></thead>
@@ -1002,6 +1065,52 @@ function buildPersonalResultHtml(record) {
     <p>この結果は、あなた自身のセルフケアと、必要に応じた医師面接指導のためのものです。職場環境の改善に使う場合も、個人が特定されない範囲で集団分析として扱われます。</p>
     <p class="fine">算出方法: 職業性ストレス簡易調査票57項目、厚生労働省資料「数値基準に基づいて高ストレス者を選定する方法」の素点換算表方式。</p>
   </main>
+</body>
+</html>`;
+}
+
+function buildAllPersonalResultsHtml(rows) {
+  const documents = rows
+    .filter((row) => buildMhlwIndividualAnalysis(row).canScore)
+    .map((row) => buildPersonalResultHtml(row).match(/<main>([\s\S]*?)<\/main>/)?.[1] || "")
+    .filter(Boolean);
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレスチェック本人向け結果 一括印刷</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111827; background: #eef3f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    main { max-width: 920px; margin: 28px auto; padding: 28px; background: #fff; border: 1px solid #d8e2e8; border-radius: 8px; page-break-after: always; }
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 1.8rem; }
+    h2 { margin-top: 24px; font-size: 1.18rem; }
+    p { margin: 8px 0 0; }
+    .screen-actions { position: sticky; top: 0; z-index: 3; max-width: 920px; margin: 0 auto; padding: 12px; display: flex; justify-content: flex-end; background: rgba(238, 243, 246, 0.92); }
+    .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+    .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+    .meta div, .notice, .box, .chart-card { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .notice { margin-top: 18px; font-weight: 800; }
+    .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
+    .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
+    table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #edf5f7; }
+    .summary { display: grid; gap: 10px; margin-top: 14px; }
+    @media (min-width: 720px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .summary strong, .summary span { display: block; }
+    .summary strong { font-size: 1.6rem; line-height: 1.1; }
+    .fine { color: #5b6678; font-size: 0.88rem; }
+    .chart-card { margin-top: 24px; }
+    .chart-card svg { display: block; width: min(100%, 520px); margin: 10px auto 0; }
+    @media print { body { background: #fff; } .screen-actions { display: none; } main { margin: 0; border: 0; border-radius: 0; } }
+  </style>
+</head>
+<body>
+  <div class="screen-actions"><button type="button" onclick="window.print()">全員分を印刷 / PDF保存</button></div>
+  ${documents.map((body) => `<main>${body.replace(/<div class="screen-actions">[\s\S]*?<\/div>/, "")}</main>`).join("")}
 </body>
 </html>`;
 }
@@ -1101,6 +1210,56 @@ function companyScaleRows(summary) {
   return rows.join("");
 }
 
+function groupJudgementSvg(summary, mode) {
+  const targets = [summary.overall, ...summary.visibleGroups].filter(Boolean);
+  if (!targets.length) return "";
+  const config = mode === "loadControl"
+    ? {
+        title: "仕事のストレス判定図（量-コントロール）",
+        xLabel: "仕事の量的負担",
+        yLabel: "仕事のコントロール",
+        xId: "A_QUANTITY",
+        yId: "A_CONTROL",
+        note: "右下に近いほど、仕事量が多く裁量が低い状態として注意が必要です。",
+      }
+    : {
+        title: "仕事のストレス判定図（上司-同僚支援）",
+        xLabel: "上司からのサポート",
+        yLabel: "同僚からのサポート",
+        xId: "C_SUPERVISOR",
+        yId: "C_COWORKER",
+        note: "左下に近いほど、支援が少ない状態として注意が必要です。",
+      };
+  const size = 420;
+  const pad = 58;
+  const plot = size - pad * 2;
+  const pointFor = (value) => pad + ((Number(value) - 1) / 4) * plot;
+  const yFor = (value) => pad + ((5 - Number(value)) / 4) * plot;
+  const points = targets.map((target, index) => ({
+    label: target.label,
+    x: pointFor(target.scaleAverages[config.xId] || 3),
+    y: yFor(target.scaleAverages[config.yId] || 3),
+    color: index === 0 ? "#9f1239" : "#2f9493",
+  }));
+  return `
+    <section class="chart-card">
+      <h2>${escapeHtml(config.title)}</h2>
+      <p class="fine">${escapeHtml(config.note)} 正式な健康リスク曲線の代替ではなく、集団別の4尺度位置を確認するための図です。</p>
+      <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${escapeHtml(config.title)}">
+        <rect x="${pad}" y="${pad}" width="${plot}" height="${plot}" fill="#fff" stroke="#d8e2e8" />
+        <line x1="${pad}" y1="${pad + plot / 2}" x2="${pad + plot}" y2="${pad + plot / 2}" stroke="#d8e2e8" />
+        <line x1="${pad + plot / 2}" y1="${pad}" x2="${pad + plot / 2}" y2="${pad + plot}" stroke="#d8e2e8" />
+        <text x="${pad + plot / 2}" y="${size - 16}" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.xLabel)} 低 ← → 高</text>
+        <text x="18" y="${pad + plot / 2}" transform="rotate(-90 18 ${pad + plot / 2})" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.yLabel)} 高 ← → 低</text>
+        ${points.map((point) => `
+          <circle cx="${point.x}" cy="${point.y}" r="7" fill="${point.color}" />
+          <text x="${point.x + 10}" y="${point.y - 8}" font-size="11" fill="#111827">${escapeHtml(point.label)}</text>
+        `).join("")}
+      </svg>
+    </section>
+  `;
+}
+
 function buildCompanyGroupHtml(rows) {
   const summary = buildCompanyGroupAnalysis(rows);
   const visibleRows = summary.visibleGroups.map((group) => `
@@ -1142,6 +1301,10 @@ function buildCompanyGroupHtml(rows) {
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
     ul { margin: 10px 0 0; }
+    .chart-grid { display: grid; gap: 14px; margin-top: 14px; }
+    @media (min-width: 860px) { .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .chart-card { padding: 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .chart-card svg { display: block; width: min(100%, 460px); margin: 10px auto 0; }
     .screen-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
     .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
     @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } .screen-actions { display: none; } }
@@ -1167,6 +1330,11 @@ function buildCompanyGroupHtml(rows) {
         <div class="box"><span>要因+サポート12尺度 平均</span><strong>${escapeHtml(overall.factorSupportAverage)}</strong></div>
       </div>
     ` : `<div class="notice"><strong>会社全体の数値は表示できません。</strong><br>判定可能な回答が${summary.minSize}人未満です。</div>`}
+
+    <div class="chart-grid">
+      ${groupJudgementSvg(summary, "loadControl")}
+      ${groupJudgementSvg(summary, "support")}
+    </div>
 
     <h2>集団別サマリー</h2>
     ${summary.visibleGroups.length ? `
@@ -1458,6 +1626,7 @@ async function handlePreviewGoogleCsv() {
     const matchedRows = googleImportRows.filter((row) => row.matchedRoster).length;
     const type = blockedRows.length ? "error" : "success";
     setGoogleImportMessage(`${googleImportRows.length}件を確認しました。名簿照合 ${matchedRows}件。${blockedRows.length ? "保存できない行があります。" : "この内容でローカル保存できます。"}`, type);
+    addOperationLog("CSV確認", { matchedRows, blockedRows: blockedRows.length });
   } catch (error) {
     setGoogleImportMessage(`CSV確認に失敗しました。理由: ${error.message}`, "error");
     renderGoogleImportPreview([]);
@@ -1935,6 +2104,7 @@ function handleDownloadIndividualAnalysisCsv() {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
   setGoogleImportMessage("個人分析CSVを保存しました。厚労省57項目の素点換算表方式による評価点と高ストレス者判定を出力しています。", "success");
+  addOperationLog("個人分析CSV保存");
 }
 
 function handleDownloadPersonalResultHtml() {
@@ -1950,10 +2120,12 @@ function handleDownloadPersonalResultHtml() {
   if (scoreableRows.length === 1) {
     const opened = openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]));
     setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。下の本人別ボタンからもう一度開いてください。", opened ? "success" : "error");
+    if (opened) addOperationLog("本人向け結果表示", { count: 1 });
     return;
   }
-  individualAnalysisPreview.scrollIntoView({ behavior: "smooth", block: "start" });
-  setGoogleImportMessage("複数人分があります。下の一覧から本人ごとの「本人向け結果を開く」を押してください。", "info");
+  const opened = openHtmlDocument(buildAllPersonalResultsHtml(scoreableRows));
+  setGoogleImportMessage(opened ? "本人向け結果の一括印刷画面を開きました。必要に応じて、下の一覧から1人ずつ開くこともできます。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("本人向け結果一括表示", { count: scoreableRows.length });
 }
 
 function handleDownloadCompanyGroupHtml() {
@@ -1968,6 +2140,12 @@ function handleDownloadCompanyGroupHtml() {
   }
   const opened = openHtmlDocument(buildCompanyGroupHtml(googleImportRows));
   setGoogleImportMessage(opened ? "企業向け集団分析を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("企業向け集団分析表示", { visibleGroups: summary.visibleGroups.length, suppressedGroups: summary.suppressedGroups.length });
+}
+
+function handleDownloadOperationLogCsv() {
+  if (!operationLog.length) return;
+  downloadTextFile("stress-check-operation-log.csv", `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
 }
 
 async function loadSummary() {
@@ -2018,6 +2196,7 @@ downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCh
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
+downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 responseAdminRows.addEventListener("click", (event) => {
@@ -2032,6 +2211,7 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   if (!row) return;
   const opened = openHtmlDocument(buildPersonalResultHtml(row));
   setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, respondentId: row.respondentId || row.participantCode || "" });
 });
 googleCsvFile.addEventListener("change", () => {
   googleImportRows = [];
@@ -2041,6 +2221,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadCompanyGroupHtml.disabled = true;
+  downloadOperationLogCsv.disabled = !operationLog.length;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
   renderBasicInfoEditor([]);
