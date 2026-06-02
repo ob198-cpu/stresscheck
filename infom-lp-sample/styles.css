@@ -4029,6 +4029,68 @@ textarea {
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
+.basic-info-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.basic-info-editor:empty {
+  display: none;
+}
+
+.basic-info-editor-head,
+.basic-info-row {
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #f8fbfc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.basic-info-editor-head strong,
+.basic-info-editor-head span {
+  display: block;
+}
+
+.basic-info-editor-head strong {
+  color: var(--teal-dark);
+}
+
+.basic-info-editor-head span {
+  color: var(--muted);
+}
+
+.basic-info-row-list {
+  display: grid;
+  gap: 10px;
+}
+
+.basic-info-row h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.basic-info-grid {
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 760px) {
+  .basic-info-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.basic-info-grid label {
+  display: grid;
+  gap: 5px;
+  font-weight: 800;
+}
+
+.basic-info-grid span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .analysis-details {
   border-radius: 8px;
   border: 1px solid rgba(15, 23, 42, 0.08);

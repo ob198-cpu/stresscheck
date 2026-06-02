@@ -32,6 +32,7 @@ const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividua
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const googleImportMessage = document.querySelector("#googleImportMessage");
+const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
@@ -1178,6 +1179,79 @@ function buildCompanyGroupHtml(rows) {
 </html>`;
 }
 
+const editableBasicFields = [
+  ["respondentId", "受検者ID", "text"],
+  ["personName", "氏名", "text"],
+  ["kanaName", "フリガナ", "text"],
+  ["birthDate", "生年月日", "date"],
+  ["gender", "性別", "select"],
+  ["workplaceCode", "職場コード", "text"],
+  ["workplaceName", "職場名", "text"],
+  ["department", "部署", "text"],
+];
+
+function needsBasicInfoEdit(row) {
+  return importIssues(row).length || importWarnings(row).length || !normalizeGenderForMhlw(row.gender);
+}
+
+function renderBasicInfoEditor(rows) {
+  if (!basicInfoEditor) return;
+  const targets = rows
+    .map((row, index) => ({ row, index }))
+    .filter(({ row }) => needsBasicInfoEdit(row));
+
+  if (!targets.length) {
+    basicInfoEditor.innerHTML = "";
+    return;
+  }
+
+  basicInfoEditor.innerHTML = `
+    <div class="basic-info-editor-head">
+      <strong>不足情報をその場で入力</strong>
+      <span>性別が入ると本人向け結果の判定が可能になります。入力内容はこの画面内だけで使い、サーバーには保存しません。</span>
+    </div>
+    <div class="basic-info-row-list">
+      ${targets.slice(0, 50).map(({ row, index }) => `
+        <section class="basic-info-row" data-row-index="${index}">
+          <h3>CSV ${escapeHtml(row.sourceRowNumber)}行目 / ${escapeHtml(row.respondentId || row.participantCode || "ID未設定")}</h3>
+          <div class="basic-info-grid">
+            ${editableBasicFields.map(([field, label, type]) => {
+              if (type === "select") {
+                return `
+                  <label>
+                    <span>${label}</span>
+                    <select data-basic-field="${field}">
+                      <option value="">選択</option>
+                      <option value="男性" ${normalizeGenderForMhlw(row[field]) === "male" ? "selected" : ""}>男性</option>
+                      <option value="女性" ${normalizeGenderForMhlw(row[field]) === "female" ? "selected" : ""}>女性</option>
+                    </select>
+                  </label>
+                `;
+              }
+              return `
+                <label>
+                  <span>${label}</span>
+                  <input type="${type}" data-basic-field="${field}" value="${escapeHtml(row[field] || "")}">
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `).join("")}
+      ${targets.length > 50 ? `<p class="fine">残り ${targets.length - 50}件は省略しています。補完CSVを使うと一括補完できます。</p>` : ""}
+    </div>
+  `;
+}
+
+function refreshAnalysisAfterBasicEdit(redrawEditor = false) {
+  renderIndividualAnalysisPreview(googleImportRows);
+  if (redrawEditor) renderBasicInfoEditor(googleImportRows);
+  const blockedRows = googleImportRows.filter((row) => importIssues(row).length);
+  const matchedRows = googleImportRows.filter((row) => row.matchedRoster).length;
+  const type = blockedRows.length ? "error" : "success";
+  setGoogleImportMessage(`${googleImportRows.length}件を確認しました。名簿照合 ${matchedRows}件。${blockedRows.length ? "保存できない行があります。" : "この内容で結果出力できます。"}`, type);
+}
+
 function renderIndividualAnalysisPreview(rows) {
   if (!individualAnalysisPreview) return;
   if (!rows.length) {
@@ -1292,6 +1366,7 @@ function renderGoogleImportPreview(rows) {
   if (!rows.length) {
     renderEmpty(googleImportPreview, "CSVを読み込めませんでした。1行目が見出し、2行目以降が回答になっているか確認してください。");
     renderIndividualAnalysisPreview([]);
+    renderBasicInfoEditor([]);
     importGoogleCsv.disabled = true;
     downloadGoogleImportCheck.disabled = true;
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
@@ -1303,6 +1378,7 @@ function renderGoogleImportPreview(rows) {
   const matchedRows = rows.filter((row) => row.matchedRoster).length;
   importGoogleCsv.disabled = isPublicStaticPage || Boolean(blockedRows.length);
   downloadGoogleImportCheck.disabled = false;
+  renderBasicInfoEditor(rows);
   renderIndividualAnalysisPreview(rows);
   const diagnostics = googleImportDiagnostics || {};
   const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
@@ -1947,11 +2023,30 @@ googleCsvFile.addEventListener("change", () => {
   downloadCompanyGroupHtml.disabled = true;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
+  renderBasicInfoEditor([]);
   renderIndividualAnalysisPreview([]);
   if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
 });
 basicInfoSource.addEventListener("input", () => {
   if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
+});
+basicInfoEditor.addEventListener("input", (event) => {
+  const field = event.target?.dataset?.basicField;
+  const rowElement = event.target?.closest?.(".basic-info-row");
+  if (!field || !rowElement) return;
+  const rowIndex = Number(rowElement.dataset.rowIndex);
+  if (!googleImportRows[rowIndex]) return;
+  googleImportRows[rowIndex][field] = cleanText(event.target.value);
+  refreshAnalysisAfterBasicEdit();
+});
+basicInfoEditor.addEventListener("change", (event) => {
+  const field = event.target?.dataset?.basicField;
+  const rowElement = event.target?.closest?.(".basic-info-row");
+  if (!field || !rowElement) return;
+  const rowIndex = Number(rowElement.dataset.rowIndex);
+  if (!googleImportRows[rowIndex]) return;
+  googleImportRows[rowIndex][field] = cleanText(event.target.value);
+  refreshAnalysisAfterBasicEdit(true);
 });
 window.addEventListener("afterprint", () => {
   participantQrSheet.hidden = true;
