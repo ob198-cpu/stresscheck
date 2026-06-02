@@ -27,8 +27,10 @@ const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
 const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
+const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const googleImportPreview = document.querySelector("#googleImportPreview");
+const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
 const downloadResponseAdminCsv = document.querySelector("#downloadResponseAdminCsv");
 const responseAdminMessage = document.querySelector("#responseAdminMessage");
@@ -62,6 +64,36 @@ const googleCsvTemplateHeaders = [
   "個人情報の扱いの確認",
   "回答内容の確認",
 ];
+
+const mhlwScaleDefinitions = [
+  { id: "A_QUANTITY", domain: "A", label: "心理的な仕事の負担（量）", direction: "badHigh", raw: (a) => 15 - (a.A1 + a.A2 + a.A3), ranges: { male: [[3, 5], [6, 7], [8, 9], [10, 11], [12, 12]], female: [[3, 4], [5, 6], [7, 9], [10, 11], [12, 12]] } },
+  { id: "A_QUALITY", domain: "A", label: "心理的な仕事の負担（質）", direction: "badHigh", raw: (a) => 15 - (a.A4 + a.A5 + a.A6), ranges: { male: [[3, 5], [6, 7], [8, 9], [10, 11], [12, 12]], female: [[3, 4], [5, 6], [7, 8], [9, 10], [11, 12]] } },
+  { id: "A_PHYSICAL", domain: "A", label: "自覚的な身体的負担度", direction: "badHigh", raw: (a) => 5 - a.A7, ranges: { male: [[1, 1], [2, 2], [3, 3], [4, 4]], female: [[1, 1], [2, 2], [3, 3], [4, 4]] } },
+  { id: "A_RELATIONS", domain: "A", label: "職場の対人関係でのストレス", direction: "badHigh", raw: (a) => 10 - (a.A12 + a.A13) + a.A14, ranges: { male: [[3, 3], [4, 5], [6, 7], [8, 9], [10, 12]], female: [[3, 3], [4, 5], [6, 7], [8, 9], [10, 12]] } },
+  { id: "A_ENVIRONMENT", domain: "A", label: "職場環境によるストレス", direction: "badHigh", raw: (a) => 5 - a.A15, ranges: { male: [[1, 1], [2, 2], [3, 3], [4, 4]], female: [[1, 1], [2, 2], [3, 3], [4, 4]] } },
+  { id: "A_CONTROL", domain: "A", label: "仕事のコントロール度", direction: "goodHigh", raw: (a) => 15 - (a.A8 + a.A9 + a.A10), ranges: { male: [[3, 4], [5, 6], [7, 8], [9, 10], [11, 12]], female: [[3, 3], [4, 5], [6, 8], [9, 10], [11, 12]] } },
+  { id: "A_SKILL", domain: "A", label: "技能の活用度", direction: "goodHigh", raw: (a) => a.A11, ranges: { male: [[1, 1], [2, 2], [3, 3], [4, 4]], female: [[1, 1], [2, 2], [3, 3], [4, 4]] } },
+  { id: "A_FIT", domain: "A", label: "仕事の適性度", direction: "goodHigh", raw: (a) => 5 - a.A16, ranges: { male: [[1, 1], [2, 2], [3, 3], [4, 4]], female: [[1, 1], [2, 2], [3, 3], [4, 4]] } },
+  { id: "A_REWARD", domain: "A", label: "働きがい", direction: "goodHigh", raw: (a) => 5 - a.A17, ranges: { male: [[1, 1], [2, 2], [3, 3], [4, 4]], female: [[1, 1], [2, 2], [3, 3], [4, 4]] } },
+  { id: "B_VIGOR", domain: "B", label: "活気", direction: "goodHigh", raw: (a) => a.B1 + a.B2 + a.B3, ranges: { male: [[3, 3], [4, 5], [6, 7], [8, 9], [10, 12]], female: [[3, 3], [4, 5], [6, 7], [8, 9], [10, 12]] } },
+  { id: "B_IRRITATION", domain: "B", label: "イライラ感", direction: "badHigh", raw: (a) => a.B4 + a.B5 + a.B6, ranges: { male: [[3, 3], [4, 5], [6, 7], [8, 9], [10, 12]], female: [[3, 3], [4, 5], [6, 8], [9, 10], [11, 12]] } },
+  { id: "B_FATIGUE", domain: "B", label: "疲労感", direction: "badHigh", raw: (a) => a.B7 + a.B8 + a.B9, ranges: { male: [[3, 3], [4, 4], [5, 7], [8, 10], [11, 12]], female: [[3, 3], [4, 5], [6, 8], [9, 11], [12, 12]] } },
+  { id: "B_ANXIETY", domain: "B", label: "不安感", direction: "badHigh", raw: (a) => a.B10 + a.B11 + a.B12, ranges: { male: [[3, 3], [4, 4], [5, 7], [8, 9], [10, 12]], female: [[3, 3], [4, 4], [5, 7], [8, 10], [11, 12]] } },
+  { id: "B_DEPRESSION", domain: "B", label: "抑うつ感", direction: "badHigh", raw: (a) => a.B13 + a.B14 + a.B15 + a.B16 + a.B17 + a.B18, ranges: { male: [[6, 6], [7, 8], [9, 12], [13, 16], [17, 24]], female: [[6, 6], [7, 8], [9, 12], [13, 17], [18, 24]] } },
+  { id: "B_PHYSICAL", domain: "B", label: "身体愁訴", direction: "badHigh", raw: (a) => a.B19 + a.B20 + a.B21 + a.B22 + a.B23 + a.B24 + a.B25 + a.B26 + a.B27 + a.B28 + a.B29, ranges: { male: [[11, 11], [12, 15], [16, 21], [22, 26], [27, 44]], female: [[11, 13], [14, 17], [18, 23], [24, 29], [30, 44]] } },
+  { id: "C_SUPERVISOR", domain: "C", label: "上司からのサポート", direction: "goodHigh", raw: (a) => 15 - (a.C1 + a.C4 + a.C7), ranges: { male: [[3, 4], [5, 6], [7, 8], [9, 10], [11, 12]], female: [[3, 3], [4, 5], [6, 7], [8, 10], [11, 12]] } },
+  { id: "C_COWORKER", domain: "C", label: "同僚からのサポート", direction: "goodHigh", raw: (a) => 15 - (a.C2 + a.C5 + a.C8), ranges: { male: [[3, 5], [6, 7], [8, 9], [10, 11], [12, 12]], female: [[3, 5], [6, 7], [8, 9], [10, 11], [12, 12]] } },
+  { id: "C_FAMILY", domain: "C", label: "家族・友人からのサポート", direction: "goodHigh", raw: (a) => 15 - (a.C3 + a.C6 + a.C9), ranges: { male: [[3, 6], [7, 8], [9, 9], [10, 11], [12, 12]], female: [[3, 6], [7, 8], [9, 9], [10, 11], [12, 12]] } },
+  { id: "D_SATISFACTION", domain: "D", label: "仕事や生活の満足度", direction: "goodHigh", raw: (a) => 10 - (a.D1 + a.D2), ranges: { male: [[2, 3], [4, 4], [5, 6], [7, 7], [8, 8]], female: [[2, 3], [4, 4], [5, 6], [7, 7], [8, 8]] } },
+];
+
+const mhlwRiskDomains = {
+  reaction: ["B_VIGOR", "B_IRRITATION", "B_FATIGUE", "B_ANXIETY", "B_DEPRESSION", "B_PHYSICAL"],
+  factorsAndSupport: [
+    "A_QUANTITY", "A_QUALITY", "A_PHYSICAL", "A_RELATIONS", "A_ENVIRONMENT", "A_CONTROL",
+    "A_SKILL", "A_FIT", "A_REWARD", "C_SUPERVISOR", "C_COWORKER", "C_FAMILY",
+  ],
+};
 
 adminKeyInput.value = sessionStorage.getItem("stressCheckAdminKey") || "";
 
@@ -705,6 +737,154 @@ function missingAnswerKeys(record) {
   return questionOrder.filter((key) => ![1, 2, 3, 4].includes(Number(record.answers?.[key])));
 }
 
+function normalizeGenderForMhlw(value) {
+  const text = cleanText(value).normalize("NFKC").toLowerCase();
+  if (!text) return "";
+  if (text.includes("女") || text === "f" || text.includes("female")) return "female";
+  if (text.includes("男") || text === "m" || text.includes("male")) return "male";
+  return "";
+}
+
+function rangeIndex(value, ranges) {
+  return ranges.findIndex(([min, max]) => value >= min && value <= max);
+}
+
+function mhlwEvaluationPoint(definition, gender, rawScore) {
+  const ranges = definition.ranges[gender] || definition.ranges.male;
+  const index = rangeIndex(rawScore, ranges);
+  if (index < 0) return "";
+  const point = index + 1;
+  return definition.direction === "badHigh" ? ranges.length + 1 - point : point;
+}
+
+function sumByIds(scales, ids) {
+  return ids.reduce((total, id) => {
+    const scale = scales.find((item) => item.id === id);
+    return total + Number(scale?.point || 0);
+  }, 0);
+}
+
+function buildMhlwIndividualAnalysis(record) {
+  const missingAnswers = missingAnswerKeys(record);
+  const gender = normalizeGenderForMhlw(record.gender);
+  const warnings = importWarnings(record);
+  const canScore = !missingAnswers.length && Boolean(gender);
+  const scales = canScore
+    ? mhlwScaleDefinitions.map((definition) => {
+        const rawScore = definition.raw(record.answers);
+        return {
+          ...definition,
+          rawScore,
+          point: mhlwEvaluationPoint(definition, gender, rawScore),
+        };
+      })
+    : [];
+  const reactionTotal = canScore ? sumByIds(scales, mhlwRiskDomains.reaction) : "";
+  const factorSupportTotal = canScore ? sumByIds(scales, mhlwRiskDomains.factorsAndSupport) : "";
+  const conditionA = canScore && reactionTotal <= 12;
+  const conditionB = canScore && factorSupportTotal <= 26 && reactionTotal <= 17;
+  const highStress = conditionA || conditionB;
+  const reason = !canScore
+    ? `${missingAnswers.length ? `回答不足 ${missingAnswers.length}項目` : ""}${!gender ? `${missingAnswers.length ? " / " : ""}性別未設定` : ""}`
+    : highStress
+      ? `高ストレス者判定該当（${conditionA ? "心身のストレス反応" : "要因・サポートと反応の組合せ"}）`
+      : "高ストレス者判定には該当しません";
+
+  return {
+    sourceRowNumber: record.sourceRowNumber,
+    respondentId: record.respondentId,
+    participantCode: record.participantCode,
+    personName: record.personName,
+    department: record.department,
+    workplaceCode: record.workplaceCode,
+    workplaceName: record.workplaceName,
+    gender: gender === "female" ? "女性" : gender === "male" ? "男性" : "",
+    canScore,
+    missingAnswers,
+    missingBasic: warnings,
+    scales,
+    reactionTotal,
+    factorSupportTotal,
+    conditionA,
+    conditionB,
+    highStress,
+    reason,
+  };
+}
+
+function scalePointText(analysis, id) {
+  const scale = analysis.scales.find((item) => item.id === id);
+  return scale?.point || "";
+}
+
+function buildIndividualAnalysisCsv(rows) {
+  const scaleHeaders = mhlwScaleDefinitions.flatMap((definition) => [`${definition.label} 素点`, `${definition.label} 評価点`]);
+  const output = [
+    [
+      "CSV行", "受検者ID", "受検コード", "氏名", "性別", "部署", "職場コード", "職場名",
+      "判定可否", "高ストレス者判定", "判定根拠", "心身のストレス反応6尺度合計", "仕事のストレス要因+周囲のサポート12尺度合計",
+      "条件1_反応6尺度12点以下", "条件2_要因サポート26点以下かつ反応17点以下", "回答不足項目", "基本情報不足",
+      ...scaleHeaders,
+    ],
+    ...rows.map((record) => {
+      const analysis = buildMhlwIndividualAnalysis(record);
+      return [
+        analysis.sourceRowNumber,
+        analysis.respondentId,
+        analysis.participantCode,
+        analysis.personName,
+        analysis.gender,
+        analysis.department,
+        analysis.workplaceCode,
+        analysis.workplaceName,
+        analysis.canScore ? "判定可能" : "判定不可",
+        analysis.canScore ? (analysis.highStress ? "該当" : "非該当") : "",
+        analysis.reason,
+        analysis.reactionTotal,
+        analysis.factorSupportTotal,
+        analysis.conditionA ? "該当" : "非該当",
+        analysis.conditionB ? "該当" : "非該当",
+        analysis.missingAnswers.join(" "),
+        analysis.missingBasic.join(" / "),
+        ...mhlwScaleDefinitions.flatMap((definition) => {
+          const scale = analysis.scales.find((item) => item.id === definition.id);
+          return [scale?.rawScore ?? "", scale?.point ?? ""];
+        }),
+      ];
+    }),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function renderIndividualAnalysisPreview(rows) {
+  if (!individualAnalysisPreview) return;
+  if (!rows.length) {
+    renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
+    if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
+    return;
+  }
+
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !scoreableCount;
+
+  individualAnalysisPreview.innerHTML = [
+    `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
+    `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
+    ...analyses.slice(0, 12).map((analysis) => {
+      const label = analysis.canScore ? (analysis.highStress ? "高ストレス者判定該当" : "非該当") : "判定不可";
+      const id = analysis.respondentId || analysis.participantCode || "-";
+      const name = analysis.personName || "-";
+      const scores = analysis.canScore
+        ? `B反応6尺度 ${analysis.reactionTotal}点 / A+C 12尺度 ${analysis.factorSupportTotal}点 / 活気 ${scalePointText(analysis, "B_VIGOR")}・不安 ${scalePointText(analysis, "B_ANXIETY")}・抑うつ ${scalePointText(analysis, "B_DEPRESSION")}`
+        : analysis.reason;
+      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}</span></div>`;
+    }),
+    analyses.length > 12 ? `<div class="suppressed-item">残り ${analyses.length - 12}件は省略表示しています。全件は「個人分析CSVを保存」で確認してください。</div>` : "",
+  ].join("");
+}
+
 function importWarnings(record) {
   const warnings = [];
   for (const [key, label] of [
@@ -779,8 +959,10 @@ function parseGoogleFormCsv(text) {
 function renderGoogleImportPreview(rows) {
   if (!rows.length) {
     renderEmpty(googleImportPreview, "CSVを読み込めませんでした。1行目が見出し、2行目以降が回答になっているか確認してください。");
+    renderIndividualAnalysisPreview([]);
     importGoogleCsv.disabled = true;
     downloadGoogleImportCheck.disabled = true;
+    if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     return;
   }
 
@@ -789,6 +971,7 @@ function renderGoogleImportPreview(rows) {
   const matchedRows = rows.filter((row) => row.matchedRoster).length;
   importGoogleCsv.disabled = isPublicStaticPage || Boolean(blockedRows.length);
   downloadGoogleImportCheck.disabled = false;
+  renderIndividualAnalysisPreview(rows);
   const diagnostics = googleImportDiagnostics || {};
   const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
   const answerCount = diagnostics.recognizedQuestionCount || 0;
@@ -1314,6 +1497,23 @@ function handleDownloadGoogleImportCheck() {
   setGoogleImportMessage("取込チェックCSVを保存しました。ブラウザのダウンロード先を確認してください。", "success");
 }
 
+function handleDownloadIndividualAnalysisCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const blob = new Blob([`\uFEFF${buildIndividualAnalysisCsv(googleImportRows)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-individual-analysis-mhlw57.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  setGoogleImportMessage("個人分析CSVを保存しました。厚労省57項目の素点換算表方式による評価点と高ストレス者判定を出力しています。", "success");
+}
+
 async function loadSummary() {
   if (isPublicStaticPage) {
     setMessage("公開サイト上では管理APIを利用できません。ローカルサーバーで開いてください。", "info");
@@ -1359,6 +1559,7 @@ previewGoogleCsv.addEventListener("click", handlePreviewGoogleCsv);
 importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
+downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 responseAdminRows.addEventListener("click", (event) => {
@@ -1371,8 +1572,10 @@ googleCsvFile.addEventListener("change", () => {
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
   downloadGoogleImportCheck.disabled = true;
+  downloadIndividualAnalysisCsv.disabled = true;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
+  renderIndividualAnalysisPreview([]);
 });
 window.addEventListener("afterprint", () => {
   participantQrSheet.hidden = true;
