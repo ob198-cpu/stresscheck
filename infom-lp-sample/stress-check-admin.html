@@ -6,7 +6,7 @@
   <title>InfoM | ストレスチェック管理</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="admin-task-page">
   <header class="site-header">
     <div class="container header-inner">
       <a href="index.html" class="logo">InfoM</a>
@@ -32,20 +32,20 @@
     <section class="form-hero">
       <div class="container form-hero-inner">
         <div>
-          <p class="lp-kicker">Admin</p>
-          <h1>Googleフォーム標準のストレスチェック管理</h1>
+          <p class="lp-kicker">Stress Check Admin</p>
+          <h1>個人分析ファイル作成</h1>
           <p>
-            Googleフォームで回答を集め、CSVをこの管理画面へ取り込んで、
-            厚労省版ストレスチェック実施プログラム用CSVと集団分析に整えます。
+            Googleフォームの回答CSVを読み込み、厚労省57項目の素点換算表方式で
+            個人分析CSVを出力します。
           </p>
         </div>
         <aside class="form-guard">
-          <strong>管理上の注意</strong>
+          <strong>法定運用の前提</strong>
           <ul>
-            <li>この管理画面はローカルサーバー上で使います。</li>
-            <li>標準運用はGoogleフォーム回収、ローカルフォームは代替・検証用です。</li>
-            <li>会社担当者に個人回答・点数・高ストレス判定を共有しないでください。</li>
-            <li>10人未満の集団分析は非表示にします。</li>
+            <li>個人結果は実施者が管理し、本人へ通知します。</li>
+            <li>本人同意なしに会社へ個人結果や高ストレス判定を共有しません。</li>
+            <li>面接指導の申出対応と記録保存は運用で行います。</li>
+            <li>この画面は判定CSV作成までを一直線に行う画面です。</li>
           </ul>
         </aside>
       </div>
@@ -114,24 +114,32 @@
           </div>
         </section>
 
-        <section class="admin-panel">
-          <h2>GoogleフォームCSV取込</h2>
-          <p>Googleフォームの回答スプレッドシートをCSVで保存し、ここで読み込みます。上の名簿CSVを先に貼り付けてURL生成しておくと、受検者IDまたは受検コードで照合し、氏名・生年月日・職場コードなどを補完できます。Google API連携は使わないため、権限確認で止まりにくい運用です。</p>
+        <section class="admin-panel admin-primary-flow">
+          <h2>個人分析CSVを作る</h2>
+          <p>Googleフォームの回答CSVを選ぶだけで読み取り確認まで進みます。判定可能になったら、最後に「個人分析CSVを保存」を押してください。</p>
+          <div class="analysis-flow-steps" aria-label="個人分析CSV作成の手順">
+            <div><span>1</span><strong>CSVを選択</strong><em>Googleフォーム回答スプレッドシートから保存したCSV</em></div>
+            <div><span>2</span><strong>自動確認</strong><em>57項目・性別・基本情報・列認識を確認</em></div>
+            <div><span>3</span><strong>個人分析CSVを保存</strong><em>素点換算表方式と高ストレス者判定を出力</em></div>
+          </div>
           <div class="participant-tools">
             <label class="file-field" for="googleCsvFile">
-              <span>Googleフォーム回答CSV</span>
+              <span>1. Googleフォーム回答CSV</span>
               <input id="googleCsvFile" type="file" accept=".csv,text/csv" />
             </label>
-            <div class="participant-actions">
-              <button type="button" id="previewGoogleCsv" class="btn btn-outline">CSVを確認</button>
-              <button type="button" id="importGoogleCsv" class="btn btn-primary" disabled>回答をローカル保存</button>
-              <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">CSV見出しテンプレートを保存</button>
-              <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSVを保存</button>
-              <button type="button" id="downloadIndividualAnalysisCsv" class="btn btn-outline" disabled>個人分析CSVを保存</button>
+            <div class="participant-actions analysis-actions">
+              <button type="button" id="previewGoogleCsv" class="btn btn-outline">2. CSVを確認</button>
+              <button type="button" id="downloadIndividualAnalysisCsv" class="btn btn-primary" disabled>3. 個人分析CSVを保存</button>
+              <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">見出しテンプレート</button>
+              <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSV</button>
+              <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
             </div>
             <div id="googleImportMessage" class="form-message info" hidden></div>
-            <div id="googleImportPreview" class="suppressed-list"></div>
             <div id="individualAnalysisPreview" class="suppressed-list"></div>
+            <details class="analysis-details">
+              <summary>読取チェックの詳細を開く</summary>
+              <div id="googleImportPreview" class="suppressed-list"></div>
+            </details>
           </div>
         </section>
 

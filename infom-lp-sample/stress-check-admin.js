@@ -867,7 +867,7 @@ function renderIndividualAnalysisPreview(rows) {
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
-  if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !scoreableCount;
+  if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
@@ -1576,6 +1576,7 @@ googleCsvFile.addEventListener("change", () => {
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
   renderIndividualAnalysisPreview([]);
+  if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
 });
 window.addEventListener("afterprint", () => {
   participantQrSheet.hidden = true;

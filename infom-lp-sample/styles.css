@@ -3908,6 +3908,125 @@ textarea {
   background: #fff3bf;
 }
 
+/* Focused stress check admin workflow */
+.admin-task-page .admin-actions,
+.admin-task-page .admin-key-panel,
+.admin-task-page .admin-grid,
+.admin-task-page #adminMessage,
+.admin-task-page .admin-panel:not(.admin-primary-flow) {
+  display: none;
+}
+
+.admin-task-page .form-hero {
+  padding: 38px 0 26px;
+}
+
+.admin-task-page .form-hero h1 {
+  max-width: 12ch;
+}
+
+.admin-task-page .admin-shell {
+  max-width: 980px;
+}
+
+.admin-primary-flow {
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 3vw, 34px);
+}
+
+.admin-primary-flow h2 {
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  line-height: 1.18;
+}
+
+.admin-primary-flow > p {
+  max-width: 72ch;
+  font-size: 1rem;
+}
+
+.analysis-flow-steps {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 780px) {
+  .analysis-flow-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.analysis-flow-steps div {
+  display: grid;
+  gap: 6px;
+  min-height: 142px;
+  padding: 18px;
+  border-radius: 8px;
+  background: #f8fbfc;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.analysis-flow-steps span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(180deg, var(--teal), var(--teal-dark));
+  font-weight: 900;
+}
+
+.analysis-flow-steps strong,
+.analysis-flow-steps em {
+  display: block;
+}
+
+.analysis-flow-steps strong {
+  font-size: 1.02rem;
+}
+
+.analysis-flow-steps em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.analysis-actions {
+  align-items: stretch;
+}
+
+.analysis-actions .btn {
+  min-height: 46px;
+  padding: 10px 18px;
+}
+
+.analysis-actions #downloadIndividualAnalysisCsv {
+  min-width: min(260px, 100%);
+}
+
+.analysis-actions #importGoogleCsv {
+  display: none;
+}
+
+.analysis-details {
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.analysis-details summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.analysis-details .suppressed-list {
+  padding: 0 14px 14px;
+}
+
 .participant-check.error {
   color: #9f1239;
   background: #fff2f2;
