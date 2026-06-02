@@ -793,11 +793,25 @@ function renderGoogleImportPreview(rows) {
   const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
   const answerCount = diagnostics.recognizedQuestionCount || 0;
   const unknownHeaders = diagnostics.unknownHeaders || [];
+  const warningLabels = Array.from(new Set(rows.flatMap((row) => importWarnings(row))));
+  const issueLabels = Array.from(new Set(rows.flatMap((row) => importIssues(row))));
+  const answerMissingRows = rows.filter((row) => missingAnswerKeys(row).length).length;
+  const nextAction = blockedRows.length
+    ? "保存不可の行があります。保存不可理由と回答不足項目を直してから、もう一度CSVを確認してください。"
+    : warningRows.length
+      ? "回答57項目は読めています。厚労省CSVに出す場合は、不足している基本情報を名簿CSVで補完するか、Googleフォーム側に項目を追加してください。個人分析・集団分析だけならローカル版で保存できます。"
+      : isPublicStaticPage
+        ? "CSVは確認できました。保存まで行う場合はローカル版を起動してください。"
+        : "問題ありません。ローカル版では「回答をローカル保存」を押して保存できます。";
   const columnStatus = answerCount === questionOrder.length
     ? "57項目すべて認識"
     : `回答列認識 ${answerCount}/57。Googleフォームの設問見出しが A1. / B1. で始まるか確認`;
 
   googleImportPreview.innerHTML = [
+    `<div class="suppressed-item"><strong>確認サマリー</strong><span>回答 ${rows.length}件 / 設問 ${answerCount}/57 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
+    `<div class="suppressed-item"><strong>次にやること</strong><span>${escapeHtml(nextAction)}</span></div>`,
+    warningLabels.length ? `<div class="suppressed-item"><strong>不足している基本情報</strong><span>${escapeHtml(warningLabels.join("、"))}</span></div>` : `<div class="suppressed-item"><strong>不足している基本情報</strong><span>ありません</span></div>`,
+    issueLabels.length || answerMissingRows ? `<div class="suppressed-item"><strong>保存不可の理由</strong><span>${escapeHtml(issueLabels.join("、") || "回答不足があります")}</span></div>` : `<div class="suppressed-item"><strong>保存不可の理由</strong><span>ありません</span></div>`,
     `<div class="suppressed-item"><strong>読込件数</strong><span>${rows.length}件 / 名簿照合 ${matchedRows}件 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
     `<div class="suppressed-item"><strong>列認識</strong><span>${escapeHtml(columnStatus)} / 基本項目 ${diagnostics.recognizedMetaCount || 0}列 / 未認識 ${unknownHeaders.length}列</span></div>`,
     duplicateCount ? `<div class="suppressed-item"><strong>CSV内重複</strong><span>${duplicateCount}行。同じ受検者がCSV内に複数あります。保存前にCSVを整理してください。</span></div>` : `<div class="suppressed-item"><strong>CSV内重複</strong><span>ありません。</span></div>`,
