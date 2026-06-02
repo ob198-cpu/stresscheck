@@ -29,6 +29,7 @@ const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemp
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
+const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
@@ -977,6 +978,170 @@ function downloadTextFile(filename, content, type = "text/html;charset=utf-8") {
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
+function groupKeyForGoogleRecord(record) {
+  return cleanText(record.analysisVariable || record.workplaceName || record.workplaceCode || record.department || "未設定");
+}
+
+function average(values) {
+  const numeric = values.map(Number).filter((value) => Number.isFinite(value));
+  if (!numeric.length) return "";
+  return Math.round((numeric.reduce((sum, value) => sum + value, 0) / numeric.length) * 100) / 100;
+}
+
+function percent(count, total) {
+  if (!total) return "";
+  return `${Math.round((count / total) * 1000) / 10}%`;
+}
+
+function summarizeGroup(records, label) {
+  const analyses = records.map(buildMhlwIndividualAnalysis).filter((analysis) => analysis.canScore);
+  const scaleAverages = Object.fromEntries(mhlwScaleDefinitions.map((definition) => [
+    definition.id,
+    average(analyses.map((analysis) => scalePointText(analysis, definition.id))),
+  ]));
+  return {
+    label,
+    count: analyses.length,
+    highStressCount: analyses.filter((analysis) => analysis.highStress).length,
+    highStressRate: percent(analyses.filter((analysis) => analysis.highStress).length, analyses.length),
+    reactionAverage: average(analyses.map((analysis) => analysis.reactionTotal)),
+    factorSupportAverage: average(analyses.map((analysis) => analysis.factorSupportTotal)),
+    scaleAverages,
+  };
+}
+
+function buildCompanyGroupAnalysis(rows, minSize = 10) {
+  const scoreableRows = rows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
+  const grouped = scoreableRows.reduce((map, row) => {
+    const key = groupKeyForGoogleRecord(row);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(row);
+    return map;
+  }, new Map());
+  const groups = Array.from(grouped.entries()).map(([label, records]) => ({ label, records }));
+  return {
+    totalRows: rows.length,
+    scoreableRows: scoreableRows.length,
+    overall: scoreableRows.length >= minSize ? summarizeGroup(scoreableRows, "会社全体") : null,
+    visibleGroups: groups
+      .filter((group) => group.records.length >= minSize)
+      .map((group) => summarizeGroup(group.records, group.label))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ja")),
+    suppressedGroups: groups
+      .filter((group) => group.records.length > 0 && group.records.length < minSize)
+      .map((group) => ({ label: group.label, count: group.records.length }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "ja")),
+    minSize,
+  };
+}
+
+function companyScaleRows(summary) {
+  const rows = [];
+  const targets = [summary.overall, ...summary.visibleGroups].filter(Boolean);
+  for (const target of targets) {
+    for (const definition of mhlwScaleDefinitions.filter((item) => item.domain !== "D")) {
+      rows.push(`
+        <tr>
+          <td>${escapeHtml(target.label)}</td>
+          <td>${escapeHtml(definition.label)}</td>
+          <td>${escapeHtml(definition.domain)}</td>
+          <td>${escapeHtml(target.scaleAverages[definition.id] || "-")}</td>
+        </tr>
+      `);
+    }
+  }
+  return rows.join("");
+}
+
+function buildCompanyGroupHtml(rows) {
+  const summary = buildCompanyGroupAnalysis(rows);
+  const visibleRows = summary.visibleGroups.map((group) => `
+    <tr>
+      <td>${escapeHtml(group.label)}</td>
+      <td>${escapeHtml(group.count)}</td>
+      <td>${escapeHtml(group.highStressRate)}</td>
+      <td>${escapeHtml(group.reactionAverage)}</td>
+      <td>${escapeHtml(group.factorSupportAverage)}</td>
+    </tr>
+  `).join("");
+  const suppressedRows = summary.suppressedGroups.map((group) => `
+    <li>${escapeHtml(group.label)}: ${escapeHtml(group.count)}人（10人未満のため数値非表示）</li>
+  `).join("");
+  const overall = summary.overall;
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレスチェック集団分析結果</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111827; background: #eef3f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    main { max-width: 1040px; margin: 28px auto; padding: 28px; background: #fff; border: 1px solid #d8e2e8; border-radius: 8px; }
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 1.9rem; }
+    h2 { margin-top: 26px; font-size: 1.2rem; }
+    p { margin: 8px 0 0; }
+    .fine { color: #5b6678; font-size: 0.9rem; }
+    .summary { display: grid; gap: 10px; margin-top: 18px; }
+    @media (min-width: 760px) { .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .box, .notice { padding: 13px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .box strong, .box span { display: block; }
+    .box strong { font-size: 1.55rem; line-height: 1.1; }
+    .notice { margin-top: 18px; background: #fff8db; }
+    table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { background: #edf5f7; }
+    ul { margin: 10px 0 0; }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ストレスチェック集団分析結果</h1>
+    <p class="fine">企業担当者向け資料です。個人名、受検者ID、個人別の高ストレス判定は含めていません。10人未満の集団は個人特定防止のため数値を非表示にしています。</p>
+    <div class="summary">
+      <div class="box"><span>読取件数</span><strong>${escapeHtml(summary.totalRows)}</strong></div>
+      <div class="box"><span>分析対象</span><strong>${escapeHtml(summary.scoreableRows)}</strong></div>
+      <div class="box"><span>表示集団</span><strong>${escapeHtml(summary.visibleGroups.length)}</strong></div>
+      <div class="box"><span>非表示集団</span><strong>${escapeHtml(summary.suppressedGroups.length)}</strong></div>
+    </div>
+    ${overall ? `
+      <h2>会社全体</h2>
+      <div class="summary">
+        <div class="box"><span>対象人数</span><strong>${escapeHtml(overall.count)}</strong></div>
+        <div class="box"><span>高ストレス者割合</span><strong>${escapeHtml(overall.highStressRate)}</strong></div>
+        <div class="box"><span>心身反応6尺度 平均</span><strong>${escapeHtml(overall.reactionAverage)}</strong></div>
+        <div class="box"><span>要因+サポート12尺度 平均</span><strong>${escapeHtml(overall.factorSupportAverage)}</strong></div>
+      </div>
+    ` : `<div class="notice"><strong>会社全体の数値は表示できません。</strong><br>判定可能な回答が${summary.minSize}人未満です。</div>`}
+
+    <h2>集団別サマリー</h2>
+    ${summary.visibleGroups.length ? `
+      <table>
+        <thead><tr><th>集団</th><th>人数</th><th>高ストレス者割合</th><th>心身反応6尺度 平均</th><th>要因+サポート12尺度 平均</th></tr></thead>
+        <tbody>${visibleRows}</tbody>
+      </table>
+    ` : `<p>10人以上の表示可能な集団はありません。</p>`}
+
+    <h2>尺度別平均</h2>
+    <p class="fine">評価点は1〜5点です。1点に近いほどストレス状況がよくない方向、5点に近いほどよい方向を示します。満足度Dは高ストレス者判定には含めていません。</p>
+    <table>
+      <thead><tr><th>集団</th><th>尺度</th><th>領域</th><th>平均評価点</th></tr></thead>
+      <tbody>${companyScaleRows(summary)}</tbody>
+    </table>
+
+    <h2>非表示の集団</h2>
+    ${summary.suppressedGroups.length ? `<ul>${suppressedRows}</ul>` : `<p>10人未満で非表示にした集団はありません。</p>`}
+
+    <h2>会社側で扱う範囲</h2>
+    <p>この資料は職場環境改善のための集団分析です。個人結果、個人別の高ストレス者判定、医師面接指導の対象者情報は、本人同意がない限り会社側へ共有しないでください。</p>
+  </main>
+</body>
+</html>`;
+}
+
 function renderIndividualAnalysisPreview(rows) {
   if (!individualAnalysisPreview) return;
   if (!rows.length) {
@@ -988,12 +1153,15 @@ function renderIndividualAnalysisPreview(rows) {
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
+  if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
     `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果HTMLを保存」で、判定可能な受検者ごとに1人1ファイルを保存できます。" : "本人向け結果を出すには、57項目回答と性別が必要です。"}</span></div>`,
+    `<div class="suppressed-item"><strong>企業向け集団分析</strong><span>${groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `会社全体または10人以上の集団を表示できます。表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示集団 ${groupAnalysis.suppressedGroups.length}件。` : "企業向け集団分析を出すには、判定可能な回答が10人以上必要です。"}</span></div>`,
     `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
     ...analyses.slice(0, 12).map((analysis) => {
       const label = analysis.canScore ? (analysis.highStress ? "高ストレス者判定該当" : "非該当") : "判定不可";
@@ -1659,6 +1827,20 @@ function handleDownloadPersonalResultHtml() {
   setGoogleImportMessage(`本人向け結果HTMLを ${scoreableRows.length}件保存します。ブラウザが複数ダウンロードの許可を求めた場合は許可してください。`, "success");
 }
 
+function handleDownloadCompanyGroupHtml() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const summary = buildCompanyGroupAnalysis(googleImportRows);
+  if (!summary.overall && !summary.visibleGroups.length) {
+    setGoogleImportMessage("企業向け集団分析を出力できません。判定可能な回答が10人以上必要です。", "error");
+    return;
+  }
+  downloadTextFile("stress-check-company-group-analysis.html", buildCompanyGroupHtml(googleImportRows));
+  setGoogleImportMessage("企業向け集団分析HTMLを保存しました。個人名・個人IDは含めず、10人未満の集団は数値非表示です。", "success");
+}
+
 async function loadSummary() {
   if (isPublicStaticPage) {
     setMessage("公開サイト上では管理APIを利用できません。ローカルサーバーで開いてください。", "info");
@@ -1706,6 +1888,7 @@ downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTempl
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
+downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 responseAdminRows.addEventListener("click", (event) => {
@@ -1720,6 +1903,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadGoogleImportCheck.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;
+  downloadCompanyGroupHtml.disabled = true;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
   renderIndividualAnalysisPreview([]);

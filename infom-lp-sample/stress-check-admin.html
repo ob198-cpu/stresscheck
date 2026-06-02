@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=personal-results" />
+  <link rel="stylesheet" href="styles.css?v=company-results" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -36,7 +36,7 @@
           <h1>個人分析ファイル作成</h1>
           <p>
             Googleフォームの回答CSVを読み込み、厚労省57項目の素点換算表方式で
-            個人分析CSVと本人向け結果HTMLを出力します。
+            個人分析CSV、本人向け結果HTML、企業担当者向け集団分析HTMLを出力します。
           </p>
         </div>
         <aside class="form-guard">
@@ -116,11 +116,11 @@
 
         <section class="admin-panel admin-primary-flow">
           <h2>本人向け結果を作る</h2>
-          <p>Googleフォームの回答CSVを選ぶだけで読み取り確認まで進みます。判定可能になったら、個人分析CSVと本人向け結果HTMLを保存してください。</p>
+          <p>Googleフォームの回答CSVを選ぶだけで読み取り確認まで進みます。判定可能になったら、本人向け結果と企業担当者向け集団分析を保存してください。</p>
           <div class="analysis-flow-steps" aria-label="個人分析CSV作成の手順">
             <div><span>1</span><strong>CSVを選択</strong><em>Googleフォーム回答スプレッドシートから保存したCSV</em></div>
             <div><span>2</span><strong>自動確認</strong><em>57項目・性別・基本情報・列認識を確認</em></div>
-            <div><span>3</span><strong>本人向け結果を保存</strong><em>1人1ファイルのHTML通知を出力</em></div>
+            <div><span>3</span><strong>結果を保存</strong><em>本人向けと企業向けを分けて出力</em></div>
           </div>
           <div class="participant-tools">
             <label class="file-field" for="googleCsvFile">
@@ -131,6 +131,7 @@
               <button type="button" id="previewGoogleCsv" class="btn btn-outline">2. CSVを確認</button>
               <button type="button" id="downloadIndividualAnalysisCsv" class="btn btn-primary" disabled>3. 個人分析CSVを保存</button>
               <button type="button" id="downloadPersonalResultHtml" class="btn btn-primary" disabled>本人向け結果HTMLを保存</button>
+              <button type="button" id="downloadCompanyGroupHtml" class="btn btn-primary" disabled>企業向け集団分析HTMLを保存</button>
               <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">見出しテンプレート</button>
               <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSV</button>
               <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
@@ -272,6 +273,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=personal-results"></script>
+  <script src="stress-check-admin.js?v=company-results"></script>
 </body>
 </html>
