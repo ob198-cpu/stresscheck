@@ -1,0 +1,1356 @@
+const message = document.querySelector("#adminMessage");
+const totalResponses = document.querySelector("#totalResponses");
+const exportTargetResponses = document.querySelector("#exportTargetResponses");
+const mhlwReady = document.querySelector("#mhlwReady");
+const minGroupSize = document.querySelector("#minGroupSize");
+const groupRows = document.querySelector("#groupRows");
+const suppressedRows = document.querySelector("#suppressedRows");
+const invalidRows = document.querySelector("#invalidRows");
+const duplicateRows = document.querySelector("#duplicateRows");
+const auditRows = document.querySelector("#auditRows");
+const securityRows = document.querySelector("#securityRows");
+const adminKeyInput = document.querySelector("#adminKeyInput");
+const participantSource = document.querySelector("#participantSource");
+const participantRows = document.querySelector("#participantRows");
+const participantMessage = document.querySelector("#participantMessage");
+const participantChecks = document.querySelector("#participantChecks");
+const generateParticipantUrls = document.querySelector("#generateParticipantUrls");
+const downloadParticipantUrls = document.querySelector("#downloadParticipantUrls");
+const downloadStatusCsv = document.querySelector("#downloadStatusCsv");
+const downloadPendingCsv = document.querySelector("#downloadPendingCsv");
+const downloadCompanySummaryCsv = document.querySelector("#downloadCompanySummaryCsv");
+const printParticipantQrSheet = document.querySelector("#printParticipantQrSheet");
+const printPendingQrSheet = document.querySelector("#printPendingQrSheet");
+const participantQrSheet = document.querySelector("#participantQrSheet");
+const googleCsvFile = document.querySelector("#googleCsvFile");
+const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
+const importGoogleCsv = document.querySelector("#importGoogleCsv");
+const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
+const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
+const googleImportMessage = document.querySelector("#googleImportMessage");
+const googleImportPreview = document.querySelector("#googleImportPreview");
+const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
+const downloadResponseAdminCsv = document.querySelector("#downloadResponseAdminCsv");
+const responseAdminMessage = document.querySelector("#responseAdminMessage");
+const responseAdminRows = document.querySelector("#responseAdminRows");
+const isPublicStaticPage = location.hostname.endsWith("github.io");
+let generatedParticipants = [];
+let googleImportRows = [];
+let googleImportDiagnostics = null;
+let storedResponses = [];
+let qrAvailable = false;
+let submittedMap = new Map();
+let submittedCodeMap = new Map();
+
+const questionOrder = [
+  ...Array.from({ length: 17 }, (_, index) => `A${index + 1}`),
+  ...Array.from({ length: 29 }, (_, index) => `B${index + 1}`),
+  ...Array.from({ length: 9 }, (_, index) => `C${index + 1}`),
+  ...Array.from({ length: 2 }, (_, index) => `D${index + 1}`),
+];
+
+const googleCsvTemplateHeaders = [
+  "タイムスタンプ",
+  "受検者ID",
+  "受検コード",
+  "会社名・事業所名",
+  "部署",
+  "職場コード",
+  "職場名",
+  "変数値",
+  ...questionOrder,
+  "個人情報の扱いの確認",
+  "回答内容の確認",
+];
+
+adminKeyInput.value = sessionStorage.getItem("stressCheckAdminKey") || "";
+
+function setMessage(text, type = "info") {
+  message.className = `form-message ${type}`;
+  message.textContent = text;
+}
+
+function getAdminKey() {
+  return adminKeyInput.value.trim();
+}
+
+function adminHeaders() {
+  const key = getAdminKey();
+  return key ? { "X-Admin-Key": key } : {};
+}
+
+function applyAdminKeyToLinks() {
+  const key = getAdminKey();
+  document.querySelectorAll(".admin-api-link").forEach((link) => {
+    const url = new URL(link.getAttribute("href"), location.href);
+    if (key) {
+      url.searchParams.set("adminKey", key);
+    } else {
+      url.searchParams.delete("adminKey");
+    }
+    link.href = `${url.pathname}${url.search}`;
+  });
+}
+
+function renderEmpty(target, text) {
+  target.innerHTML = `<div class="suppressed-item">${text}</div>`;
+}
+
+function renderSummary(summary) {
+  qrAvailable = Boolean(summary.qrAvailable);
+  submittedMap = new Map((summary.submittedParticipants || [])
+    .filter((item) => item.respondentId)
+    .map((item) => [item.respondentId, item.submittedAt]));
+  submittedCodeMap = new Map((summary.submittedParticipants || [])
+    .filter((item) => item.participantCode)
+    .map((item) => [item.participantCode, item.submittedAt]));
+  totalResponses.textContent = summary.totalResponses;
+  exportTargetResponses.textContent = summary.exportTargetResponses ?? summary.totalResponses;
+  mhlwReady.textContent = summary.mhlwImportReady;
+  minGroupSize.textContent = summary.groupSummary.minGroupSize;
+
+  const groups = summary.groupSummary.visibleGroups;
+  if (!groups.length) {
+    groupRows.innerHTML = `<tr><td colspan="6">表示できる集団分析はありません。</td></tr>`;
+  } else {
+    groupRows.innerHTML = groups
+      .map((group) => `
+        <tr>
+          <td>${group.group}</td>
+          <td>${group.count}</td>
+          <td>${group.averages.A ?? "-"}</td>
+          <td>${group.averages.B ?? "-"}</td>
+          <td>${group.averages.C ?? "-"}</td>
+          <td>${group.averages.D ?? "-"}</td>
+        </tr>
+      `)
+      .join("");
+  }
+
+  const suppressed = summary.groupSummary.suppressedGroups;
+  if (!suppressed.length) {
+    renderEmpty(suppressedRows, "非表示の集団はありません。");
+  } else {
+    suppressedRows.innerHTML = suppressed
+      .map((group) => `<div class="suppressed-item"><strong>${group.group}</strong><span>${group.count}人 / ${group.reason}</span></div>`)
+      .join("");
+  }
+
+  const invalid = summary.invalidRecords;
+  if (!invalid.length) {
+    renderEmpty(invalidRows, "CSV取込に必要な項目の不足はありません。");
+  } else {
+    invalidRows.innerHTML = invalid
+      .map((record) => `<div class="suppressed-item"><strong>${record.respondentId || record.submissionId}</strong><span>不足: ${record.missing.join(", ")}</span></div>`)
+      .join("");
+  }
+
+  const duplicates = summary.duplicateSubmissions || [];
+  if (!duplicates.length) {
+    renderEmpty(duplicateRows, "重複送信はありません。");
+  } else {
+    duplicateRows.innerHTML = duplicates
+      .map((item) => `
+        <div class="suppressed-item">
+          <strong>${escapeHtml(item.participantCode || item.respondentId || item.key)}</strong>
+          <span>${item.count}回送信 / 最新: ${escapeHtml(item.latestSubmittedAt)} / 古い回答はCSV・集団分析から除外</span>
+        </div>
+      `)
+      .join("");
+  }
+
+  if (generatedParticipants.length) renderParticipants(generatedParticipants);
+  renderSecurityChecks(summary);
+}
+
+function renderSecurityChecks(summary) {
+  const security = summary.security || {};
+  const duplicateCount = (summary.duplicateSubmissions || []).length;
+  const invalidCount = (summary.invalidRecords || []).length;
+  const suppressedCount = summary.groupSummary?.suppressedGroups?.length || 0;
+  const checks = [
+    {
+      type: security.localOnly ? "ok" : "warning",
+      title: "公開範囲",
+      text: security.localOnly ? "ローカル専用で起動しています。" : "ローカル専用ではありません。外部公開前の設定確認が必要です。",
+    },
+    {
+      type: security.adminKeyEnabled ? "ok" : "warning",
+      title: "管理キー",
+      text: security.adminKeyEnabled ? "管理APIに管理キーが設定されています。" : "管理キーが未設定です。ローカル試用は可、本番公開時はADMIN_KEYを設定してください。",
+    },
+    {
+      type: security.qrAvailable ? "ok" : "warning",
+      title: "QR生成",
+      text: security.qrAvailable ? "ローカルQR生成を利用できます。" : "QR生成ライブラリが見つかりません。URL配布のみ利用できます。",
+    },
+    {
+      type: invalidCount ? "warning" : "ok",
+      title: "CSV取込前不足",
+      text: invalidCount ? `${invalidCount}件に不足があります。厚労省CSV出力前に確認してください。` : "CSV取込に必要な項目の不足はありません。",
+    },
+    {
+      type: duplicateCount ? "warning" : "ok",
+      title: "重複送信",
+      text: duplicateCount ? `${duplicateCount}件の重複送信があります。出力には最新回答だけを使います。` : "重複送信はありません。",
+    },
+    {
+      type: suppressedCount ? "warning" : "ok",
+      title: "10人未満集団",
+      text: suppressedCount ? `${suppressedCount}集団は10人未満のため非表示です。` : "10人未満で非表示になる集団はありません。",
+    },
+  ];
+
+  securityRows.innerHTML = checks
+    .map((check) => `
+      <div class="diagnostic-item ${check.type}">
+        <strong>${escapeHtml(check.title)}</strong>
+        <span>${escapeHtml(check.text)}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function renderAuditLog(entries) {
+  if (!entries.length) {
+    renderEmpty(auditRows, "CSV出力ログはまだありません。");
+    return;
+  }
+
+  auditRows.innerHTML = entries
+    .map((entry) => `
+      <div class="suppressed-item">
+        <strong>${escapeHtml(entry.action)} / ${escapeHtml(entry.timestamp)}</strong>
+        <span>${escapeHtml(formatAuditEntry(entry))}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function setResponseAdminMessage(text, type = "info") {
+  responseAdminMessage.hidden = false;
+  responseAdminMessage.className = `form-message ${type}`;
+  responseAdminMessage.textContent = text;
+}
+
+function statusLabel(status) {
+  return status === "disabled" ? "無効" : "有効";
+}
+
+function sourceLabel(source) {
+  const labels = {
+    "stress-check-form": "ローカルフォーム",
+    "google-form-csv": "GoogleフォームCSV",
+  };
+  return labels[source] || source || "-";
+}
+
+function renderStoredResponses(rows) {
+  storedResponses = rows || [];
+  downloadResponseAdminCsv.disabled = !storedResponses.length;
+  if (!storedResponses.length) {
+    responseAdminRows.innerHTML = `<tr><td colspan="8">保存済み回答はまだありません。</td></tr>`;
+    return;
+  }
+
+  responseAdminRows.innerHTML = storedResponses.slice(0, 200).map((row) => {
+    const statusClass = row.status === "disabled" ? "disabled" : "done";
+    const actionLabel = row.status === "disabled" ? "有効化" : "無効化";
+    const nextStatus = row.status === "disabled" ? "active" : "disabled";
+    const workplace = row.analysisVariable || row.workplaceName || row.workplaceCode || row.department || "-";
+    const csvStatus = row.mhlwReady ? "取込可" : `不足: ${(row.missing || []).slice(0, 3).join("、")}`;
+    const outputStatus = row.exportTarget ? "出力対象" : row.status === "disabled" ? "除外" : "旧回答";
+    return `
+      <tr>
+        <td><span class="status-pill ${statusClass}">${escapeHtml(statusLabel(row.status))}</span></td>
+        <td>${escapeHtml(row.submittedAt || "-")}</td>
+        <td><strong>${escapeHtml(row.respondentId || row.participantCode || "-")}</strong><small>${escapeHtml(row.submissionId || "")}</small></td>
+        <td>${escapeHtml(sourceLabel(row.source))}</td>
+        <td>${escapeHtml(workplace)}</td>
+        <td>${escapeHtml(csvStatus)}</td>
+        <td>${escapeHtml(outputStatus)}</td>
+        <td><button type="button" class="btn btn-outline btn-sm response-status-action" data-submission-id="${escapeHtml(row.submissionId)}" data-next-status="${nextStatus}">${actionLabel}</button></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function buildResponseAdminCsv(rows) {
+  const output = [
+    ["状態", "送信日時", "受検者ID", "受検コード", "回答ID", "取込元", "職場コード", "職場名", "部署", "変数値", "厚労省CSV", "不足", "出力対象", "状態変更日時", "状態変更理由"],
+    ...rows.map((row) => [
+      statusLabel(row.status),
+      row.submittedAt,
+      row.respondentId,
+      row.participantCode,
+      row.submissionId,
+      sourceLabel(row.source),
+      row.workplaceCode,
+      row.workplaceName,
+      row.department,
+      row.analysisVariable,
+      row.mhlwReady ? "取込可" : "不足あり",
+      (row.missing || []).join(" / "),
+      row.exportTarget ? "はい" : "いいえ",
+      row.statusUpdatedAt,
+      row.statusReason,
+    ]),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+async function loadStoredResponses() {
+  if (isPublicStaticPage) return;
+  try {
+    const response = await fetch("/api/stress-check-admin/responses", { headers: adminHeaders() });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "読み込めませんでした。");
+    renderStoredResponses(result.responses || []);
+    setResponseAdminMessage(`保存済み ${result.totalResponses}件 / 有効 ${result.activeResponses}件 / 無効 ${result.disabledResponses}件`, "success");
+  } catch (error) {
+    responseAdminRows.innerHTML = `<tr><td colspan="8">保存済み回答を読み込めませんでした。</td></tr>`;
+    setResponseAdminMessage(`保存済み回答を読み込めませんでした。理由: ${error.message}`, "error");
+  }
+}
+
+async function updateResponseStatus(submissionId, nextStatus) {
+  const reason = window.prompt(nextStatus === "disabled" ? "無効化する理由を入力してください。" : "有効化する理由を入力してください。", nextStatus === "disabled" ? "誤取込・テスト回答のため" : "誤って無効化したため");
+  if (reason === null) return;
+
+  try {
+    const response = await fetch("/api/stress-check-admin/response-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...adminHeaders(),
+      },
+      body: JSON.stringify({ submissionId, status: nextStatus, reason }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "状態を変更できませんでした。");
+    setResponseAdminMessage(nextStatus === "disabled" ? "回答を無効化しました。CSV出力と集団分析から外れます。" : "回答を有効化しました。CSV出力と集団分析の対象に戻ります。", "success");
+    await Promise.all([loadSummary(), loadStoredResponses(), loadAuditLog()]);
+  } catch (error) {
+    setResponseAdminMessage(`状態変更に失敗しました。理由: ${error.message}`, "error");
+  }
+}
+
+function handleDownloadResponseAdminCsv() {
+  if (!storedResponses.length) return;
+  const blob = new Blob([`\uFEFF${buildResponseAdminCsv(storedResponses)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-response-admin.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function formatAuditEntry(entry) {
+  if (entry.source === "admin-response-status") {
+    return `回答ID: ${entry.submissionId || "-"} / 理由: ${entry.reason || "-"}`;
+  }
+  if (entry.source === "admin-google-csv") {
+    return `取込: ${entry.importedCount ?? 0}件 / 厚労省CSV不足見込み: ${entry.incompleteForMhlwCount ?? 0}件 / 出力対象: ${entry.exportTargetResponses ?? 0}件 / 表示集団: ${entry.visibleGroupCount ?? 0} / 非表示集団: ${entry.suppressedGroupCount ?? 0}`;
+  }
+  if (entry.source === "admin-client") {
+    return `対象: ${entry.rosterTargetResponses ?? 0}件 / 受検済み: ${entry.submittedCount ?? 0}件 / 未受検: ${entry.pendingCount ?? 0}件 / 表示集団: ${entry.visibleGroupCount ?? 0} / 非表示集団: ${entry.suppressedGroupCount ?? 0}`;
+  }
+  return `出力対象: ${entry.exportTargetResponses ?? 0}件 / 保存総数: ${entry.totalResponses ?? 0}件 / 重複: ${entry.duplicateSubmissionGroups ?? 0}件 / 表示集団: ${entry.visibleGroupCount ?? 0} / 非表示集団: ${entry.suppressedGroupCount ?? 0}`;
+}
+
+function setParticipantMessage(text, type = "info") {
+  participantMessage.hidden = false;
+  participantMessage.className = `form-message ${type}`;
+  participantMessage.textContent = text;
+}
+
+function countBy(rows, keyGetter) {
+  return rows.reduce((map, row) => {
+    const key = String(keyGetter(row) || "").trim();
+    if (!key) return map;
+    map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+}
+
+function duplicatedKeys(map) {
+  return Array.from(map.entries())
+    .filter(([, count]) => count > 1)
+    .map(([key, count]) => `${key} (${count}件)`);
+}
+
+function groupKeyForParticipant(row) {
+  return row.variable || row.workplaceCode || row.department || row.workplaceName || "未設定";
+}
+
+function analyzeParticipants(rows) {
+  const checks = [];
+  const duplicateIds = duplicatedKeys(countBy(rows, (row) => row.id));
+  const duplicateCodes = duplicatedKeys(countBy(rows, (row) => row.accessCode));
+  const smallGroups = Array.from(countBy(rows, groupKeyForParticipant).entries())
+    .filter(([, count]) => count > 0 && count < 10)
+    .map(([key, count]) => `${key} (${count}人)`);
+  const missingNames = rows.filter((row) => !row.name).length;
+  const missingWorkplaces = rows.filter((row) => !row.workplaceCode && !row.workplaceName && !row.department).length;
+
+  if (duplicateIds.length) {
+    checks.push({ type: "error", text: `社員IDが重複しています: ${duplicateIds.join("、")}` });
+  }
+  if (duplicateCodes.length) {
+    checks.push({ type: "error", text: `受検コードが重複しています: ${duplicateCodes.join("、")}` });
+  }
+  if (smallGroups.length) {
+    checks.push({ type: "warning", text: `10人未満のため集団分析で非表示になる見込み: ${smallGroups.join("、")}` });
+  }
+  if (missingNames) {
+    checks.push({ type: "warning", text: `氏名が空の行があります: ${missingNames}件` });
+  }
+  if (missingWorkplaces) {
+    checks.push({ type: "warning", text: `職場コード・職場名・部署が空の行があります: ${missingWorkplaces}件` });
+  }
+  if (!checks.length && rows.length) {
+    checks.push({ type: "ok", text: "名簿の重複と集団人数の簡易チェックに問題はありません。" });
+  }
+  return checks;
+}
+
+function renderParticipantChecks(checks) {
+  participantChecks.hidden = !checks.length;
+  participantChecks.innerHTML = checks
+    .map((check) => `<div class="participant-check ${check.type}">${escapeHtml(check.text)}</div>`)
+    .join("");
+}
+
+function splitLine(line, delimiter) {
+  if (delimiter === "\t") return line.split("\t").map((cell) => cell.trim());
+  const cells = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"' && line[index + 1] === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      cells.push(cell.trim());
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+function normalizeHeader(header) {
+  return String(header || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("　", "")
+    .replaceAll(" ", "")
+    .replaceAll("_", "")
+    .replaceAll("-", "");
+}
+
+function resolveField(header) {
+  const key = normalizeHeader(header);
+  const map = {
+    id: "id",
+    code: "accessCode",
+    token: "accessCode",
+    accesscode: "accessCode",
+    participantcode: "accessCode",
+    受検コード: "accessCode",
+    配布コード: "accessCode",
+    employeeid: "id",
+    respondentid: "id",
+    scid: "id",
+    社員id: "id",
+    社員番号: "id",
+    受検者id: "id",
+    従業員id: "id",
+    氏名: "name",
+    name: "name",
+    personname: "name",
+    名前: "name",
+    フリガナ: "kana",
+    ふりがな: "kana",
+    kana: "kana",
+    kananame: "kana",
+    生年月日: "birthDate",
+    birthdate: "birthDate",
+    birthday: "birthDate",
+    性別: "gender",
+    gender: "gender",
+    職場コード: "workplaceCode",
+    workplacecode: "workplaceCode",
+    部署コード: "workplaceCode",
+    職場名: "workplaceName",
+    workplace: "workplaceName",
+    workplacename: "workplaceName",
+    部署: "department",
+    department: "department",
+    部署名: "department",
+    会社名: "organization",
+    事業所名: "organization",
+    organization: "organization",
+    変数値: "variable",
+    variable: "variable",
+    分析変数: "variable",
+    前回社員id: "previousEmployeeId",
+    previousemployeeid: "previousEmployeeId",
+  };
+  return map[key] || "";
+}
+
+function parseParticipantSource(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const delimiter = lines[0].includes("\t") ? "\t" : ",";
+  const fields = splitLine(lines[0], delimiter).map(resolveField);
+  return lines.slice(1).map((line) => {
+    const cells = splitLine(line, delimiter);
+    const row = {};
+    fields.forEach((field, index) => {
+      if (field) row[field] = cells[index] || "";
+    });
+    return row;
+  }).filter((row) => row.id);
+}
+
+function cleanText(value) {
+  return String(value ?? "").trim();
+}
+
+function setGoogleImportMessage(text, type = "info") {
+  googleImportMessage.hidden = false;
+  googleImportMessage.className = `form-message ${type}`;
+  googleImportMessage.textContent = text;
+}
+
+function parseCsvText(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  const source = String(text || "").replace(/^\uFEFF/, "");
+
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    const next = source[index + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+      if (char === "\r" && next === "\n") index += 1;
+    } else {
+      cell += char;
+    }
+  }
+
+  if (cell || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+
+  return rows
+    .map((items) => items.map((item) => cleanText(item)))
+    .filter((items) => items.some(Boolean));
+}
+
+function normalizeLoose(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .toLowerCase()
+    .replace(/\s/g, "")
+    .replace(/[＿_\-－ー]/g, "");
+}
+
+function questionKeyFromHeader(header) {
+  const normalized = String(header || "").normalize("NFKC").trim().toUpperCase();
+  const direct = normalized.match(/(?:^|[^A-Z])([ABCD])\s*0?(\d{1,2})(?=[^0-9]|$)/);
+  if (direct) {
+    const key = `${direct[1]}${Number(direct[2])}`;
+    if (questionOrder.includes(key)) return key;
+  }
+
+  const sequential = normalized.match(/(?:回答|質問|設問|問)\s*0?(\d{1,2})(?=[^0-9]|$)/);
+  if (sequential) {
+    return questionOrder[Number(sequential[1]) - 1] || "";
+  }
+
+  const numericOnly = normalized.match(/^0?(\d{1,2})$/);
+  if (numericOnly) {
+    return questionOrder[Number(numericOnly[1]) - 1] || "";
+  }
+
+  return "";
+}
+
+function resolveGoogleResponseField(header) {
+  const questionKey = questionKeyFromHeader(header);
+  if (questionKey) return `answer:${questionKey}`;
+
+  const key = normalizeLoose(header);
+  const map = {
+    timestamp: "submittedAt",
+    タイムスタンプ: "submittedAt",
+    送信日時: "submittedAt",
+    回答日時: "submittedAt",
+    受検者id: "respondentId",
+    受検者コード: "participantCode",
+    受検コード: "participantCode",
+    配布コード: "participantCode",
+    社員id: "respondentId",
+    社員番号: "respondentId",
+    従業員id: "respondentId",
+    respondentid: "respondentId",
+    participantcode: "participantCode",
+    氏名: "personName",
+    名前: "personName",
+    personname: "personName",
+    フリガナ: "kanaName",
+    ふりがな: "kanaName",
+    kananame: "kanaName",
+    生年月日: "birthDate",
+    birthdate: "birthDate",
+    性別: "gender",
+    gender: "gender",
+    会社名事業所名: "organization",
+    会社名: "organization",
+    事業所名: "organization",
+    organization: "organization",
+    部署: "department",
+    部署名: "department",
+    department: "department",
+    職場コード: "workplaceCode",
+    workplacecode: "workplaceCode",
+    職場名: "workplaceName",
+    workplacename: "workplaceName",
+    変数値: "analysisVariable",
+    分析変数: "analysisVariable",
+    analysisvariable: "analysisVariable",
+    前回社員id: "previousEmployeeId",
+    previousemployeeid: "previousEmployeeId",
+  };
+  return map[key] || "";
+}
+
+function parseAnswerValue(value) {
+  const text = cleanText(value).normalize("NFKC");
+  const match = text.match(/[1-4]/);
+  return match ? Number(match[0]) : "";
+}
+
+function buildRosterLookups() {
+  return generatedParticipants.reduce((lookups, row) => {
+    if (row.id) lookups.byId.set(row.id, row);
+    if (row.accessCode) lookups.byCode.set(row.accessCode, row);
+    return lookups;
+  }, { byId: new Map(), byCode: new Map() });
+}
+
+function enrichGoogleRecord(record, lookups) {
+  const idOrCode = cleanText(record.respondentId || record.participantCode);
+  const roster = lookups.byCode.get(idOrCode) || lookups.byId.get(idOrCode) || lookups.byCode.get(record.participantCode) || lookups.byId.get(record.respondentId);
+  return {
+    submittedAt: cleanText(record.submittedAt),
+    respondentId: cleanText(roster?.id || record.respondentId || record.participantCode),
+    participantCode: cleanText(record.participantCode || (roster && idOrCode === roster.accessCode ? idOrCode : roster?.accessCode)),
+    organization: cleanText(record.organization || roster?.organization),
+    department: cleanText(record.department || roster?.department),
+    personName: cleanText(record.personName || roster?.name),
+    kanaName: cleanText(record.kanaName || roster?.kana),
+    birthDate: cleanText(record.birthDate || roster?.birthDate),
+    gender: cleanText(record.gender || roster?.gender),
+    workplaceCode: cleanText(record.workplaceCode || roster?.workplaceCode),
+    workplaceName: cleanText(record.workplaceName || roster?.workplaceName),
+    analysisVariable: cleanText(record.analysisVariable || roster?.variable || record.department),
+    previousEmployeeId: cleanText(record.previousEmployeeId || roster?.previousEmployeeId),
+    answers: record.answers || {},
+    sourceRowNumber: record.sourceRowNumber,
+    matchedRoster: Boolean(roster),
+  };
+}
+
+function importIssues(record) {
+  const issues = [];
+  if (!record.respondentId) issues.push("受検者ID");
+  const missingAnswers = missingAnswerKeys(record);
+  if (missingAnswers.length) {
+    const shown = missingAnswers.slice(0, 8).join(" ");
+    issues.push(`回答不足 ${missingAnswers.length}項目${shown ? `: ${shown}` : ""}`);
+  }
+  if (record.csvDuplicate) issues.push("CSV内で同じ受検者が重複");
+  return issues;
+}
+
+function missingAnswerKeys(record) {
+  return questionOrder.filter((key) => ![1, 2, 3, 4].includes(Number(record.answers?.[key])));
+}
+
+function importWarnings(record) {
+  const warnings = [];
+  for (const [key, label] of [
+    ["personName", "氏名"],
+    ["kanaName", "フリガナ"],
+    ["birthDate", "生年月日"],
+    ["gender", "性別"],
+    ["workplaceCode", "職場コード"],
+  ]) {
+    if (!record[key]) warnings.push(label);
+  }
+  return warnings;
+}
+
+function googleImportKey(row) {
+  return cleanText(row.participantCode || row.respondentId);
+}
+
+function buildGoogleImportDiagnostics(headers, fields, records) {
+  const recognizedQuestions = Array.from(new Set(fields
+    .filter((field) => field.startsWith("answer:"))
+    .map((field) => field.slice("answer:".length))));
+  const recognizedMeta = fields.filter((field) => field && !field.startsWith("answer:")).length;
+  const unknownHeaders = headers
+    .map((header, index) => ({ header, index, field: fields[index] }))
+    .filter((item) => item.header && !item.field)
+    .map((item) => item.header);
+  const duplicateKeys = duplicatedKeys(countBy(records, googleImportKey));
+  const completeRows = records.filter((record) => !importIssues(record).length).length;
+
+  return {
+    headers,
+    recognizedQuestionCount: recognizedQuestions.length,
+    recognizedMetaCount: recognizedMeta,
+    unknownHeaders,
+    duplicateKeys,
+    completeRows,
+  };
+}
+
+function parseGoogleFormCsv(text) {
+  const rows = parseCsvText(text);
+  googleImportDiagnostics = null;
+  if (rows.length < 2) return [];
+
+  const headers = rows[0];
+  const fields = headers.map(resolveGoogleResponseField);
+  const lookups = buildRosterLookups();
+  const records = rows.slice(1).map((cells, index) => {
+    const raw = { answers: {}, sourceRowNumber: index + 2 };
+    fields.forEach((field, cellIndex) => {
+      if (!field) return;
+      const value = cells[cellIndex] || "";
+      if (field.startsWith("answer:")) {
+        raw.answers[field.slice("answer:".length)] = parseAnswerValue(value);
+      } else {
+        raw[field] = value;
+      }
+    });
+    return enrichGoogleRecord(raw, lookups);
+  });
+
+  const duplicateCounts = countBy(records, googleImportKey);
+  records.forEach((record) => {
+    const key = googleImportKey(record);
+    record.csvDuplicate = Boolean(key && duplicateCounts.get(key) > 1);
+  });
+  googleImportDiagnostics = buildGoogleImportDiagnostics(headers, fields, records);
+  return records;
+}
+
+function renderGoogleImportPreview(rows) {
+  if (!rows.length) {
+    renderEmpty(googleImportPreview, "CSVを読み込めませんでした。1行目が見出し、2行目以降が回答になっているか確認してください。");
+    importGoogleCsv.disabled = true;
+    downloadGoogleImportCheck.disabled = true;
+    return;
+  }
+
+  const blockedRows = rows.filter((row) => importIssues(row).length);
+  const warningRows = rows.filter((row) => importWarnings(row).length);
+  const matchedRows = rows.filter((row) => row.matchedRoster).length;
+  importGoogleCsv.disabled = Boolean(blockedRows.length);
+  downloadGoogleImportCheck.disabled = false;
+  const diagnostics = googleImportDiagnostics || {};
+  const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
+  const answerCount = diagnostics.recognizedQuestionCount || 0;
+  const unknownHeaders = diagnostics.unknownHeaders || [];
+  const columnStatus = answerCount === questionOrder.length
+    ? "57項目すべて認識"
+    : `回答列認識 ${answerCount}/57。Googleフォームの設問見出しが A1. / B1. で始まるか確認`;
+
+  googleImportPreview.innerHTML = [
+    `<div class="suppressed-item"><strong>読込件数</strong><span>${rows.length}件 / 名簿照合 ${matchedRows}件 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
+    `<div class="suppressed-item"><strong>列認識</strong><span>${escapeHtml(columnStatus)} / 基本項目 ${diagnostics.recognizedMetaCount || 0}列 / 未認識 ${unknownHeaders.length}列</span></div>`,
+    duplicateCount ? `<div class="suppressed-item"><strong>CSV内重複</strong><span>${duplicateCount}行。同じ受検者がCSV内に複数あります。保存前にCSVを整理してください。</span></div>` : `<div class="suppressed-item"><strong>CSV内重複</strong><span>ありません。</span></div>`,
+    unknownHeaders.length ? `<div class="suppressed-item"><strong>未認識列</strong><span>${escapeHtml(unknownHeaders.slice(0, 12).join("、"))}${unknownHeaders.length > 12 ? " ほか" : ""}</span></div>` : "",
+    ...rows.slice(0, 12).map((row) => {
+      const issues = importIssues(row);
+      const warnings = importWarnings(row);
+      const note = issues.length
+        ? `保存不可: ${issues.join("、")}`
+        : warnings.length
+          ? `保存可。ただし厚労省CSV不足: ${warnings.join("、")}`
+          : "保存可";
+      const matched = row.matchedRoster ? "名簿照合あり" : "名簿照合なし";
+      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${row.sourceRowNumber}行目 / ${row.respondentId || "-"}`)}</strong><span>${escapeHtml(`${note} / ${matched}`)}</span></div>`;
+    }),
+    rows.length > 12 ? `<div class="suppressed-item">残り ${rows.length - 12}件は省略表示しています。</div>` : "",
+  ].join("");
+}
+
+async function handlePreviewGoogleCsv() {
+  const file = googleCsvFile.files?.[0];
+  if (!file) {
+    setGoogleImportMessage("Googleフォームから保存したCSVファイルを選択してください。", "error");
+    renderGoogleImportPreview([]);
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    googleImportRows = parseGoogleFormCsv(text);
+    renderGoogleImportPreview(googleImportRows);
+    if (!googleImportRows.length) {
+      setGoogleImportMessage("CSVの回答行を認識できませんでした。", "error");
+      return;
+    }
+
+    const blockedRows = googleImportRows.filter((row) => importIssues(row).length);
+    const matchedRows = googleImportRows.filter((row) => row.matchedRoster).length;
+    const type = blockedRows.length ? "error" : "success";
+    setGoogleImportMessage(`${googleImportRows.length}件を確認しました。名簿照合 ${matchedRows}件。${blockedRows.length ? "保存できない行があります。" : "この内容でローカル保存できます。"}`, type);
+  } catch (error) {
+    setGoogleImportMessage(`CSV確認に失敗しました。理由: ${error.message}`, "error");
+    renderGoogleImportPreview([]);
+  }
+}
+
+async function handleImportGoogleCsv() {
+  if (!googleImportRows.length || googleImportRows.some((row) => importIssues(row).length)) {
+    setGoogleImportMessage("保存前にCSVを確認してください。保存不可の行がある場合は修正が必要です。", "error");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/stress-check-admin/import-google-form-csv", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...adminHeaders(),
+      },
+      body: JSON.stringify({ records: googleImportRows }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "保存できませんでした。");
+
+    setGoogleImportMessage(`${result.importedCount}件をローカル保存しました。厚労省CSV不足見込み ${result.incompleteForMhlwCount}件。`, "success");
+    googleImportRows = [];
+    importGoogleCsv.disabled = true;
+    await Promise.all([loadSummary(), loadStoredResponses()]);
+  } catch (error) {
+    setGoogleImportMessage(`ローカル保存に失敗しました。理由: ${error.message}`, "error");
+  }
+}
+
+function buildParticipantUrl(row) {
+  const url = new URL("stress-check-form.html", location.href);
+  url.searchParams.set("code", row.accessCode);
+  return url.href;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  if (/[",\r\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function buildParticipantCsv(rows) {
+  const output = [
+    ["社員ID", "氏名", "職場コード", "職場名", "部署", "変数値", "受検コード", "ローカルフォームURL"],
+    ...rows.map((row) => [
+      row.id,
+      row.name,
+      row.workplaceCode,
+      row.workplaceName,
+      row.department,
+      row.variable,
+      row.accessCode,
+      row.url,
+    ]),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function generateAccessCode(usedCodes = new Set()) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(12);
+  let code = "";
+  do {
+    if (window.crypto?.getRandomValues) {
+      window.crypto.getRandomValues(bytes);
+    } else {
+      for (let index = 0; index < bytes.length; index += 1) {
+        bytes[index] = Math.floor(Math.random() * 256);
+      }
+    }
+    code = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+  } while (usedCodes.has(code));
+  usedCodes.add(code);
+  return code;
+}
+
+function getStatus(row) {
+  const submittedAt = submittedCodeMap.get(row.accessCode) || submittedMap.get(row.id);
+  return {
+    label: submittedAt ? "受検済み" : "未受検",
+    submittedAt: submittedAt || "",
+  };
+}
+
+function buildStatusCsv(rows) {
+  const output = [
+    ["社員ID", "氏名", "職場コード", "職場名", "部署", "変数値", "受検コード", "受検状況", "受検日時"],
+    ...rows.map((row) => {
+      const status = getStatus(row);
+      return [
+        row.id,
+        row.name,
+        row.workplaceCode,
+        row.workplaceName,
+        row.department,
+        row.variable,
+        row.accessCode,
+        status.label,
+        status.submittedAt,
+      ];
+    }),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function pendingRows(rows) {
+  return rows.filter((row) => !getStatus(row).submittedAt);
+}
+
+function buildPendingCsv(rows) {
+  const output = [
+    ["社員ID", "氏名", "職場コード", "職場名", "部署", "変数値", "受検コード", "ローカルフォームURL"],
+    ...pendingRows(rows).map((row) => [
+      row.id,
+      row.name,
+      row.workplaceCode,
+      row.workplaceName,
+      row.department,
+      row.variable,
+      row.accessCode,
+      row.url,
+    ]),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function buildCompanySummaryCsv(rows) {
+  const total = rows.length;
+  const submitted = rows.filter((row) => getStatus(row).submittedAt).length;
+  const pending = total - submitted;
+  const rate = total ? `${Math.round((submitted / total) * 1000) / 10}%` : "0%";
+  const groupCounts = Array.from(countBy(rows, groupKeyForParticipant).entries());
+  const visibleGroups = groupCounts.filter(([, count]) => count >= 10);
+  const suppressedGroups = groupCounts.filter(([, count]) => count > 0 && count < 10);
+
+  const output = [
+    ["区分", "項目", "値", "備考"],
+    ["全体", "対象人数", total, "名簿貼り付け件数"],
+    ["全体", "受検済み", submitted, "回答内容・点数・高ストレス判定は含まない"],
+    ["全体", "未受検", pending, "督促管理用"],
+    ["全体", "受検率", rate, ""],
+    ["集団分析", "表示可能集団数", visibleGroups.length, "10人以上"],
+    ["集団分析", "非表示集団数", suppressedGroups.length, "10人未満は個人特定防止のため非表示"],
+    ...visibleGroups.map(([group, count]) => ["表示可能集団", group, count, "集団分析対象"]),
+    ...suppressedGroups.map(([group, count]) => ["非表示集団", group, count, "10人未満"]),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function clientAuditStats(action, rows) {
+  const submitted = rows.filter((row) => getStatus(row).submittedAt).length;
+  const pending = rows.length - submitted;
+  const groupCounts = Array.from(countBy(rows, groupKeyForParticipant).values());
+  return {
+    action,
+    rosterTargetResponses: rows.length,
+    submittedCount: submitted,
+    pendingCount: pending,
+    visibleGroupCount: groupCounts.filter((count) => count >= 10).length,
+    suppressedGroupCount: groupCounts.filter((count) => count > 0 && count < 10).length,
+  };
+}
+
+async function loadAuditLog() {
+  const auditResponse = await fetch("/api/stress-check-admin/audit-log", { headers: adminHeaders() });
+  const audit = await auditResponse.json();
+  if (auditResponse.ok) renderAuditLog(audit.auditLog || []);
+}
+
+async function logClientAudit(action, rows = generatedParticipants) {
+  if (isPublicStaticPage || !rows.length) return;
+  try {
+    await fetch("/api/stress-check-admin/audit-log", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...adminHeaders(),
+      },
+      body: JSON.stringify(clientAuditStats(action, rows)),
+    });
+    await loadAuditLog();
+  } catch {
+    // Logging must not block CSV download or printing.
+  }
+}
+
+function qrSrc(url) {
+  return `/api/qr.svg?data=${encodeURIComponent(url)}`;
+}
+
+function renderQrCell(row) {
+  if (!qrAvailable) return `<span class="participant-qr-unavailable">ローカルQR生成が使えません</span>`;
+  return `<img class="participant-qr" src="${escapeHtml(qrSrc(row.url))}" alt="${escapeHtml(row.id)}のQRコード" loading="lazy">`;
+}
+
+function renderParticipants(rows) {
+  if (!rows.length) {
+    participantRows.innerHTML = `<tr><td colspan="8">社員IDを含む名簿を貼り付けてください。</td></tr>`;
+    renderParticipantChecks([]);
+    downloadParticipantUrls.disabled = true;
+    downloadStatusCsv.disabled = true;
+    downloadPendingCsv.disabled = true;
+    downloadCompanySummaryCsv.disabled = true;
+    printParticipantQrSheet.disabled = true;
+    printPendingQrSheet.disabled = true;
+    return;
+  }
+  const pending = pendingRows(rows);
+  participantRows.innerHTML = rows.map((row) => `
+    <tr>
+      <td>${escapeHtml(row.id)}</td>
+      <td><code>${escapeHtml(row.accessCode)}</code></td>
+      <td>${escapeHtml(row.name)}</td>
+      <td>${escapeHtml(row.workplaceName || row.department || row.workplaceCode)}</td>
+      <td>${escapeHtml(row.variable)}</td>
+      <td><span class="status-pill ${getStatus(row).submittedAt ? "done" : "pending"}">${escapeHtml(getStatus(row).label)}</span></td>
+      <td>${renderQrCell(row)}</td>
+      <td><a href="${escapeHtml(row.url)}" target="_blank" rel="noreferrer">${escapeHtml(row.url)}</a></td>
+    </tr>
+  `).join("");
+  downloadParticipantUrls.disabled = false;
+  downloadStatusCsv.disabled = false;
+  downloadPendingCsv.disabled = !pending.length;
+  downloadCompanySummaryCsv.disabled = false;
+  printParticipantQrSheet.disabled = !qrAvailable;
+  printPendingQrSheet.disabled = !qrAvailable || !pending.length;
+}
+
+function renderQrSheet(rows, title = "ローカルフォームURL 配布シート") {
+  participantQrSheet.innerHTML = `
+    <div class="qr-sheet-head">
+      <p>ストレスチェック回答用QRコード</p>
+      <h1>${escapeHtml(title)}</h1>
+      <span>会社担当者には回答内容・点数・高ストレス判定を共有しません。</span>
+    </div>
+    <div class="qr-card-grid">
+      ${rows.map((row) => `
+        <article class="qr-card">
+          <div>
+            <span>社員ID</span>
+            <strong>${escapeHtml(row.id)}</strong>
+          </div>
+          <div>
+            <span>受検コード</span>
+            <strong>${escapeHtml(row.accessCode)}</strong>
+          </div>
+          <div>
+            <span>氏名</span>
+            <strong>${escapeHtml(row.name || "-")}</strong>
+          </div>
+          <img src="${escapeHtml(qrSrc(row.url))}" alt="${escapeHtml(row.id)}のQRコード">
+          <p>${escapeHtml(row.url)}</p>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function waitForImages(target) {
+  const images = Array.from(target.querySelectorAll("img"));
+  return Promise.all(images.map((image) => {
+    if (image.complete) return Promise.resolve();
+    return new Promise((resolve) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", resolve, { once: true });
+    });
+  }));
+}
+
+async function handlePrintParticipantQrSheet() {
+  if (!generatedParticipants.length || !qrAvailable) return;
+  await logClientAudit("QR配布シート印刷", generatedParticipants);
+  renderQrSheet(generatedParticipants);
+  participantQrSheet.hidden = false;
+  document.body.classList.add("printing-qr-sheet");
+  await waitForImages(participantQrSheet);
+  window.print();
+}
+
+async function handlePrintPendingQrSheet() {
+  const pending = pendingRows(generatedParticipants);
+  if (!pending.length || !qrAvailable) return;
+  await logClientAudit("未受検者QR印刷", pending);
+  renderQrSheet(pending, "未受検者QR 再配布シート");
+  participantQrSheet.hidden = false;
+  document.body.classList.add("printing-qr-sheet");
+  await waitForImages(participantQrSheet);
+  window.print();
+}
+
+function handleGenerateParticipantUrls() {
+  const usedCodes = new Set();
+  generatedParticipants = parseParticipantSource(participantSource.value).map((row) => {
+    const enrichedRow = {
+      ...row,
+      accessCode: row.accessCode || generateAccessCode(usedCodes),
+    };
+    if (row.accessCode) usedCodes.add(row.accessCode);
+    return {
+      ...enrichedRow,
+      url: buildParticipantUrl(enrichedRow),
+    };
+  });
+  renderParticipants(generatedParticipants);
+  renderParticipantChecks(analyzeParticipants(generatedParticipants));
+  if (generatedParticipants.length) {
+    const qrNote = qrAvailable ? "QR配布シートも印刷できます。" : "QR生成ライブラリが見つからないため、URL配布のみ利用できます。";
+    setParticipantMessage(`${generatedParticipants.length}件の名簿を読み込みました。GoogleフォームCSV取込時の照合に使えます。代替用のローカルフォームURLにはランダムな受検コードだけを入れ、社員ID・氏名・生年月日・性別は入れていません。名簿は保存していません。${qrNote}`, "success");
+  } else {
+    setParticipantMessage("社員IDを含むヘッダー行と名簿行を貼り付けてください。", "error");
+  }
+}
+
+function handleDownloadParticipantUrls() {
+  if (!generatedParticipants.length) return;
+  void logClientAudit("ローカル配布用CSV保存", generatedParticipants);
+  const blob = new Blob([`\uFEFF${buildParticipantCsv(generatedParticipants)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-participant-urls.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleDownloadStatusCsv() {
+  if (!generatedParticipants.length) return;
+  void logClientAudit("受検状況CSV保存", generatedParticipants);
+  const blob = new Blob([`\uFEFF${buildStatusCsv(generatedParticipants)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-submission-status.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleDownloadPendingCsv() {
+  if (!generatedParticipants.length) return;
+  const pending = pendingRows(generatedParticipants);
+  if (!pending.length) return;
+  void logClientAudit("未受検者CSV保存", pending);
+  const blob = new Blob([`\uFEFF${buildPendingCsv(generatedParticipants)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-pending-participants.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleDownloadCompanySummaryCsv() {
+  if (!generatedParticipants.length) return;
+  void logClientAudit("会社共有サマリーCSV保存", generatedParticipants);
+  const blob = new Blob([`\uFEFF${buildCompanySummaryCsv(generatedParticipants)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "stress-check-company-summary.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildGoogleCsvTemplate() {
+  const sampleAnswers = Object.fromEntries(questionOrder.map((key) => [key, key.startsWith("A") ? 2 : 1]));
+  const sample = {
+    タイムスタンプ: "2026/05/30 09:00:00",
+    受検者ID: "SC-0001",
+    受検コード: "任意。名簿の受検コードを使う場合のみ",
+    "会社名・事業所名": "株式会社サンプル",
+    部署: "営業部",
+    職場コード: "D001",
+    職場名: "営業部",
+    変数値: "営業部",
+    個人情報の扱いの確認: "確認しました",
+    回答内容の確認: "すべての設問に回答しました",
+    ...sampleAnswers,
+  };
+  const rows = [
+    googleCsvTemplateHeaders,
+    googleCsvTemplateHeaders.map((header) => sample[header] || ""),
+  ];
+  return rows.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function handleDownloadGoogleCsvTemplate() {
+  const blob = new Blob([`\uFEFF${buildGoogleCsvTemplate()}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "google-form-response-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildGoogleImportCheckCsv(rows) {
+  const output = [
+    ["CSV行", "受検者ID", "受検コード", "保存判定", "保存不可理由", "厚労省CSV不足", "名簿照合", "回答不足項目"],
+    ...rows.map((row) => {
+      const issues = importIssues(row);
+      const warnings = importWarnings(row);
+      return [
+        row.sourceRowNumber,
+        row.respondentId,
+        row.participantCode,
+        issues.length ? "保存不可" : "保存可",
+        issues.join(" / "),
+        warnings.join(" / "),
+        row.matchedRoster ? "あり" : "なし",
+        missingAnswerKeys(row).join(" "),
+      ];
+    }),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function handleDownloadGoogleImportCheck() {
+  if (!googleImportRows.length) return;
+  const blob = new Blob([`\uFEFF${buildGoogleImportCheckCsv(googleImportRows)}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "google-form-import-check.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function loadSummary() {
+  if (isPublicStaticPage) {
+    setMessage("公開サイト上では管理APIを利用できません。ローカルサーバーで開いてください。", "info");
+    document.querySelectorAll(".admin-actions a").forEach((link) => {
+      if (link.href.includes("/api/")) link.setAttribute("aria-disabled", "true");
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/stress-check-admin/summary", { headers: adminHeaders() });
+    const summary = await response.json();
+    if (!response.ok) throw new Error(summary.error || "読み込めませんでした。");
+    renderSummary(summary);
+    await loadAuditLog();
+    setMessage("回答保存・CSV出力・集団分析の準備ができています。", "success");
+  } catch (error) {
+    setMessage(`管理情報を読み込めませんでした。理由: ${error.message}`, "error");
+  }
+}
+
+adminKeyInput.addEventListener("input", () => {
+  const key = getAdminKey();
+  if (key) {
+    sessionStorage.setItem("stressCheckAdminKey", key);
+  } else {
+    sessionStorage.removeItem("stressCheckAdminKey");
+  }
+  applyAdminKeyToLinks();
+});
+
+applyAdminKeyToLinks();
+loadSummary();
+loadStoredResponses();
+generateParticipantUrls.addEventListener("click", handleGenerateParticipantUrls);
+downloadParticipantUrls.addEventListener("click", handleDownloadParticipantUrls);
+downloadStatusCsv.addEventListener("click", handleDownloadStatusCsv);
+downloadPendingCsv.addEventListener("click", handleDownloadPendingCsv);
+downloadCompanySummaryCsv.addEventListener("click", handleDownloadCompanySummaryCsv);
+printParticipantQrSheet.addEventListener("click", handlePrintParticipantQrSheet);
+printPendingQrSheet.addEventListener("click", handlePrintPendingQrSheet);
+previewGoogleCsv.addEventListener("click", handlePreviewGoogleCsv);
+importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
+downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
+downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
+reloadStoredResponses.addEventListener("click", loadStoredResponses);
+downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
+responseAdminRows.addEventListener("click", (event) => {
+  const button = event.target.closest(".response-status-action");
+  if (!button) return;
+  void updateResponseStatus(button.dataset.submissionId, button.dataset.nextStatus);
+});
+googleCsvFile.addEventListener("change", () => {
+  googleImportRows = [];
+  googleImportDiagnostics = null;
+  importGoogleCsv.disabled = true;
+  downloadGoogleImportCheck.disabled = true;
+  googleImportMessage.hidden = true;
+  renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
+});
+window.addEventListener("afterprint", () => {
+  participantQrSheet.hidden = true;
+  document.body.classList.remove("printing-qr-sheet");
+});

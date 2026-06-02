@@ -1,0 +1,17 @@
+*
+
+!/.gitignore
+!/README.md
+
+!/stresscheck-system/
+!/stresscheck-system/**
+/stresscheck-system/node_modules/
+/stresscheck-system/data/
+/stresscheck-system/*.log
+
+!/infom-lp-sample/
+!/infom-lp-sample/**
+/infom-lp-sample/responses/
+
+!/google-form-builder/
+!/google-form-builder/**

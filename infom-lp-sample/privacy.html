@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | 個人情報の扱い</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">InfoM</a>
+      <nav class="nav" aria-label="メインメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+      </nav>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+    </div>
+    <div id="mobile-nav" class="mobile-nav" hidden>
+      <a href="index.html">ホーム</a>
+      <a href="system-development.html">システム開発</a>
+      <a href="stress-check.html">ストレスチェック</a>
+      <a href="lecture.html">ストレス講義</a>
+      <a href="about.html">InfoMについて</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container page-hero-grid">
+        <div>
+          <p class="page-kicker">Privacy</p>
+          <h1 class="page-title">個人情報の扱い</h1>
+          <p class="page-lead">
+            InfoMでは、相談内容、従業員情報、ストレスチェック結果などの情報を、目的に応じて分けて扱います。
+            詳細な保存期間や連絡窓口は、個別の契約・案内文に合わせて明示します。
+          </p>
+        </div>
+        <div class="profile-card">
+          <span>基本方針</span>
+          <h2>必要な情報だけを、必要な範囲で扱う</h2>
+          <p>通常メールやLINEで個人結果を送るなど、漏えい時の影響が大きい運用は避けます。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-muted">
+      <div class="container">
+        <p class="lp-kicker centered">Handling</p>
+        <h2 class="lp-title centered">取り扱う情報と利用目的</h2>
+        <div class="info-grid">
+          <div><strong>相談・見積の情報</strong><span>問い合わせへの回答、課題整理、提案、見積作成に利用します。</span></div>
+          <div><strong>業務システムの情報</strong><span>画面設計、権限設計、帳票作成、保守対応に必要な範囲で利用します。</span></div>
+          <div><strong>ストレスチェック情報</strong><span>本人結果通知、受検状況管理、集団分析、実施報告に必要な範囲で利用します。</span></div>
+          <div><strong>講義・相談の情報</strong><span>講義設計、資料作成、実施後の振り返りに必要な範囲で利用します。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="container lp-split">
+        <div>
+          <p class="lp-kicker">Stress Check</p>
+          <h2>ストレスチェックでは、本人結果と会社報告を分けます。</h2>
+        </div>
+        <div class="lp-review-list">
+          <div>
+            <strong>会社へ共有する情報</strong>
+            <p>受検済み・未受検の状況、個人が特定されない範囲の集団分析、実施報告に必要な情報。</p>
+          </div>
+          <div>
+            <strong>会社へ共有しない情報</strong>
+            <p>回答内容、点数、個人結果、高ストレス判定。本人同意がある場合を除き、会社へ提供しません。</p>
+          </div>
+          <div>
+            <strong>本人への結果通知</strong>
+            <p>本人が確認できる方法で通知します。LINEや通常メールに個人結果を直接記載する運用は避けます。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-muted">
+      <div class="container">
+        <p class="lp-kicker centered">Security</p>
+        <h2 class="lp-title centered">安全管理の考え方</h2>
+        <div class="trust-panel-grid">
+          <article class="trust-panel">
+            <span>01</span>
+            <h3>アクセス制限</h3>
+            <p>担当者、会社担当者、従業員本人など、役割ごとに閲覧できる情報を分けます。</p>
+          </article>
+          <article class="trust-panel">
+            <span>02</span>
+            <h3>通信と保管</h3>
+            <p>Webで扱う場合はHTTPSを前提にし、個別IDや権限管理を設けます。</p>
+          </article>
+          <article class="trust-panel">
+            <span>03</span>
+            <h3>第三者提供</h3>
+            <p>本人同意、法令に基づく場合、業務上必要な委託を除き、第三者へ提供しません。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band">
+      <div class="container cta-simple">
+        <p class="lp-kicker centered">Confirmation</p>
+        <h2 class="cta-title">具体的な運用は、契約・案内文で明示します。</h2>
+        <p class="cta-lead">対象人数、回答方法、本人通知、保存期間、会社へ共有する情報を確認してから実施します。</p>
+        <div class="link-panel">
+          <a href="stress-check.html">ストレスチェックを見る</a>
+          <a href="about.html">InfoMについて見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">InfoM</p>
+      <nav class="footer-nav" aria-label="フッターメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+        <a href="privacy.html">個人情報の扱い</a>
+      </nav>
+      <p class="copyright">相談内容に応じて、対応範囲・費用・個人情報の扱いを事前に確認します。</p>
+    </div>
+  </footer>
+  <script>
+    const button = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#mobile-nav');
+    if (button && nav) {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        nav.hidden = expanded;
+      });
+    }
+  </script>
+</body>
+</html>

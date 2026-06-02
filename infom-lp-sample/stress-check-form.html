@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | ストレスチェック回答フォーム</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">InfoM</a>
+      <nav class="nav" aria-label="メインメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+      </nav>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+    </div>
+    <div id="mobile-nav" class="mobile-nav" hidden>
+      <a href="index.html">ホーム</a>
+      <a href="system-development.html">システム開発</a>
+      <a href="stress-check.html">ストレスチェック</a>
+      <a href="lecture.html">ストレス講義</a>
+      <a href="about.html">InfoMについて</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="form-hero">
+      <div class="container form-hero-inner">
+        <div>
+          <p class="lp-kicker">Stress Check Form</p>
+          <h1>ストレスチェック回答フォーム</h1>
+          <p>
+            厚生労働省が公開している「職業性ストレス簡易調査票（57項目）」に基づく回答フォームです。
+            回答内容、点数、高ストレス判定は会社担当者には共有されません。
+          </p>
+        </div>
+        <aside class="form-guard">
+          <strong>回答前に確認してください</strong>
+          <ul>
+            <li>会社に共有されるのは受検済み・未受検などの管理情報です。</li>
+            <li>個人結果は本人へ通知されます。</li>
+            <li>途中保存はこの端末のブラウザ内だけに残ります。</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="container">
+        <div class="form-shell">
+          <div class="form-progress-card">
+            <div>
+              <strong id="progressText">入力状況 0 / 57</strong>
+              <span>すべての設問に回答すると送信できます。</span>
+            </div>
+            <div class="progress-track" aria-hidden="true"><span id="progressBar"></span></div>
+          </div>
+
+          <form id="stressCheckForm" class="stress-form" novalidate>
+            <input id="participantCode" name="participantCode" type="hidden" />
+            <section class="respondent-panel" aria-labelledby="respondentTitle">
+              <h2 id="respondentTitle">受検者情報</h2>
+              <div class="respondent-grid">
+                <label>
+                  <span>社員ID・受検者ID</span>
+                  <input id="respondentId" name="respondentId" type="text" autocomplete="off" required placeholder="例: SC-0001" />
+                </label>
+                <label>
+                  <span>会社名・事業所名</span>
+                  <input id="organization" name="organization" type="text" autocomplete="organization" placeholder="任意" />
+                </label>
+                <label>
+                  <span>部署</span>
+                  <input id="department" name="department" type="text" autocomplete="off" placeholder="任意" />
+                </label>
+                <label>
+                  <span>氏名</span>
+                  <input id="personName" name="personName" type="text" autocomplete="name" placeholder="厚労省CSV取込時は必須" />
+                </label>
+                <label>
+                  <span>フリガナ</span>
+                  <input id="kanaName" name="kanaName" type="text" autocomplete="off" placeholder="例: ヤマダ タロウ" />
+                </label>
+                <label>
+                  <span>生年月日</span>
+                  <input id="birthDate" name="birthDate" type="date" autocomplete="bday" />
+                </label>
+                <label>
+                  <span>性別</span>
+                  <select id="gender" name="gender">
+                    <option value="">選択してください</option>
+                    <option value="男性">男性</option>
+                    <option value="女性">女性</option>
+                  </select>
+                </label>
+                <label>
+                  <span>職場コード</span>
+                  <input id="workplaceCode" name="workplaceCode" type="text" autocomplete="off" placeholder="例: D001" />
+                </label>
+                <label>
+                  <span>職場名</span>
+                  <input id="workplaceName" name="workplaceName" type="text" autocomplete="off" placeholder="例: 営業部" />
+                </label>
+                <label>
+                  <span>変数値</span>
+                  <input id="analysisVariable" name="analysisVariable" type="text" autocomplete="off" placeholder="例: 拠点A / 管理職 / 2026上期" />
+                </label>
+                <label>
+                  <span>前回社員ID</span>
+                  <input id="previousEmployeeId" name="previousEmployeeId" type="text" autocomplete="off" placeholder="前回結果と紐づける場合のみ" />
+                </label>
+              </div>
+              <p class="form-note-left">本人専用URLで配布する場合、URLには受検コードだけを含めます。厚労省プログラムへCSV取込する場合は、氏名・フリガナ・生年月日・性別・社員ID・職場コード・57項目回答が必要です。</p>
+            </section>
+
+            <div id="questionRoot" class="question-root"></div>
+
+            <section class="agreement-panel" aria-labelledby="agreementTitle">
+              <h2 id="agreementTitle">送信前の確認</h2>
+              <label class="check-line">
+                <input id="privacyConfirm" name="privacyConfirm" type="checkbox" required />
+                <span>回答内容・点数・高ストレス判定が、本人同意なしに会社担当者へ共有されないことを確認しました。</span>
+              </label>
+              <label class="check-line">
+                <input id="answerConfirm" name="answerConfirm" type="checkbox" required />
+                <span>すべての設問に、現在の状態に最も近い選択肢で回答しました。</span>
+              </label>
+            </section>
+
+            <div class="form-actions-bar">
+              <button type="button" id="saveDraftButton" class="btn btn-outline">途中保存</button>
+              <button type="button" id="clearDraftButton" class="btn btn-ghost">保存を消す</button>
+              <button type="submit" class="btn btn-primary btn-lg">回答を送信する</button>
+            </div>
+          </form>
+
+          <div id="formMessage" class="form-message" role="status" aria-live="polite" hidden></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">InfoM</p>
+      <nav class="footer-nav" aria-label="フッターメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+        <a href="privacy.html">個人情報の扱い</a>
+      </nav>
+      <p class="copyright">相談内容に応じて、対応範囲・費用・個人情報の扱いを事前に確認します。</p>
+    </div>
+  </footer>
+  <script>
+    const button = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#mobile-nav');
+    if (button && nav) {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        nav.hidden = expanded;
+      });
+    }
+  </script>
+  <script src="stress-check-form.js"></script>
+</body>
+</html>

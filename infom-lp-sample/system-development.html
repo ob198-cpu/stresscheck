@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | システム開発</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="studio-page system-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">InfoM</a>
+      <nav class="nav" aria-label="メインメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html" aria-current="page">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+      </nav>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+    </div>
+    <div id="mobile-nav" class="mobile-nav" hidden>
+      <a href="index.html">ホーム</a>
+      <a href="system-development.html" aria-current="page">システム開発</a>
+      <a href="stress-check.html">ストレスチェック</a>
+      <a href="lecture.html">ストレス講義</a>
+      <a href="about.html">InfoMについて</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="studio-hero system-detail-hero">
+      <div class="container studio-hero-grid">
+        <div class="studio-copy">
+          <p class="studio-kicker">System Development</p>
+          <h1>作る前に、業務のどこを軽くするか決める。</h1>
+          <p class="studio-lead">
+            Webシステム開発は、画面を増やす仕事ではありません。
+            入力、確認、催促、集計、報告、権限管理のどこで時間が失われているかを見て、必要な部分だけを仕組みにします。
+          </p>
+          <div class="studio-actions">
+            <a class="btn btn-primary btn-lg" href="#scope">開発範囲を見る</a>
+            <a class="btn btn-outline btn-lg" href="#pricing">費用目安を見る</a>
+          </div>
+        </div>
+
+        <div class="build-brief" aria-label="開発前の整理">
+          <div class="brief-row head">
+            <span>開発前に整理すること</span>
+            <strong>作る / 後で足す / 作らない</strong>
+          </div>
+          <div class="brief-row">
+            <span>作る</span>
+            <strong>入力、一覧、検索、集計、権限</strong>
+          </div>
+          <div class="brief-row">
+            <span>後で足す</span>
+            <strong>通知、自動化、外部連携、帳票強化</strong>
+          </div>
+          <div class="brief-row">
+            <span>作らない</span>
+            <strong>使わない機能、目的のない装飾、大きすぎる初期開発</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section">
+      <div class="container problem-map">
+        <div class="studio-section-head left">
+          <p class="studio-kicker">Problem Map</p>
+          <h2>よくある問題は、入力フォームそのものではありません。</h2>
+          <p>入力後の確認、催促、集計、報告、権限で止まっている場合、そこまで含めて設計する必要があります。</p>
+        </div>
+        <div class="problem-chain" aria-label="業務の詰まり">
+          <div><span>入力</span><strong>紙・Excel・メールが混在</strong></div>
+          <i></i>
+          <div><span>確認</span><strong>担当者と期限が見えない</strong></div>
+          <i></i>
+          <div><span>報告</span><strong>毎回手作業で集計</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section studio-light" id="scope">
+      <div class="container">
+        <div class="studio-section-head">
+          <p class="studio-kicker">Build Scope</p>
+          <h2>開発で整える範囲</h2>
+          <p>下の要素を組み合わせ、必要な最小構成から始めます。</p>
+        </div>
+        <div class="scope-catalog">
+          <article><span>Input</span><h3>入力フォーム</h3><p>必須項目、選択肢、添付、確認画面、入力補助。</p></article>
+          <article><span>List</span><h3>一覧・検索</h3><p>ステータス、担当者、期限、絞り込み、並び替え。</p></article>
+          <article><span>Record</span><h3>詳細・履歴</h3><p>対応履歴、メモ、次回予定、変更履歴。</p></article>
+          <article><span>Report</span><h3>集計・出力</h3><p>月次集計、CSV、PDF、簡易レポート。</p></article>
+          <article><span>Role</span><h3>権限管理</h3><p>管理者、担当者、閲覧のみ、外部共有の切り分け。</p></article>
+          <article><span>AI</span><h3>AI活用</h3><p>要約、分類、文章整形、確認漏れのチェック。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section">
+      <div class="container">
+        <div class="studio-section-head">
+          <p class="studio-kicker">Examples</p>
+          <h2>対応しやすい業務</h2>
+        </div>
+        <div class="example-table" role="table" aria-label="対応しやすい業務">
+          <div class="example-row head" role="row">
+            <span role="columnheader">業務</span>
+            <span role="columnheader">よくある状態</span>
+            <span role="columnheader">作るもの</span>
+          </div>
+          <div class="example-row" role="row">
+            <span>Excel管理</span>
+            <span>複数ファイル、最新版不明、手作業集計</span>
+            <span>入力画面、一覧、検索、CSV出力</span>
+          </div>
+          <div class="example-row" role="row">
+            <span>申請・承認</span>
+            <span>メール確認、対応漏れ、履歴が追えない</span>
+            <span>申請フォーム、ステータス、承認履歴</span>
+          </div>
+          <div class="example-row" role="row">
+            <span>ストレスチェック運用</span>
+            <span>受検状況、本人通知、会社報告の管理が重い</span>
+            <span>受検管理、本人専用URL、集団分析、報告整理</span>
+          </div>
+          <div class="example-row" role="row">
+            <span>相談・面談記録</span>
+            <span>記録の保管、権限、次回確認が曖昧</span>
+            <span>相談記録、権限、対応履歴、次回予定</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section studio-dark">
+      <div class="container">
+        <div class="studio-section-head left">
+          <p class="studio-kicker">Process</p>
+          <h2>開発の流れ</h2>
+          <p>大きな仕様書がなくても、今の資料と作業の流れが分かれば始められます。</p>
+        </div>
+        <div class="process-board">
+          <article><span>01</span><h3>現状確認</h3><p>Excel、紙帳票、メール、既存フォーム、報告資料を見ます。</p></article>
+          <article><span>02</span><h3>範囲整理</h3><p>最初に作る機能、後から足す機能、作らない機能を分けます。</p></article>
+          <article><span>03</span><h3>試作</h3><p>実際に触れる画面で、入力と確認の流れを確認します。</p></article>
+          <article><span>04</span><h3>運用開始</h3><p>使い方、権限、修正、保守、バックアップを整理します。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section">
+      <div class="container proof-grid">
+        <div>
+          <p class="studio-kicker">What You Get</p>
+          <h2>納品物は、画面だけではありません。</h2>
+          <p>
+            使う人が迷わないよう、運用ルール、権限、初期データ、説明文、修正方法まで確認します。
+            ストレスチェックや個人情報を扱う場合は、会社に共有する情報としない情報も整理します。
+          </p>
+        </div>
+        <div class="proof-list">
+          <div><strong>画面</strong><span>入力、一覧、詳細、集計、管理画面</span></div>
+          <div><strong>データ</strong><span>項目設計、CSV、バックアップ方針</span></div>
+          <div><strong>運用</strong><span>使い方、権限、修正依頼の流れ</span></div>
+          <div><strong>文書</strong><span>説明文、案内文、報告用の整理</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section studio-light" id="pricing">
+      <div class="container">
+        <div class="studio-section-head">
+          <p class="studio-kicker">Pricing</p>
+          <h2>費用の目安</h2>
+          <p>最初に全てを作るより、効果が出る範囲から始める方が、費用も運用も無理が出にくくなります。</p>
+        </div>
+        <div class="pricing-table-lite strong">
+          <div><span>業務整理</span><strong>33,000円から</strong><em>現状確認、業務フロー整理、開発範囲の切り分け</em></div>
+          <div><span>小規模ツール</span><strong>165,000円から</strong><em>入力フォーム、一覧、検索、簡易管理画面</em></div>
+          <div><span>Webシステム</span><strong>330,000円から</strong><em>複数画面、権限、集計、帳票、運用設計</em></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-cta">
+      <div class="container">
+        <p class="studio-kicker">Development Brief</p>
+        <h2>最初に必要なのは、完成イメージではなく現在の業務資料です。</h2>
+        <p>Excel、紙帳票、メール文面、報告書を見ながら、どこをWeb化すべきか整理します。</p>
+        <div class="studio-actions center">
+          <a class="btn btn-primary btn-lg" href="index.html">トップへ戻る</a>
+          <a class="btn btn-outline btn-lg" href="privacy.html">個人情報の扱いを見る</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">InfoM</p>
+      <nav class="footer-nav" aria-label="フッターメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+        <a href="privacy.html">個人情報の扱い</a>
+      </nav>
+      <p class="copyright">相談内容に応じて、対応範囲・費用・個人情報の扱いを事前に確認します。</p>
+    </div>
+  </footer>
+  <script>
+    const button = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#mobile-nav');
+    if (button && nav) {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        nav.hidden = expanded;
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | ストレスチェック管理</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">InfoM</a>
+      <nav class="nav" aria-label="メインメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+      </nav>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+    </div>
+    <div id="mobile-nav" class="mobile-nav" hidden>
+      <a href="index.html">ホーム</a>
+      <a href="system-development.html">システム開発</a>
+      <a href="stress-check.html">ストレスチェック</a>
+      <a href="lecture.html">ストレス講義</a>
+      <a href="about.html">InfoMについて</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="form-hero">
+      <div class="container form-hero-inner">
+        <div>
+          <p class="lp-kicker">Admin</p>
+          <h1>Googleフォーム標準のストレスチェック管理</h1>
+          <p>
+            Googleフォームで回答を集め、CSVをこの管理画面へ取り込んで、
+            厚労省版ストレスチェック実施プログラム用CSVと集団分析に整えます。
+          </p>
+        </div>
+        <aside class="form-guard">
+          <strong>管理上の注意</strong>
+          <ul>
+            <li>この管理画面はローカルサーバー上で使います。</li>
+            <li>標準運用はGoogleフォーム回収、ローカルフォームは代替・検証用です。</li>
+            <li>会社担当者に個人回答・点数・高ストレス判定を共有しないでください。</li>
+            <li>10人未満の集団分析は非表示にします。</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="container admin-shell">
+        <div id="adminMessage" class="form-message info" role="status">読み込み中です。</div>
+
+        <div class="admin-actions">
+          <a class="btn btn-primary btn-lg admin-api-link" href="/api/stress-check-export/mhlw-results.csv">厚労省取込用CSVを出力</a>
+          <a class="btn btn-outline btn-lg admin-api-link" href="/api/stress-check-export/group-analysis.csv">集団分析CSVを出力</a>
+          <a class="btn btn-outline btn-lg" href="stress-check-form.html">ローカル回答フォーム（代替）</a>
+        </div>
+
+        <section class="admin-key-panel" aria-label="管理キー">
+          <label for="adminKeyInput">管理キー</label>
+          <input id="adminKeyInput" type="password" autocomplete="off" placeholder="本番でADMIN_KEYを設定した場合のみ入力" />
+          <span>ローカル運用では空欄のままで使えます。本番公開時は必ず設定してください。</span>
+        </section>
+
+        <section class="admin-panel">
+          <h2>推奨運用</h2>
+          <div class="suppressed-list">
+            <div class="suppressed-item"><strong>1. Googleフォームで回答回収</strong><span>従業員はスマホ・PCのブラウザから回答します。フォームでは個人結果通知や会社共有を行いません。</span></div>
+            <div class="suppressed-item"><strong>2. 回答CSVをローカル取込</strong><span>GoogleスプレッドシートからCSVを保存し、この管理画面で列認識・名簿照合・保存可否を確認します。</span></div>
+            <div class="suppressed-item"><strong>3. 会社共有は最小限</strong><span>会社へ出すのは受検済み/未受検、10人以上の集団分析、実施報告だけです。</span></div>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>名簿の読み込み・配布補助</h2>
+          <p>Googleフォーム方式では、ここで名簿を読み込み、回答CSV取込時の照合に使います。ローカルフォームを代替で使う場合だけ、本人専用URLやQR配布シートを使います。名簿はブラウザ内だけで処理し、サーバーには保存しません。</p>
+          <div class="participant-tools">
+            <textarea id="participantSource" rows="7" placeholder="社員ID,氏名,フリガナ,生年月日,性別,職場コード,職場名,部署,変数値&#10;SC-0001,山田 太郎,ヤマダ タロウ,1990-01-01,男性,D001,営業部,営業部,営業部"></textarea>
+            <div class="participant-actions">
+              <button type="button" id="generateParticipantUrls" class="btn btn-primary">名簿を読み込み・照合用コードを生成</button>
+              <button type="button" id="downloadParticipantUrls" class="btn btn-outline" disabled>ローカル配布用CSVを保存</button>
+              <button type="button" id="downloadStatusCsv" class="btn btn-outline" disabled>受検状況CSVを保存</button>
+              <button type="button" id="downloadPendingCsv" class="btn btn-outline" disabled>未受検者CSVを保存</button>
+              <button type="button" id="downloadCompanySummaryCsv" class="btn btn-outline" disabled>会社共有サマリーCSVを保存</button>
+              <button type="button" id="printParticipantQrSheet" class="btn btn-outline" disabled>QR配布シートを印刷</button>
+              <button type="button" id="printPendingQrSheet" class="btn btn-outline" disabled>未受検者QRを印刷</button>
+            </div>
+            <div id="participantMessage" class="form-message info" hidden></div>
+            <div id="participantChecks" class="participant-checks" hidden></div>
+            <div class="admin-table-wrap">
+              <table class="admin-table participant-table">
+                <thead>
+                  <tr>
+                    <th>社員ID</th>
+                    <th>受検コード</th>
+                    <th>氏名</th>
+                    <th>職場</th>
+                    <th>変数値</th>
+                    <th>受検状況</th>
+                    <th>QR</th>
+                    <th>ローカルフォームURL</th>
+                  </tr>
+                </thead>
+                <tbody id="participantRows">
+                  <tr><td colspan="8">名簿を貼り付けてURLを生成してください。</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>GoogleフォームCSV取込</h2>
+          <p>Googleフォームの回答スプレッドシートをCSVで保存し、ここで読み込みます。上の名簿CSVを先に貼り付けてURL生成しておくと、受検者IDまたは受検コードで照合し、氏名・生年月日・職場コードなどを補完できます。Google API連携は使わないため、権限確認で止まりにくい運用です。</p>
+          <div class="participant-tools">
+            <label class="file-field" for="googleCsvFile">
+              <span>Googleフォーム回答CSV</span>
+              <input id="googleCsvFile" type="file" accept=".csv,text/csv" />
+            </label>
+            <div class="participant-actions">
+              <button type="button" id="previewGoogleCsv" class="btn btn-outline">CSVを確認</button>
+              <button type="button" id="importGoogleCsv" class="btn btn-primary" disabled>回答をローカル保存</button>
+              <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">CSV見出しテンプレートを保存</button>
+              <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSVを保存</button>
+            </div>
+            <div id="googleImportMessage" class="form-message info" hidden></div>
+            <div id="googleImportPreview" class="suppressed-list"></div>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>保存済み回答管理</h2>
+          <p>誤取込やテスト回答は削除せず、無効化してCSV出力と集団分析から外します。ここでは回答内容・点数・高ストレス判定は表示しません。</p>
+          <div class="participant-actions">
+            <button type="button" id="reloadStoredResponses" class="btn btn-outline">保存済み回答を更新</button>
+            <button type="button" id="downloadResponseAdminCsv" class="btn btn-outline" disabled>管理用一覧CSVを保存</button>
+          </div>
+          <div id="responseAdminMessage" class="form-message info" hidden></div>
+          <div class="admin-table-wrap">
+            <table class="admin-table response-admin-table">
+              <thead>
+                <tr>
+                  <th>状態</th>
+                  <th>送信日時</th>
+                  <th>受検者ID</th>
+                  <th>取込元</th>
+                  <th>職場</th>
+                  <th>CSV</th>
+                  <th>出力</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="responseAdminRows">
+                <tr><td colspan="8">保存済み回答を読み込んでいます。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-grid" aria-label="集計概要">
+          <article>
+            <span>回答数</span>
+            <strong id="totalResponses">-</strong>
+          </article>
+          <article>
+            <span>出力対象</span>
+            <strong id="exportTargetResponses">-</strong>
+          </article>
+          <article>
+            <span>CSV取込可能</span>
+            <strong id="mhlwReady">-</strong>
+          </article>
+          <article>
+            <span>集団分析の最小人数</span>
+            <strong id="minGroupSize">10</strong>
+          </article>
+        </section>
+
+        <section class="admin-panel">
+          <h2>運用診断</h2>
+          <p>本番実施前に、管理キー、ローカル運用、QR生成、CSV不足、重複送信、10人未満集団を確認します。</p>
+          <div id="securityRows" class="suppressed-list"></div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>集団分析</h2>
+          <p>変数値、職場コード、部署の順に集団キーとして扱います。10人未満の集団は表示しません。</p>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>集団</th>
+                  <th>人数</th>
+                  <th>A平均</th>
+                  <th>B平均</th>
+                  <th>C平均</th>
+                  <th>D平均</th>
+                </tr>
+              </thead>
+              <tbody id="groupRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>非表示の集団</h2>
+          <p>個人が特定されやすい集団は出力しません。</p>
+          <div id="suppressedRows" class="suppressed-list"></div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>CSV取込前の不足</h2>
+          <p>厚労省プログラムへ取り込むには、氏名・フリガナ・生年月日・性別・社員ID・職場コード・57項目回答が必要です。</p>
+          <div id="invalidRows" class="suppressed-list"></div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>重複送信</h2>
+          <p>同じ受検コードまたは社員IDで複数回送信された場合、CSV出力と集団分析には最新回答だけを使います。</p>
+          <div id="duplicateRows" class="suppressed-list"></div>
+        </section>
+
+        <section class="admin-panel">
+          <h2>出力ログ</h2>
+          <p>厚労省取込用CSVと集団分析CSVを出力した日時と件数だけを記録します。個人名・回答内容・点数・高ストレス判定は記録しません。</p>
+          <div id="auditRows" class="suppressed-list"></div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <section id="participantQrSheet" class="participant-qr-sheet" hidden></section>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">InfoM</p>
+      <nav class="footer-nav" aria-label="フッターメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+        <a href="privacy.html">個人情報の扱い</a>
+      </nav>
+      <p class="copyright">相談内容に応じて、対応範囲・費用・個人情報の扱いを事前に確認します。</p>
+    </div>
+  </footer>
+  <script>
+    const button = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#mobile-nav');
+    if (button && nav) {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        nav.hidden = expanded;
+      });
+    }
+  </script>
+  <script src="stress-check-admin.js"></script>
+</body>
+</html>

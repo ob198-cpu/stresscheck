@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | ストレスチェック運用支援</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo">InfoM</a>
+      <nav class="nav" aria-label="メインメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html" aria-current="page">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+      </nav>
+      <button type="button" class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">メニュー</button>
+    </div>
+    <div id="mobile-nav" class="mobile-nav" hidden>
+      <a href="index.html">ホーム</a>
+      <a href="system-development.html">システム開発</a>
+      <a href="stress-check.html" aria-current="page">ストレスチェック</a>
+      <a href="lecture.html">ストレス講義</a>
+      <a href="about.html">InfoMについて</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="lp-hero stress-hero">
+      <div class="container lp-hero-inner">
+        <div class="lp-hero-copy">
+          <p class="lp-kicker">Stress Check Support</p>
+          <h1>ストレスの状態を、やさしく見える化する。</h1>
+          <p class="lp-lead">
+            これまでのストレスチェックに、満足していますか。
+            数分のチェックで、こころと身体のサインを整理。結果をわかりやすく可視化し、必要なケアや相談につなげます。
+          </p>
+          <p class="lp-source-note">
+            厚生労働省は、ストレスチェック制度を、本人のストレスへの気づきと職場改善を通じてメンタルヘルス不調を未然に防ぐ仕組みとして説明しています。
+            <a href="https://www.startup-roudou.mhlw.go.jp/study/jigyonushi_stresscheck.html" target="_blank" rel="noreferrer">出典を見る</a>
+          </p>
+          <div class="lp-actions">
+            <a class="btn btn-primary btn-lg" href="about.html">実施方法を相談する</a>
+            <a class="btn btn-outline btn-lg" href="about.html">仕組みを見る</a>
+          </div>
+          <div class="lp-trust-row" aria-label="対応の特徴">
+            <span>Googleフォーム回答</span>
+            <span>スマホ・PC対応</span>
+            <span>本人へ結果通知</span>
+            <span>会社は個人結果を閲覧不可</span>
+          </div>
+        </div>
+        <aside class="interactive-stress-demo" data-stress-demo aria-label="回答が状態マップになるデモ">
+          <div class="demo-glow" aria-hidden="true"></div>
+          <div class="demo-header">
+            <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <strong>Stress Insight Lab</strong>
+          </div>
+
+          <div class="demo-title">
+            <span>INTERACTIVE CHECK</span>
+            <h2>回答が、こころの状態マップになる</h2>
+            <p>TAP OR DRAG TO ANALYZE</p>
+          </div>
+
+          <button type="button" class="demo-input" data-demo-trigger aria-label="分析デモを開始する">
+            <span>最近、眠りが浅く疲れが残る</span>
+          </button>
+
+          <div class="demo-flow" aria-hidden="true">
+            <span class="flow-line"></span>
+            <span class="flow-particle particle-a"></span>
+            <span class="flow-particle particle-b"></span>
+            <span class="flow-particle particle-c"></span>
+          </div>
+
+          <div class="stress-result-card">
+            <div class="score-block">
+              <div class="score-meter" data-score-meter><span>72</span></div>
+              <div>
+                <p>Stress Balance Score</p>
+                <strong>睡眠・疲労・集中度のサインを整理しました。</strong>
+                <em>無理のないケアから始めましょう。</em>
+              </div>
+            </div>
+            <div class="mini-metrics">
+              <div><span>Sleep</span><strong>浅い</strong></div>
+              <div><span>Fatigue</span><strong>残る</strong></div>
+              <div><span>Focus</span><strong>波がある</strong></div>
+            </div>
+            <a href="about.html">実施方法を見る</a>
+          </div>
+
+          <div class="demo-stage-track" aria-label="分析の進行">
+            <span data-stage-label>Answer</span>
+            <div><i data-stage-bar></i></div>
+            <span>Care Plan</span>
+          </div>
+
+          <div class="demo-step-grid">
+            <div class="demo-step active" data-demo-step="0"><span>01</span><strong>Answer</strong><em>質問に答える</em></div>
+            <div class="demo-step" data-demo-step="1"><span>02</span><strong>Analyze</strong><em>状態を整理する</em></div>
+            <div class="demo-step" data-demo-step="2"><span>03</span><strong>Care</strong><em>次の行動を提案</em></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="stress-message-band">
+      <div class="container message-contrast">
+        <div class="message-question">
+          <p class="lp-kicker">Problem</p>
+          <h2>「やっただけ」で終わっていませんか。</h2>
+          <ul>
+            <li>結果は出たが、次に何をすればよいか分からない</li>
+            <li>従業員にとって意味がある実感が薄い</li>
+            <li>改善したいが、現場も経営も余裕がない</li>
+            <li>外部の正論で責められそうで相談しづらい</li>
+          </ul>
+        </div>
+        <div class="message-answer">
+          <p class="lp-kicker">InfoM</p>
+          <h2>検査結果を、行動に変える支援をします。</h2>
+          <div class="answer-stack">
+            <div><strong>本人へ</strong><span>気づき、カウンセリング、必要な相談先へつなぐ。</span></div>
+            <div><strong>組織へ</strong><span>ストレッサーをアセスメントし、改善策を一緒に考える。</span></div>
+            <div><strong>業務へ</strong><span>仕組み化・AI活用で、分かっていてもできない負担を減らす。</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-intro">
+      <div class="container lp-split">
+        <div>
+          <p class="lp-kicker">Purpose</p>
+          <h2>ストレスチェックは、治療ではなく「気づき」と「改善」の入口です。</h2>
+        </div>
+        <p>
+          本人が自分の状態に気づき、必要に応じて産業医、医師面接指導、カウンセリング、職場環境の改善につながることが大切です。
+          InfoMでは、会社に個人結果を渡さない設計を守りながら、実際の解決に進めるための選択肢を一緒に整理します。
+        </p>
+      </div>
+    </section>
+
+    <section class="lp-section solution-section">
+      <div class="container">
+        <p class="lp-kicker centered">From Check To Action</p>
+        <h2 class="lp-title centered">気づいたあとに、実際の支援へつなげます。</h2>
+        <div class="solution-lanes">
+          <article>
+            <span>本人支援</span>
+            <h3>産業医・医師面接指導につなぐ</h3>
+            <p>高ストレス者や本人の希望がある場合、申出時に会社へ何が伝わるかを事前に説明し、必要な支援につなぎます。</p>
+          </article>
+          <article>
+            <span>個別相談</span>
+            <h3>カウンセリングで整理する</h3>
+            <p>ストレス理論やポリヴェーガル理論を参考に、何がストレッサーになりやすいか、気持ちと状況を一緒に整理します。</p>
+          </article>
+          <article>
+            <span>環境調整</span>
+            <h3>ストレスになりにくい環境を考える</h3>
+            <p>本人を責めるのではなく、環境、考え方、仕事の進め方を見直し、負担が積み上がりにくい形を探します。</p>
+          </article>
+          <article>
+            <span>組織改善</span>
+            <h3>組織のストレッサーを減らす</h3>
+            <p>集団分析やヒアリングからストレッサーをアセスメントし、会議、情報共有、業務量、役割分担の改善を提案します。</p>
+          </article>
+          <article>
+            <span>伴走姿勢</span>
+            <h3>正論ではなく、解決に伴走する</h3>
+            <p>第三者が正論で攻撃するのではなく、経営上の事情も踏まえ、現実に動く方法を一緒に考えます。</p>
+          </article>
+          <article>
+            <span>仕組み化</span>
+            <h3>仕組みとAIで負担を減らす</h3>
+            <p>分かっていてもできない作業は、人の努力だけに頼らず、システム化やAI活用で短縮・効率化します。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-muted">
+      <div class="container">
+        <p class="lp-kicker centered">Support</p>
+        <h2 class="lp-title centered">対応できること</h2>
+        <div class="lp-card-grid">
+          <article class="lp-card">
+            <h3>受検案内の作成</h3>
+            <p>回答方法、個人結果の扱い、会社へ共有される情報を従業員に分かる言葉で整理します。</p>
+          </article>
+          <article class="lp-card">
+            <h3>Web回答の運用</h3>
+            <p>Googleフォームを標準に、スマホやPCのブラウザから回答できる形にします。ローカルフォームは代替・検証用として扱います。</p>
+          </article>
+          <article class="lp-card">
+            <h3>受検状況の管理</h3>
+            <p>会社へ共有するのは受検済み・未受検の確認まで。回答内容は共有しません。</p>
+          </article>
+          <article class="lp-card">
+            <h3>本人結果通知</h3>
+            <p>結果は従業員本人へ通知します。LINEや通常メールで個人結果を送る運用は避けます。</p>
+          </article>
+          <article class="lp-card">
+            <h3>簡易実施報告</h3>
+            <p>実施人数、受検状況、集団分析の扱い、改善相談の論点を整理します。</p>
+          </article>
+          <article class="lp-card">
+            <h3>改善相談</h3>
+            <p>検査して終わりにせず、カウンセリング、産業医連携、職場改善、業務効率化につながる次の対応を確認します。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="container">
+        <p class="lp-kicker centered">Information Sharing</p>
+        <h2 class="lp-title centered">会社に共有する情報・共有しない情報</h2>
+        <div class="lp-scope-table" role="table" aria-label="会社に共有する情報">
+          <div class="lp-scope-head" role="row">
+            <span role="columnheader">区分</span>
+            <span role="columnheader">扱う情報</span>
+            <span role="columnheader">補足</span>
+          </div>
+          <div role="row"><span>会社に共有する</span><span>受検済み・未受検</span><span>回答を促すために必要な範囲で共有します。</span></div>
+          <div role="row"><span>条件付きで共有する</span><span>集団分析</span><span>個人が特定されない人数単位で扱います。</span></div>
+          <div role="row"><span>本人同意後に扱う</span><span>面接指導申出に必要な情報</span><span>会社へ何が伝わるかを事前に説明します。</span></div>
+          <div role="row"><span>会社に共有しない</span><span>回答内容、点数、個人結果、高ストレス判定</span><span>本人同意がない状態では会社担当者へ提供しません。</span></div>
+          <div role="row"><span>慎重に扱う</span><span>10人未満部署の集団分析</span><span>個人が特定されやすい場合は原則として出しません。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-muted">
+      <div class="container">
+        <p class="lp-kicker centered">How It Works</p>
+        <h2 class="lp-title centered">実施の流れ</h2>
+        <div class="lp-flow">
+          <div><span>01</span><strong>対象者確認</strong><p>人数、実施時期、回答方法、紙対応の有無を確認します。</p></div>
+          <div><span>02</span><strong>案内準備</strong><p>従業員向け説明文、GoogleフォームURL、受検者IDの案内を準備します。</p></div>
+          <div><span>03</span><strong>回答・通知</strong><p>Googleフォームで回答を受け付け、CSVを管理画面へ取り込み、結果は本人へ通知します。</p></div>
+          <div><span>04</span><strong>報告・相談</strong><p>受検状況、集団分析の扱い、改善相談の内容を整理します。</p></div>
+        </div>
+        <div class="link-panel">
+          <a href="about.html">実施方法を相談する</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section">
+      <div class="container lp-split">
+        <div>
+          <p class="lp-kicker">Cost</p>
+          <h2>費用は、人数だけでなく運用範囲で変わります。</h2>
+        </div>
+        <div class="lp-review-list">
+          <div>
+            <strong>標準で確認するもの</strong>
+            <p>対象人数、回答方法、本人通知、受検状況管理、会社向け報告の範囲。</p>
+          </div>
+          <div>
+            <strong>追加確認が必要なもの</strong>
+            <p>紙回答、会社端末対応、医師面接指導、産業医連携、多拠点運用、追加相談。</p>
+          </div>
+          <div>
+            <strong>見積前に分かるとよいもの</strong>
+            <p>対象人数、実施希望時期、スマホ利用可否、メールアドレスの有無、会社に必要な報告内容。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band" id="stress-consult">
+      <div class="container cta-simple">
+        <p class="lp-kicker centered">Stress Check Brief</p>
+        <h2 class="cta-title">まずは、今のストレスチェックへの不満を聞かせてください。</h2>
+        <p class="cta-lead">形式的に実施するだけで終わっている、改善につながっていない、従業員に響いていない。そこから一緒に整理します。</p>
+        <div class="cta-checks">
+          <div><strong>対象者数</strong><span>人数、部署、10人未満部署の有無。</span></div>
+          <div><strong>回答方法</strong><span>Googleフォーム、スマホ、PC、紙対応の必要性。</span></div>
+          <div><strong>実施後の支援</strong><span>産業医連携、カウンセリング、職場改善、講義。</span></div>
+          <div><strong>仕組み化</strong><span>AIやWebシステムで、管理・集計・改善提案の負担を減らす。</span></div>
+        </div>
+        <div class="notice-panel">
+          <strong>伴走するパートナーです</strong>
+          <p>正論で責めるためではなく、解決できる形を一緒に探すために関わります。回答内容、点数、高ストレス判定は会社担当者へ共有しません。</p>
+        </div>
+        <div class="link-panel">
+          <a href="about.html">実施方法を相談する</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p class="footer-brand">InfoM</p>
+      <nav class="footer-nav" aria-label="フッターメニュー">
+        <a href="index.html">ホーム</a>
+        <a href="system-development.html">システム開発</a>
+        <a href="stress-check.html">ストレスチェック</a>
+        <a href="lecture.html">ストレス講義</a>
+        <a href="about.html">InfoMについて</a>
+        <a href="privacy.html">個人情報の扱い</a>
+      </nav>
+      <p class="copyright">相談内容に応じて、対応範囲・費用・個人情報の扱いを事前に確認します。</p>
+    </div>
+  </footer>
+  <script>
+    const button = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#mobile-nav');
+    if (button && nav) {
+      button.addEventListener('click', () => {
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', String(!expanded));
+        nav.hidden = expanded;
+      });
+    }
+  </script>
+  <script src="stress-demo.js"></script>
+</body>
+</html>
