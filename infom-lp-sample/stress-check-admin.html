@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=completion-checklist" />
+  <link rel="stylesheet" href="styles.css?v=privacy-safe-log" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -116,7 +116,7 @@
 
         <section class="admin-panel admin-primary-flow">
           <h2>本人向け結果を作る</h2>
-          <p>Googleフォームの回答CSVを選ぶだけで読み取り確認まで進みます。判定可能になったら、本人向け結果と企業担当者向け集団分析をブラウザで開き、印刷またはPDF保存してください。実施ログCSVも保存できます。</p>
+          <p>Googleフォームの回答CSVを選ぶだけで読み取り確認まで進みます。判定可能になったら、本人向け結果と企業担当者向け集団分析をブラウザで開き、印刷またはPDF保存してください。実施ログCSVには個人名・受検者ID・点数・判定を記録しません。</p>
           <div class="analysis-flow-steps" aria-label="個人分析CSV作成の手順">
             <div><span>1</span><strong>CSVを選択</strong><em>Googleフォーム回答スプレッドシートから保存したCSV</em></div>
             <div><span>2</span><strong>自動確認</strong><em>57項目・性別・基本情報・列認識を確認</em></div>
@@ -308,6 +308,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=completion-checklist"></script>
+  <script src="stress-check-admin.js?v=privacy-safe-log"></script>
 </body>
 </html>

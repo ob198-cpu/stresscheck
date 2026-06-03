@@ -618,13 +618,29 @@ function setGoogleImportMessage(text, type = "info") {
   googleImportMessage.textContent = text;
 }
 
+function operationLogDetail(detail = {}) {
+  const blockedKeys = new Set([
+    "respondentId",
+    "participantCode",
+    "personName",
+    "kanaName",
+    "name",
+    "id",
+    "code",
+  ]);
+  return Object.entries(detail)
+    .filter(([key]) => !blockedKeys.has(key))
+    .map(([key, value]) => `${key}=${value}`)
+    .join(" / ");
+}
+
 function addOperationLog(action, detail = {}) {
   operationLog.push({
     timestamp: new Date().toISOString(),
     action,
     totalRows: googleImportRows.length || "",
     scoreableRows: googleImportRows.filter?.((row) => buildMhlwIndividualAnalysis(row).canScore).length || "",
-    detail: Object.entries(detail).map(([key, value]) => `${key}=${value}`).join(" / "),
+    detail: operationLogDetail(detail),
   });
   if (downloadOperationLogCsv) downloadOperationLogCsv.disabled = !operationLog.length;
   renderCompletionChecklist(googleImportRows);
@@ -1706,6 +1722,7 @@ function buildImplementationRecordHtml(rows) {
     ` : `<p>10人未満で非表示にした集団はありません。</p>`}
 
     <h2>操作ログ</h2>
+    <p class="fine">操作ログには個人名、受検者ID、配布コード、回答内容、点数、高ストレス判定を記録しません。</p>
     ${logRows ? `
       <table>
         <thead><tr><th>日時</th><th>操作</th><th>詳細</th></tr></thead>
@@ -2627,7 +2644,7 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   const settings = getImplementationSettings();
   const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
-  if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, respondentId: row.respondentId || row.participantCode || "", missingGuidance });
+  if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, missingGuidance });
 });
 googleCsvFile.addEventListener("change", () => {
   googleImportRows = [];
