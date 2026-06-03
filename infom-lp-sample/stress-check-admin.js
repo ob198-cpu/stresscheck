@@ -690,7 +690,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["企業向け集団分析PDF", names.company, hasOperation("企業向け集団分析") ? "出力済み" : "未出力"],
     ["実施記録PDF", names.implementation, hasOperation("実施記録") ? "出力済み" : "未出力"],
     ["個人分析CSV", names.individualCsv, hasOperation("個人分析CSV保存") ? "保存済み" : "未保存"],
-    ["取込チェックCSV", names.importCheck, "任意"],
+    ["取込チェックCSV", names.importCheck, hasOperation("取込チェックCSV保存") ? "保存済み" : "未保存"],
     ["実施ログCSV", names.operationLog, hasOperation("実施ログCSV") ? "保存済み" : "未保存"],
     ["保管ファイル一覧CSV", names.retentionManifest, "このファイル"],
   ];
@@ -781,6 +781,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
     statusItem("本人向け結果を開く", hasOperation("本人向け結果"), scoreableCount ? `対象 ${scoreableCount}件` : "判定可能な回答なし"),
     statusItem("企業向け集団分析を開く", hasOperation("企業向け集団分析"), groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件` : "10人以上の集団なし"),
     statusItem("実施記録を開く", hasOperation("実施記録"), "PDF保存して保管"),
+    statusItem("取込チェックCSV", hasOperation("取込チェックCSV保存"), "読込結果の確認用"),
     statusItem("実施ログCSV", hasOperation("実施ログCSV"), operationLog.length ? `${operationLog.length}件のログ` : "ログなし"),
     statusItem("保管ファイル一覧CSV", hasOperation("保管ファイル一覧CSV"), "監査用フォルダの台帳"),
   ];
@@ -2604,6 +2605,7 @@ function handleDownloadGoogleImportCheck() {
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
   setGoogleImportMessage(`取込チェックCSVを保存しました。実施ID: ${currentRunId || "-"}`, "success");
+  addOperationLog("取込チェックCSV保存", { rows: googleImportRows.length });
 }
 
 function handleDownloadIndividualAnalysisCsv() {
