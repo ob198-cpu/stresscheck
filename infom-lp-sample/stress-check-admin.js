@@ -1349,6 +1349,11 @@ function downloadTextFile(filename, content, type = "text/html;charset=utf-8") {
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
+function fileNameWithRunId(baseName, extension) {
+  const suffix = safeFileName(currentRunId || "no-run-id");
+  return `${baseName}_${suffix}.${extension}`;
+}
+
 function openHtmlDocument(content) {
   const blob = new Blob([content], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -2498,12 +2503,12 @@ function handleDownloadGoogleImportCheck() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "google-form-import-check.csv";
+  link.download = fileNameWithRunId("google-form-import-check", "csv");
   document.body.appendChild(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
-  setGoogleImportMessage("取込チェックCSVを保存しました。ブラウザのダウンロード先を確認してください。", "success");
+  setGoogleImportMessage(`取込チェックCSVを保存しました。実施ID: ${currentRunId || "-"}`, "success");
 }
 
 function handleDownloadIndividualAnalysisCsv() {
@@ -2515,12 +2520,12 @@ function handleDownloadIndividualAnalysisCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "stress-check-individual-analysis-mhlw57.csv";
+  link.download = fileNameWithRunId("stress-check-individual-analysis-mhlw57", "csv");
   document.body.appendChild(link);
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
-  setGoogleImportMessage("個人分析CSVを保存しました。厚労省57項目の素点換算表方式による評価点と高ストレス者判定を出力しています。", "success");
+  setGoogleImportMessage(`個人分析CSVを保存しました。実施ID: ${currentRunId || "-"}。厚労省57項目の素点換算表方式による評価点と高ストレス者判定を出力しています。`, "success");
   addOperationLog("個人分析CSV保存");
 }
 
@@ -2578,7 +2583,7 @@ function handleDownloadImplementationRecordHtml() {
 function handleDownloadOperationLogCsv() {
   if (!operationLog.length) return;
   addOperationLog("実施ログCSV保存", { rows: operationLog.length });
-  downloadTextFile("stress-check-operation-log.csv", `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
+  downloadTextFile(fileNameWithRunId("stress-check-operation-log", "csv"), `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
 }
 
 async function loadSummary() {
