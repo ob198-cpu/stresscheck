@@ -58,6 +58,8 @@ let submittedMap = new Map();
 let submittedCodeMap = new Map();
 let operationLog = [];
 let currentRunId = "";
+let currentCsvSourceName = "";
+let currentCsvHash = "";
 
 const localSettingsKey = "stressCheckAdminOperationSettings";
 
@@ -626,6 +628,13 @@ function createRunId(prefix = "SC") {
   return `${prefix}-${timestamp}-${suffix}`;
 }
 
+async function sha256Text(text) {
+  if (!crypto?.subtle) return "";
+  const bytes = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function operationLogDetail(detail = {}) {
   const blockedKeys = new Set([
     "respondentId",
@@ -689,6 +698,8 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["項目", "値"],
     ["実施ID", currentRunId || ""],
     ["推奨保管フォルダ名", recommendedFolderName()],
+    ["CSVファイル名", currentCsvSourceName || ""],
+    ["CSV SHA-256", currentCsvHash || ""],
     ["作成日時", new Date().toISOString()],
     ["CSV読込件数", rows.length],
     ["判定可能件数", scoreableCount],
@@ -764,6 +775,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
   const names = recommendedFileNames(rows);
   const items = [
     statusItem("CSV確認", rows.length > 0, `${rows.length}件 / 実施ID ${currentRunId || "-"}`),
+    statusItem("CSV元照合情報", Boolean(currentCsvHash), currentCsvHash ? `${currentCsvSourceName || "-"} / SHA-256 ${currentCsvHash.slice(0, 12)}...` : "未取得"),
     statusItem("本人通知・面接指導案内の入力", !missingGuidance.length, missingGuidance.length ? `${missingGuidance.length}項目未入力` : "入力済み"),
     statusItem("実施前チェック", uncheckedCount === 0, uncheckedCount ? `${uncheckedCount}項目未確認` : "全項目確認済み"),
     statusItem("本人向け結果を開く", hasOperation("本人向け結果"), scoreableCount ? `対象 ${scoreableCount}件` : "判定可能な回答なし"),
@@ -1765,6 +1777,7 @@ function buildImplementationRecordHtml(rows) {
       <div class="box"><span>高ストレス該当</span><strong>${escapeHtml(highStressCount)}</strong></div>
       <div class="box"><span>実施ID</span><strong style="font-size:1rem">${escapeHtml(currentRunId || "-")}</strong></div>
       <div class="box"><span>推奨保管フォルダ</span><strong style="font-size:1rem">${escapeHtml(recommendedFolderName())}</strong></div>
+      <div class="box"><span>CSV SHA-256</span><strong style="font-size:0.82rem">${escapeHtml(currentCsvHash || "-")}</strong></div>
     </div>
     <div class="notice">
       <strong>運用確認</strong>
@@ -2062,6 +2075,7 @@ function renderGoogleImportPreview(rows) {
   googleImportPreview.innerHTML = [
     `<div class="suppressed-item"><strong>確認サマリー</strong><span>回答 ${rows.length}件 / 設問 ${answerCount}/57 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
     `<div class="suppressed-item"><strong>実施ID</strong><span>${escapeHtml(currentRunId || "-")}</span></div>`,
+    `<div class="suppressed-item"><strong>CSV元照合</strong><span>${escapeHtml(currentCsvSourceName || "-")} / SHA-256 ${escapeHtml(currentCsvHash || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>次にやること</strong><span>${escapeHtml(nextAction)}</span></div>`,
     warningLabels.length ? `<div class="suppressed-item"><strong>不足している基本情報</strong><span>${escapeHtml(warningLabels.join("、"))}</span></div>` : `<div class="suppressed-item"><strong>不足している基本情報</strong><span>ありません</span></div>`,
     issueLabels.length || answerMissingRows ? `<div class="suppressed-item"><strong>保存不可の理由</strong><span>${escapeHtml(issueLabels.join("、") || "回答不足があります")}</span></div>` : `<div class="suppressed-item"><strong>保存不可の理由</strong><span>ありません</span></div>`,
@@ -2095,6 +2109,8 @@ async function handlePreviewGoogleCsv() {
   try {
     const text = await file.text();
     currentRunId = createRunId("SC");
+    currentCsvSourceName = file.name || "selected-csv";
+    currentCsvHash = await sha256Text(text);
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -2106,7 +2122,7 @@ async function handlePreviewGoogleCsv() {
     const matchedRows = googleImportRows.filter((row) => row.matchedRoster).length;
     const type = blockedRows.length ? "error" : "success";
     setGoogleImportMessage(`${googleImportRows.length}件を確認しました。名簿照合 ${matchedRows}件。${blockedRows.length ? "保存できない行があります。" : "この内容でローカル保存できます。"}`, type);
-    addOperationLog("CSV確認", { matchedRows, blockedRows: blockedRows.length });
+    addOperationLog("CSV確認", { matchedRows, blockedRows: blockedRows.length, csvHash: currentCsvHash.slice(0, 12) });
   } catch (error) {
     setGoogleImportMessage(`CSV確認に失敗しました。理由: ${error.message}`, "error");
     renderGoogleImportPreview([]);
@@ -2119,6 +2135,8 @@ async function handleLoadSampleCsv() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     currentRunId = createRunId("SAMPLE");
+    currentCsvSourceName = "sample-group-analysis.csv";
+    currentCsvHash = await sha256Text(text);
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -2126,7 +2144,7 @@ async function handleLoadSampleCsv() {
       return;
     }
     setGoogleImportMessage("サンプルCSVを読み込みました。本人向け結果・企業向け集団分析・実施記録を試せます。", "success");
-    addOperationLog("サンプルCSV確認", { rows: googleImportRows.length });
+    addOperationLog("サンプルCSV確認", { rows: googleImportRows.length, csvHash: currentCsvHash.slice(0, 12) });
   } catch (error) {
     setGoogleImportMessage(`サンプルCSVの読み込みに失敗しました。理由: ${error.message}`, "error");
   }
@@ -2756,6 +2774,8 @@ individualAnalysisPreview.addEventListener("click", (event) => {
 });
 googleCsvFile.addEventListener("change", () => {
   currentRunId = "";
+  currentCsvSourceName = "";
+  currentCsvHash = "";
   googleImportRows = [];
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
