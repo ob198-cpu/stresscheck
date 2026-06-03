@@ -4085,6 +4085,77 @@ textarea {
   font: inherit;
 }
 
+.completion-checklist {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d8e2e8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.completion-checklist > strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.completion-grid {
+  display: grid;
+  gap: 8px;
+}
+
+@media (min-width: 760px) {
+  .completion-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.completion-item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 11px;
+  border: 1px solid #d8e2e8;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.completion-item strong {
+  color: #fff;
+  border-radius: 999px;
+  text-align: center;
+  padding: 3px 8px;
+  font-size: 0.78rem;
+}
+
+.completion-item.ok strong {
+  background: #176c6a;
+}
+
+.completion-item.todo strong {
+  background: #9f1239;
+}
+
+.completion-item span,
+.completion-item em {
+  display: block;
+}
+
+.completion-item span {
+  color: var(--ink);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.completion-item em {
+  color: var(--muted);
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
 @media (min-width: 760px) {
   .implementation-settings {
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -40,6 +40,7 @@ const legalOperationChecklist = document.querySelector("#legalOperationChecklist
 const implementationOperator = document.querySelector("#implementationOperator");
 const interviewContact = document.querySelector("#interviewContact");
 const interviewDeadline = document.querySelector("#interviewDeadline");
+const completionChecklist = document.querySelector("#completionChecklist");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
@@ -626,6 +627,7 @@ function addOperationLog(action, detail = {}) {
     detail: Object.entries(detail).map(([key, value]) => `${key}=${value}`).join(" / "),
   });
   if (downloadOperationLogCsv) downloadOperationLogCsv.disabled = !operationLog.length;
+  renderCompletionChecklist(googleImportRows);
 }
 
 function buildOperationLogCsv() {
@@ -650,6 +652,48 @@ function getImplementationSettings() {
     interviewContact: cleanText(interviewContact?.value),
     interviewDeadline: cleanText(interviewDeadline?.value),
   };
+}
+
+function hasOperation(actionPrefix) {
+  return operationLog.some((entry) => entry.action.startsWith(actionPrefix));
+}
+
+function statusItem(label, done, detail = "") {
+  return `
+    <div class="completion-item ${done ? "ok" : "todo"}">
+      <strong>${done ? "完了" : "未完了"}</strong>
+      <span>${escapeHtml(label)}${detail ? `<em>${escapeHtml(detail)}</em>` : ""}</span>
+    </div>
+  `;
+}
+
+function renderCompletionChecklist(rows = googleImportRows) {
+  if (!completionChecklist) return;
+  if (!rows.length) {
+    completionChecklist.hidden = true;
+    completionChecklist.innerHTML = "";
+    return;
+  }
+  completionChecklist.hidden = false;
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const settings = getImplementationSettings();
+  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]);
+  const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
+  const items = [
+    statusItem("CSV確認", rows.length > 0, `${rows.length}件`),
+    statusItem("本人通知・面接指導案内の入力", !missingGuidance.length, missingGuidance.length ? `${missingGuidance.length}項目未入力` : "入力済み"),
+    statusItem("実施前チェック", uncheckedCount === 0, uncheckedCount ? `${uncheckedCount}項目未確認` : "全項目確認済み"),
+    statusItem("本人向け結果を開く", hasOperation("本人向け結果"), scoreableCount ? `対象 ${scoreableCount}件` : "判定可能な回答なし"),
+    statusItem("企業向け集団分析を開く", hasOperation("企業向け集団分析"), groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件` : "10人以上の集団なし"),
+    statusItem("実施記録を開く", hasOperation("実施記録"), "PDF保存して保管"),
+    statusItem("実施ログCSV", hasOperation("実施ログCSV"), operationLog.length ? `${operationLog.length}件のログ` : "ログなし"),
+  ];
+  completionChecklist.innerHTML = `
+    <strong>完了状況</strong>
+    <div class="completion-grid">${items.join("")}</div>
+  `;
 }
 
 function saveOperationSettings() {
@@ -1750,6 +1794,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (!individualAnalysisPreview) return;
   if (!rows.length) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
+    renderCompletionChecklist([]);
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
@@ -1771,6 +1816,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
   if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = !rows.length;
+  renderCompletionChecklist(rows);
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
@@ -2499,6 +2545,7 @@ function handleDownloadImplementationRecordHtml() {
 
 function handleDownloadOperationLogCsv() {
   if (!operationLog.length) return;
+  addOperationLog("実施ログCSV保存", { rows: operationLog.length });
   downloadTextFile("stress-check-operation-log.csv", `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
 }
 
