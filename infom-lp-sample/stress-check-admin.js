@@ -663,6 +663,10 @@ function buildOperationLogCsv() {
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function recommendedFolderName() {
+  return `stress-check_${safeFileName(currentRunId || "no-run-id")}`;
+}
+
 function buildRetentionManifestCsv(rows = googleImportRows) {
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
@@ -684,6 +688,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
   const output = [
     ["項目", "値"],
     ["実施ID", currentRunId || ""],
+    ["推奨保管フォルダ名", recommendedFolderName()],
     ["作成日時", new Date().toISOString()],
     ["CSV読込件数", rows.length],
     ["判定可能件数", scoreableCount],
@@ -771,6 +776,8 @@ function renderCompletionChecklist(rows = googleImportRows) {
     <strong>完了状況</strong>
     <div class="completion-grid">${items.join("")}</div>
     <div class="recommended-files">
+      <strong>推奨保管フォルダ</strong>
+      <span>${escapeHtml(recommendedFolderName())}</span>
       <strong>推奨保存名</strong>
       <span>${escapeHtml(names.personal)}</span>
       <span>${escapeHtml(names.company)}</span>
@@ -1757,6 +1764,7 @@ function buildImplementationRecordHtml(rows) {
       <div class="box"><span>判定不可</span><strong>${escapeHtml(analyses.length - scoreableCount)}</strong></div>
       <div class="box"><span>高ストレス該当</span><strong>${escapeHtml(highStressCount)}</strong></div>
       <div class="box"><span>実施ID</span><strong style="font-size:1rem">${escapeHtml(currentRunId || "-")}</strong></div>
+      <div class="box"><span>推奨保管フォルダ</span><strong style="font-size:1rem">${escapeHtml(recommendedFolderName())}</strong></div>
     </div>
     <div class="notice">
       <strong>運用確認</strong>
