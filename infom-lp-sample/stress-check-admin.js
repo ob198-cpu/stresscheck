@@ -31,6 +31,7 @@ const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportC
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
+const downloadImplementationRecordHtml = document.querySelector("#downloadImplementationRecordHtml");
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
@@ -1466,6 +1467,117 @@ function buildCompanyGroupHtml(rows) {
 </html>`;
 }
 
+function buildImplementationRecordHtml(rows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const blockedRows = rows.filter((row) => importIssues(row).length);
+  const warningRows = rows.filter((row) => importWarnings(row).length);
+  const summary = buildCompanyGroupAnalysis(rows);
+  const visibleRows = [summary.overall, ...summary.visibleGroups].filter(Boolean).map((group) => `
+    <tr>
+      <td>${escapeHtml(group.label)}</td>
+      <td>${escapeHtml(group.count)}</td>
+      <td>${escapeHtml(group.highStressRate)}</td>
+      <td>${escapeHtml(group.healthRisk?.loadControl || "-")}</td>
+      <td>${escapeHtml(group.healthRisk?.support || "-")}</td>
+      <td>${escapeHtml(group.healthRisk?.total || "-")}</td>
+    </tr>
+  `).join("");
+  const suppressedRows = summary.suppressedGroups.map((group) => `
+    <tr><td>${escapeHtml(group.label)}</td><td>${escapeHtml(group.count)}</td><td>10人未満のため数値非表示</td></tr>
+  `).join("");
+  const logRows = operationLog.map((item) => `
+    <tr>
+      <td>${escapeHtml(item.createdAt)}</td>
+      <td>${escapeHtml(item.action)}</td>
+      <td>${escapeHtml(JSON.stringify(item.detail || {}))}</td>
+    </tr>
+  `).join("");
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレスチェック実施記録</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #111827; background: #eef3f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    main { max-width: 1040px; margin: 28px auto; padding: 28px; background: #fff; border: 1px solid #d8e2e8; border-radius: 8px; }
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h1 { font-size: 1.9rem; }
+    h2 { margin-top: 26px; font-size: 1.2rem; }
+    p { margin: 8px 0 0; }
+    .fine { color: #5b6678; font-size: 0.9rem; }
+    .summary { display: grid; gap: 10px; margin-top: 18px; }
+    @media (min-width: 760px) { .summary { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+    .box, .notice { padding: 13px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
+    .box strong, .box span { display: block; }
+    .box strong { font-size: 1.45rem; line-height: 1.1; }
+    .notice { margin-top: 18px; background: #fff8db; }
+    table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+    th { background: #edf5f7; }
+    .screen-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+    .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; border-radius: 0; } .screen-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    <h1>ストレスチェック実施記録</h1>
+    <p class="fine">この帳票は実施者・事務局向けの保管用記録です。本人向け結果そのもの、個人別の高ストレス判定、個人名は載せていません。</p>
+    <div class="summary">
+      <div class="box"><span>CSV読込件数</span><strong>${escapeHtml(rows.length)}</strong></div>
+      <div class="box"><span>判定可能</span><strong>${escapeHtml(scoreableCount)}</strong></div>
+      <div class="box"><span>判定不可</span><strong>${escapeHtml(analyses.length - scoreableCount)}</strong></div>
+      <div class="box"><span>高ストレス該当</span><strong>${escapeHtml(highStressCount)}</strong></div>
+    </div>
+    <div class="notice">
+      <strong>運用確認</strong>
+      <p>本人向け結果は本人へ通知し、本人同意なしに会社側へ個人結果・高ストレス者判定を共有しない運用を前提にしてください。集団分析は10人未満の集団を非表示にしています。</p>
+    </div>
+
+    <h2>読込・補完状況</h2>
+    <table>
+      <tbody>
+        <tr><th>保存不可行</th><td>${escapeHtml(blockedRows.length)}件</td></tr>
+        <tr><th>基本情報不足見込み</th><td>${escapeHtml(warningRows.length)}件</td></tr>
+        <tr><th>57項目認識</th><td>${escapeHtml(googleImportDiagnostics?.recognizedQuestionCount || 0)}/57</td></tr>
+        <tr><th>未認識列</th><td>${escapeHtml((googleImportDiagnostics?.unknownHeaders || []).slice(0, 20).join("、") || "なし")}</td></tr>
+      </tbody>
+    </table>
+
+    <h2>企業向け集団分析サマリー</h2>
+    ${visibleRows ? `
+      <table>
+        <thead><tr><th>集団</th><th>人数</th><th>高ストレス者割合</th><th>量-コントロール</th><th>職場の支援</th><th>総合健康リスク</th></tr></thead>
+        <tbody>${visibleRows}</tbody>
+      </table>
+    ` : `<p>10人以上の表示可能な集団はありません。</p>`}
+
+    <h2>非表示集団</h2>
+    ${suppressedRows ? `
+      <table>
+        <thead><tr><th>集団</th><th>人数</th><th>理由</th></tr></thead>
+        <tbody>${suppressedRows}</tbody>
+      </table>
+    ` : `<p>10人未満で非表示にした集団はありません。</p>`}
+
+    <h2>操作ログ</h2>
+    ${logRows ? `
+      <table>
+        <thead><tr><th>日時</th><th>操作</th><th>詳細</th></tr></thead>
+        <tbody>${logRows}</tbody>
+      </table>
+    ` : `<p>この画面で記録された操作ログはまだありません。</p>`}
+  </main>
+</body>
+</html>`;
+}
+
 const editableBasicFields = [
   ["respondentId", "受検者ID", "text"],
   ["personName", "氏名", "text"],
@@ -1546,6 +1658,7 @@ function renderIndividualAnalysisPreview(rows) {
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
+    if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = true;
     return;
   }
 
@@ -1556,6 +1669,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
+  if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = !rows.length;
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
@@ -2248,6 +2362,16 @@ function handleDownloadCompanyGroupHtml() {
   if (opened) addOperationLog("企業向け集団分析表示", { visibleGroups: summary.visibleGroups.length, suppressedGroups: summary.suppressedGroups.length });
 }
 
+function handleDownloadImplementationRecordHtml() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
+  setGoogleImportMessage(opened ? "実施記録を開きました。開いた画面の「印刷 / PDF保存」で保管してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length });
+}
+
 function handleDownloadOperationLogCsv() {
   if (!operationLog.length) return;
   downloadTextFile("stress-check-operation-log.csv", `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
@@ -2301,6 +2425,7 @@ downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCh
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
+downloadImplementationRecordHtml.addEventListener("click", handleDownloadImplementationRecordHtml);
 downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
@@ -2326,6 +2451,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadCompanyGroupHtml.disabled = true;
+  downloadImplementationRecordHtml.disabled = true;
   downloadOperationLogCsv.disabled = !operationLog.length;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
