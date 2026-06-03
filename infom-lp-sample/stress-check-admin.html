@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=interview-guidance" />
+  <link rel="stylesheet" href="styles.css?v=saved-operation-settings" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -132,7 +132,7 @@
               <textarea id="basicInfoSource" rows="4" placeholder="受検者ID,氏名,性別,職場コード,職場名,部署&#10;SC-0001,山田 太郎,男性,D001,営業部,営業部"></textarea>
             </label>
             <div class="implementation-settings" aria-label="本人通知と面接指導案内">
-              <strong>本人通知・面接指導案内</strong>
+              <strong>本人通知・面接指導案内 <small>このブラウザに自動保存</small></strong>
               <label>
                 <span>実施者名</span>
                 <input id="implementationOperator" type="text" placeholder="例: 産業医 〇〇 / 実施者 〇〇" />
@@ -160,7 +160,7 @@
               <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
             </div>
             <div id="legalOperationChecklist" class="legal-operation-checklist" aria-label="法定運用チェック">
-              <strong>実施前チェック</strong>
+              <strong>実施前チェック <small>このブラウザに自動保存</small></strong>
               <label><input type="checkbox" data-legal-check="実施者・実施事務従事者を決め、個人結果を扱う範囲を限定した">実施者・実施事務従事者を決め、個人結果を扱う範囲を限定した</label>
               <label><input type="checkbox" data-legal-check="本人向け結果は本人に直接通知し、会社担当者へ個人結果を渡さない">本人向け結果は本人に直接通知し、会社担当者へ個人結果を渡さない</label>
               <label><input type="checkbox" data-legal-check="高ストレス者には面接指導の申出方法を案内する">高ストレス者には面接指導の申出方法を案内する</label>
@@ -306,6 +306,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=interview-guidance"></script>
+  <script src="stress-check-admin.js?v=saved-operation-settings"></script>
 </body>
 </html>

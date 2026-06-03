@@ -55,6 +55,8 @@ let submittedMap = new Map();
 let submittedCodeMap = new Map();
 let operationLog = [];
 
+const localSettingsKey = "stressCheckAdminOperationSettings";
+
 const questionOrder = [
   ...Array.from({ length: 17 }, (_, index) => `A${index + 1}`),
   ...Array.from({ length: 29 }, (_, index) => `B${index + 1}`),
@@ -647,6 +649,30 @@ function getImplementationSettings() {
     interviewContact: cleanText(interviewContact?.value),
     interviewDeadline: cleanText(interviewDeadline?.value),
   };
+}
+
+function saveOperationSettings() {
+  const payload = {
+    implementation: getImplementationSettings(),
+    legalChecks: getLegalOperationChecks(),
+  };
+  localStorage.setItem(localSettingsKey, JSON.stringify(payload));
+}
+
+function restoreOperationSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(localSettingsKey) || "{}");
+    const implementation = saved.implementation || {};
+    if (implementationOperator) implementationOperator.value = implementation.operator || "";
+    if (interviewContact) interviewContact.value = implementation.interviewContact || "";
+    if (interviewDeadline) interviewDeadline.value = implementation.interviewDeadline || "";
+    const checkedByLabel = new Map((saved.legalChecks || []).map((item) => [item.label, Boolean(item.checked)]));
+    legalOperationChecklist?.querySelectorAll("[data-legal-check]").forEach((input) => {
+      input.checked = checkedByLabel.get(input.dataset.legalCheck) || false;
+    });
+  } catch {
+    localStorage.removeItem(localSettingsKey);
+  }
 }
 
 function parseCsvText(text) {
@@ -2489,6 +2515,7 @@ adminKeyInput.addEventListener("input", () => {
 });
 
 applyAdminKeyToLinks();
+restoreOperationSettings();
 loadSummary();
 loadStoredResponses();
 generateParticipantUrls.addEventListener("click", handleGenerateParticipantUrls);
@@ -2509,6 +2536,16 @@ downloadImplementationRecordHtml.addEventListener("click", handleDownloadImpleme
 downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
+legalOperationChecklist?.addEventListener("change", () => {
+  saveOperationSettings();
+  if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
+});
+[implementationOperator, interviewContact, interviewDeadline].forEach((input) => {
+  input?.addEventListener("input", () => {
+    saveOperationSettings();
+    if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
+  });
+});
 responseAdminRows.addEventListener("click", (event) => {
   const button = event.target.closest(".response-status-action");
   if (!button) return;

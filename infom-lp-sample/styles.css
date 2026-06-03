@@ -4029,6 +4029,13 @@ textarea {
   font-size: 0.98rem;
 }
 
+.legal-operation-checklist small,
+.implementation-settings small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .legal-operation-checklist label {
   display: grid;
   grid-template-columns: 18px 1fr;
