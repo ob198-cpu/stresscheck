@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=implementation-record" />
+  <link rel="stylesheet" href="styles.css?v=legal-checklist" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -144,6 +144,15 @@
               <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSV</button>
               <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
             </div>
+            <div id="legalOperationChecklist" class="legal-operation-checklist" aria-label="法定運用チェック">
+              <strong>実施前チェック</strong>
+              <label><input type="checkbox" data-legal-check="実施者・実施事務従事者を決め、個人結果を扱う範囲を限定した">実施者・実施事務従事者を決め、個人結果を扱う範囲を限定した</label>
+              <label><input type="checkbox" data-legal-check="本人向け結果は本人に直接通知し、会社担当者へ個人結果を渡さない">本人向け結果は本人に直接通知し、会社担当者へ個人結果を渡さない</label>
+              <label><input type="checkbox" data-legal-check="高ストレス者には面接指導の申出方法を案内する">高ストレス者には面接指導の申出方法を案内する</label>
+              <label><input type="checkbox" data-legal-check="本人同意なしに個人結果・高ストレス判定を事業者へ提供しない">本人同意なしに個人結果・高ストレス判定を事業者へ提供しない</label>
+              <label><input type="checkbox" data-legal-check="集団分析は10人未満の集団を非表示にし、個人が特定されない形で共有する">集団分析は10人未満の集団を非表示にし、個人が特定されない形で共有する</label>
+              <label><input type="checkbox" data-legal-check="実施記録・操作ログ・出力ファイルの保管先と管理者を決めた">実施記録・操作ログ・出力ファイルの保管先と管理者を決めた</label>
+            </div>
             <div id="googleImportMessage" class="form-message info" hidden></div>
             <div id="basicInfoEditor" class="basic-info-editor"></div>
             <div id="individualAnalysisPreview" class="suppressed-list"></div>
@@ -282,6 +291,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=implementation-record"></script>
+  <script src="stress-check-admin.js?v=legal-checklist"></script>
 </body>
 </html>

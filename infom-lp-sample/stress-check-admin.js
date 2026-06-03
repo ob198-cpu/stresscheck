@@ -35,6 +35,7 @@ const downloadImplementationRecordHtml = document.querySelector("#downloadImplem
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
+const legalOperationChecklist = document.querySelector("#legalOperationChecklist");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
@@ -627,6 +628,14 @@ function buildOperationLogCsv() {
     ...operationLog.map((entry) => [entry.timestamp, entry.action, entry.totalRows, entry.scoreableRows, entry.detail]),
   ];
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function getLegalOperationChecks() {
+  if (!legalOperationChecklist) return [];
+  return Array.from(legalOperationChecklist.querySelectorAll("[data-legal-check]")).map((input) => ({
+    label: input.dataset.legalCheck,
+    checked: input.checked,
+  }));
 }
 
 function parseCsvText(text) {
@@ -1474,6 +1483,8 @@ function buildImplementationRecordHtml(rows) {
   const blockedRows = rows.filter((row) => importIssues(row).length);
   const warningRows = rows.filter((row) => importWarnings(row).length);
   const summary = buildCompanyGroupAnalysis(rows);
+  const legalChecks = getLegalOperationChecks();
+  const uncheckedLegalChecks = legalChecks.filter((item) => !item.checked);
   const visibleRows = [summary.overall, ...summary.visibleGroups].filter(Boolean).map((group) => `
     <tr>
       <td>${escapeHtml(group.label)}</td>
@@ -1492,6 +1503,12 @@ function buildImplementationRecordHtml(rows) {
       <td>${escapeHtml(item.createdAt)}</td>
       <td>${escapeHtml(item.action)}</td>
       <td>${escapeHtml(JSON.stringify(item.detail || {}))}</td>
+    </tr>
+  `).join("");
+  const legalCheckRows = legalChecks.map((item) => `
+    <tr>
+      <td>${item.checked ? "確認済み" : "未確認"}</td>
+      <td>${escapeHtml(item.label)}</td>
     </tr>
   `).join("");
 
@@ -1538,7 +1555,14 @@ function buildImplementationRecordHtml(rows) {
     <div class="notice">
       <strong>運用確認</strong>
       <p>本人向け結果は本人へ通知し、本人同意なしに会社側へ個人結果・高ストレス者判定を共有しない運用を前提にしてください。集団分析は10人未満の集団を非表示にしています。</p>
+      <p>${uncheckedLegalChecks.length ? `未確認の運用チェックが ${uncheckedLegalChecks.length}件あります。実施完了前に確認してください。` : "実施前チェックはすべて確認済みです。"}</p>
     </div>
+
+    <h2>実施前チェック</h2>
+    <table>
+      <thead><tr><th>状態</th><th>確認項目</th></tr></thead>
+      <tbody>${legalCheckRows || `<tr><td colspan="2">チェック項目を取得できませんでした。</td></tr>`}</tbody>
+    </table>
 
     <h2>読込・補完状況</h2>
     <table>
@@ -2367,9 +2391,10 @@ function handleDownloadImplementationRecordHtml() {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
     return;
   }
+  const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
   setGoogleImportMessage(opened ? "実施記録を開きました。開いた画面の「印刷 / PDF保存」で保管してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length });
+  if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length, uncheckedLegalChecks: uncheckedCount });
 }
 
 function handleDownloadOperationLogCsv() {
