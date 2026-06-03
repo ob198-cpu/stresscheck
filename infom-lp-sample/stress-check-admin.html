@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=legal-checklist" />
+  <link rel="stylesheet" href="styles.css?v=interview-guidance" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -131,6 +131,21 @@
               <span>任意: 基本情報補完CSV</span>
               <textarea id="basicInfoSource" rows="4" placeholder="受検者ID,氏名,性別,職場コード,職場名,部署&#10;SC-0001,山田 太郎,男性,D001,営業部,営業部"></textarea>
             </label>
+            <div class="implementation-settings" aria-label="本人通知と面接指導案内">
+              <strong>本人通知・面接指導案内</strong>
+              <label>
+                <span>実施者名</span>
+                <input id="implementationOperator" type="text" placeholder="例: 産業医 〇〇 / 実施者 〇〇" />
+              </label>
+              <label>
+                <span>面接指導の申出先</span>
+                <input id="interviewContact" type="text" placeholder="例: 実施者メール / 産業保健窓口 / 担当者名" />
+              </label>
+              <label>
+                <span>申出期限</span>
+                <input id="interviewDeadline" type="text" placeholder="例: 結果通知日から30日以内" />
+              </label>
+            </div>
             <div class="participant-actions analysis-actions">
               <button type="button" id="previewGoogleCsv" class="btn btn-outline">2. CSVを確認</button>
               <button type="button" id="downloadIndividualAnalysisCsv" class="btn btn-primary" disabled>3. 個人分析CSVを保存</button>
@@ -291,6 +306,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=legal-checklist"></script>
+  <script src="stress-check-admin.js?v=interview-guidance"></script>
 </body>
 </html>

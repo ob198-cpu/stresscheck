@@ -36,6 +36,9 @@ const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const legalOperationChecklist = document.querySelector("#legalOperationChecklist");
+const implementationOperator = document.querySelector("#implementationOperator");
+const interviewContact = document.querySelector("#interviewContact");
+const interviewDeadline = document.querySelector("#interviewDeadline");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
@@ -638,6 +641,14 @@ function getLegalOperationChecks() {
   }));
 }
 
+function getImplementationSettings() {
+  return {
+    operator: cleanText(implementationOperator?.value),
+    interviewContact: cleanText(interviewContact?.value),
+    interviewDeadline: cleanText(interviewDeadline?.value),
+  };
+}
+
 function parseCsvText(text) {
   const rows = [];
   let row = [];
@@ -1076,6 +1087,7 @@ function profileRadarSvg(analysis) {
 
 function buildPersonalResultHtml(record) {
   const analysis = buildMhlwIndividualAnalysis(record);
+  const settings = getImplementationSettings();
   const titleName = analysis.personName || analysis.respondentId || analysis.participantCode || "受検者";
   const scaleRows = analysis.scales.map((scale) => `
     <tr>
@@ -1088,6 +1100,25 @@ function buildPersonalResultHtml(record) {
   `).join("");
   const highStressLabel = analysis.highStress ? "該当" : "非該当";
   const resultClass = analysis.highStress ? "attention" : "stable";
+  const interviewNotice = analysis.highStress
+    ? `
+      <h2>医師による面接指導の申出</h2>
+      <div class="notice attention">
+        <p>この結果は高ストレス者判定に該当します。医師による面接指導を希望する場合は、下記の申出先へ連絡してください。</p>
+        <div class="meta">
+          <div><strong>申出先</strong><br>${escapeHtml(settings.interviewContact || "実施者からの案内を確認してください")}</div>
+          <div><strong>申出期限</strong><br>${escapeHtml(settings.interviewDeadline || "実施者からの案内を確認してください")}</div>
+        </div>
+        <p class="fine">面接指導の申出を行う場合、法令・制度運用上、事業者が面接指導の実施に必要な範囲で結果情報を取り扱うことがあります。詳細は実施者の案内を確認してください。</p>
+      </div>
+    `
+    : `
+      <h2>相談先</h2>
+      <div class="notice stable">
+        <p>高ストレス者判定には該当しませんが、心身の不調や働き方について相談したい場合は、実施者または産業保健窓口に相談してください。</p>
+        <p class="fine">相談先: ${escapeHtml(settings.interviewContact || "実施者からの案内を確認してください")}</p>
+      </div>
+    `;
 
   return `<!DOCTYPE html>
 <html lang="ja">
@@ -1133,6 +1164,8 @@ function buildPersonalResultHtml(record) {
       <div><strong>受検者ID</strong><br>${escapeHtml(analysis.respondentId || "-")}</div>
       <div><strong>職場</strong><br>${escapeHtml(analysis.workplaceName || analysis.workplaceCode || analysis.department || "-")}</div>
       <div><strong>性別</strong><br>${escapeHtml(analysis.gender || "-")}</div>
+      <div><strong>実施者</strong><br>${escapeHtml(settings.operator || "-")}</div>
+      <div><strong>通知日</strong><br>${escapeHtml(new Date().toLocaleDateString("ja-JP"))}</div>
     </div>
     <div class="notice ${resultClass}">
       ${escapeHtml(personalRiskText(analysis))}
@@ -1145,6 +1178,7 @@ function buildPersonalResultHtml(record) {
       <div class="box"><span>要因+サポート12尺度</span><strong>${escapeHtml(analysis.factorSupportTotal)}</strong><span class="fine">26点以下で条件確認</span></div>
     </div>
 
+    ${interviewNotice}
     ${profileRadarSvg(analysis)}
     <h2>尺度別の結果</h2>
     <p class="fine">評価点は1〜5点です。1点に近いほどストレス状況がよくない方向、5点に近いほどよい方向を示します。</p>
@@ -1484,6 +1518,7 @@ function buildImplementationRecordHtml(rows) {
   const warningRows = rows.filter((row) => importWarnings(row).length);
   const summary = buildCompanyGroupAnalysis(rows);
   const legalChecks = getLegalOperationChecks();
+  const settings = getImplementationSettings();
   const uncheckedLegalChecks = legalChecks.filter((item) => !item.checked);
   const visibleRows = [summary.overall, ...summary.visibleGroups].filter(Boolean).map((group) => `
     <tr>
@@ -1562,6 +1597,15 @@ function buildImplementationRecordHtml(rows) {
     <table>
       <thead><tr><th>状態</th><th>確認項目</th></tr></thead>
       <tbody>${legalCheckRows || `<tr><td colspan="2">チェック項目を取得できませんでした。</td></tr>`}</tbody>
+    </table>
+
+    <h2>本人通知・面接指導案内</h2>
+    <table>
+      <tbody>
+        <tr><th>実施者名</th><td>${escapeHtml(settings.operator || "未入力")}</td></tr>
+        <tr><th>面接指導の申出先</th><td>${escapeHtml(settings.interviewContact || "未入力")}</td></tr>
+        <tr><th>申出期限</th><td>${escapeHtml(settings.interviewDeadline || "未入力")}</td></tr>
+      </tbody>
     </table>
 
     <h2>読込・補完状況</h2>
@@ -1690,6 +1734,12 @@ function renderIndividualAnalysisPreview(rows) {
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const settings = getImplementationSettings();
+  const missingGuidance = [
+    !settings.operator ? "実施者名" : "",
+    !settings.interviewContact ? "面接指導の申出先" : "",
+    !settings.interviewDeadline ? "申出期限" : "",
+  ].filter(Boolean);
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
@@ -1697,8 +1747,9 @@ function renderIndividualAnalysisPreview(rows) {
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
-    `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果HTMLを保存」で、判定可能な受検者ごとに1人1ファイルを保存できます。" : "本人向け結果を出すには、57項目回答と性別が必要です。"}</span></div>`,
+    `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果を開く」で、判定可能な受検者の本人通知画面を開けます。" : "本人向け結果を出すには、57項目回答と性別が必要です。"}</span></div>`,
     `<div class="suppressed-item"><strong>企業向け集団分析</strong><span>${groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `会社全体または10人以上の集団を表示できます。表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示集団 ${groupAnalysis.suppressedGroups.length}件。` : "企業向け集団分析を出すには、判定可能な回答が10人以上必要です。"}</span></div>`,
+    `<div class="suppressed-item"><strong>本人通知・面接指導案内</strong><span>${missingGuidance.length ? `未入力: ${missingGuidance.join("、")}。本人向け結果を出す前に入力してください。` : "実施者名・申出先・申出期限を本人向け結果に反映します。"}</span></div>`,
     `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
     ...analyses.slice(0, 12).map((analysis) => {
       const label = analysis.canScore ? (analysis.highStress ? "高ストレス者判定該当" : "非該当") : "判定不可";
@@ -2356,6 +2407,8 @@ function handleDownloadPersonalResultHtml() {
     return;
   }
   const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
+  const settings = getImplementationSettings();
+  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
   if (!scoreableRows.length) {
     setGoogleImportMessage("本人向け結果を出力できる行がありません。57項目回答と性別を確認してください。", "error");
     return;
@@ -2363,12 +2416,12 @@ function handleDownloadPersonalResultHtml() {
   if (scoreableRows.length === 1) {
     const opened = openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]));
     setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。下の本人別ボタンからもう一度開いてください。", opened ? "success" : "error");
-    if (opened) addOperationLog("本人向け結果表示", { count: 1 });
+    if (opened) addOperationLog("本人向け結果表示", { count: 1, missingGuidance });
     return;
   }
   const opened = openHtmlDocument(buildAllPersonalResultsHtml(scoreableRows));
   setGoogleImportMessage(opened ? "本人向け結果の一括印刷画面を開きました。必要に応じて、下の一覧から1人ずつ開くこともできます。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  if (opened) addOperationLog("本人向け結果一括表示", { count: scoreableRows.length });
+  if (opened) addOperationLog("本人向け結果一括表示", { count: scoreableRows.length, missingGuidance });
 }
 
 function handleDownloadCompanyGroupHtml() {
@@ -2392,9 +2445,11 @@ function handleDownloadImplementationRecordHtml() {
     return;
   }
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
+  const settings = getImplementationSettings();
+  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
   const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
   setGoogleImportMessage(opened ? "実施記録を開きました。開いた画面の「印刷 / PDF保存」で保管してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length, uncheckedLegalChecks: uncheckedCount });
+  if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length, uncheckedLegalChecks: uncheckedCount, missingGuidance });
 }
 
 function handleDownloadOperationLogCsv() {
@@ -2466,7 +2521,9 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   if (!row) return;
   const opened = openHtmlDocument(buildPersonalResultHtml(row));
   setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, respondentId: row.respondentId || row.participantCode || "" });
+  const settings = getImplementationSettings();
+  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, respondentId: row.respondentId || row.participantCode || "", missingGuidance });
 });
 googleCsvFile.addEventListener("change", () => {
   googleImportRows = [];

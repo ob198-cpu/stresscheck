@@ -4044,6 +4044,50 @@ textarea {
   accent-color: var(--teal-dark);
 }
 
+.implementation-settings {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d8e2e8;
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  gap: 12px;
+}
+
+.implementation-settings strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+
+.implementation-settings label {
+  display: grid;
+  gap: 6px;
+}
+
+.implementation-settings span {
+  color: var(--teal-dark);
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.implementation-settings input {
+  min-height: 42px;
+  border: 1px solid #cfdbe3;
+  border-radius: 8px;
+  padding: 9px 11px;
+  font: inherit;
+}
+
+@media (min-width: 760px) {
+  .implementation-settings {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .implementation-settings strong {
+    grid-column: 1 / -1;
+  }
+}
+
 .analysis-supplement {
   display: grid;
   gap: 8px;
