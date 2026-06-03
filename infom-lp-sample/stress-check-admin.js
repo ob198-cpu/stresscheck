@@ -691,6 +691,18 @@ function statusItem(label, done, detail = "") {
   `;
 }
 
+function recommendedFileNames(rows = googleImportRows) {
+  const scoreableCount = rows.filter((row) => buildMhlwIndividualAnalysis(row).canScore).length;
+  return {
+    personal: fileNameWithRunId(scoreableCount > 1 ? "personal-results-print" : "personal-result", "pdf"),
+    company: fileNameWithRunId("company-group-analysis", "pdf"),
+    implementation: fileNameWithRunId("implementation-record", "pdf"),
+    importCheck: fileNameWithRunId("google-form-import-check", "csv"),
+    individualCsv: fileNameWithRunId("stress-check-individual-analysis-mhlw57", "csv"),
+    operationLog: fileNameWithRunId("stress-check-operation-log", "csv"),
+  };
+}
+
 function renderCompletionChecklist(rows = googleImportRows) {
   if (!completionChecklist) return;
   if (!rows.length) {
@@ -705,6 +717,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
   const settings = getImplementationSettings();
   const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]);
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
+  const names = recommendedFileNames(rows);
   const items = [
     statusItem("CSV確認", rows.length > 0, `${rows.length}件 / 実施ID ${currentRunId || "-"}`),
     statusItem("本人通知・面接指導案内の入力", !missingGuidance.length, missingGuidance.length ? `${missingGuidance.length}項目未入力` : "入力済み"),
@@ -717,6 +730,14 @@ function renderCompletionChecklist(rows = googleImportRows) {
   completionChecklist.innerHTML = `
     <strong>完了状況</strong>
     <div class="completion-grid">${items.join("")}</div>
+    <div class="recommended-files">
+      <strong>推奨保存名</strong>
+      <span>${escapeHtml(names.personal)}</span>
+      <span>${escapeHtml(names.company)}</span>
+      <span>${escapeHtml(names.implementation)}</span>
+      <span>${escapeHtml(names.individualCsv)}</span>
+      <span>${escapeHtml(names.operationLog)}</span>
+    </div>
   `;
 }
 
@@ -1195,6 +1216,7 @@ function buildPersonalResultHtml(record) {
   `).join("");
   const highStressLabel = analysis.highStress ? "該当" : "非該当";
   const resultClass = analysis.highStress ? "attention" : "stable";
+  const names = recommendedFileNames([record]);
   const interviewNotice = analysis.highStress
     ? `
       <h2>医師による面接指導の申出</h2>
@@ -1253,7 +1275,7 @@ function buildPersonalResultHtml(record) {
   <main>
     <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック個人結果</h1>
-    <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。</p>
+    <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。PDF保存名の例: ${escapeHtml(names.personal)}</p>
     <div class="meta">
       <div><strong>氏名</strong><br>${escapeHtml(analysis.personName || "-")}</div>
       <div><strong>受検者ID</strong><br>${escapeHtml(analysis.respondentId || "-")}</div>
@@ -1292,6 +1314,7 @@ function buildPersonalResultHtml(record) {
 }
 
 function buildAllPersonalResultsHtml(rows) {
+  const names = recommendedFileNames(rows);
   const documents = rows
     .filter((row) => buildMhlwIndividualAnalysis(row).canScore)
     .map((row) => buildPersonalResultHtml(row).match(/<main>([\s\S]*?)<\/main>/)?.[1] || "")
@@ -1310,7 +1333,8 @@ function buildAllPersonalResultsHtml(rows) {
     h1 { font-size: 1.8rem; }
     h2 { margin-top: 24px; font-size: 1.18rem; }
     p { margin: 8px 0 0; }
-    .screen-actions { position: sticky; top: 0; z-index: 3; max-width: 920px; margin: 0 auto; padding: 12px; display: flex; justify-content: flex-end; background: rgba(238, 243, 246, 0.92); }
+    .screen-actions { position: sticky; top: 0; z-index: 3; max-width: 920px; margin: 0 auto; padding: 12px; display: flex; gap: 12px; align-items: center; justify-content: flex-end; background: rgba(238, 243, 246, 0.92); }
+    .screen-actions span { color: #526173; font-size: 0.88rem; font-weight: 700; }
     .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
     .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
     .meta div, .notice, .box, .chart-card { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
@@ -1331,7 +1355,7 @@ function buildAllPersonalResultsHtml(rows) {
   </style>
 </head>
 <body>
-  <div class="screen-actions"><button type="button" onclick="window.print()">全員分を印刷 / PDF保存</button></div>
+  <div class="screen-actions"><span>PDF保存名の例: ${escapeHtml(names.personal)}</span><button type="button" onclick="window.print()">全員分を印刷 / PDF保存</button></div>
   ${documents.map((body) => `<main>${body.replace(/<div class="screen-actions">[\s\S]*?<\/div>/, "")}</main>`).join("")}
 </body>
 </html>`;
@@ -1503,6 +1527,7 @@ function groupJudgementSvg(summary, mode) {
 
 function buildCompanyGroupHtml(rows) {
   const summary = buildCompanyGroupAnalysis(rows);
+  const names = recommendedFileNames(rows);
   const visibleRows = summary.visibleGroups.map((group) => `
     <tr>
       <td>${escapeHtml(group.label)}</td>
@@ -1558,7 +1583,7 @@ function buildCompanyGroupHtml(rows) {
   <main>
     <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック集団分析結果</h1>
-    <p class="fine">企業担当者向け資料です。個人名、受検者ID、個人別の高ストレス判定は含めていません。10人未満の集団は個人特定防止のため数値を非表示にしています。</p>
+    <p class="fine">企業担当者向け資料です。個人名、受検者ID、個人別の高ストレス判定は含めていません。10人未満の集団は個人特定防止のため数値を非表示にしています。PDF保存名の例: ${escapeHtml(names.company)}</p>
     <div class="summary">
       <div class="box"><span>読取件数</span><strong>${escapeHtml(summary.totalRows)}</strong></div>
       <div class="box"><span>分析対象</span><strong>${escapeHtml(summary.scoreableRows)}</strong></div>
@@ -1613,6 +1638,7 @@ function buildCompanyGroupHtml(rows) {
 }
 
 function buildImplementationRecordHtml(rows) {
+  const names = recommendedFileNames(rows);
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
@@ -1683,7 +1709,7 @@ function buildImplementationRecordHtml(rows) {
   <main>
     <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック実施記録</h1>
-    <p class="fine">この帳票は実施者・事務局向けの保管用記録です。本人向け結果そのもの、個人別の高ストレス判定、個人名は載せていません。</p>
+    <p class="fine">この帳票は実施者・事務局向けの保管用記録です。本人向け結果そのもの、個人別の高ストレス判定、個人名は載せていません。PDF保存名の例: ${escapeHtml(names.implementation)}</p>
     <div class="summary">
       <div class="box"><span>CSV読込件数</span><strong>${escapeHtml(rows.length)}</strong></div>
       <div class="box"><span>判定可能</span><strong>${escapeHtml(scoreableCount)}</strong></div>

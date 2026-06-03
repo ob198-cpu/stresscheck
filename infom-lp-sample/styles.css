@@ -4156,6 +4156,31 @@ textarea {
   font-size: 0.82rem;
 }
 
+.recommended-files {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #d8e2e8;
+  display: grid;
+  gap: 6px;
+}
+
+.recommended-files strong,
+.recommended-files span {
+  display: block;
+}
+
+.recommended-files strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.recommended-files span {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 760px) {
   .implementation-settings {
     grid-template-columns: repeat(3, minmax(0, 1fr));
