@@ -33,6 +33,7 @@ const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResu
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const downloadImplementationRecordHtml = document.querySelector("#downloadImplementationRecordHtml");
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
+const loadSampleCsv = document.querySelector("#loadSampleCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const legalOperationChecklist = document.querySelector("#legalOperationChecklist");
@@ -1953,6 +1954,24 @@ async function handlePreviewGoogleCsv() {
   }
 }
 
+async function handleLoadSampleCsv() {
+  try {
+    const response = await fetch("sample-group-analysis.csv", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    googleImportRows = parseGoogleFormCsv(text);
+    renderGoogleImportPreview(googleImportRows);
+    if (!googleImportRows.length) {
+      setGoogleImportMessage("サンプルCSVを読み込めませんでした。", "error");
+      return;
+    }
+    setGoogleImportMessage("サンプルCSVを読み込みました。本人向け結果・企業向け集団分析・実施記録を試せます。", "success");
+    addOperationLog("サンプルCSV確認", { rows: googleImportRows.length });
+  } catch (error) {
+    setGoogleImportMessage(`サンプルCSVの読み込みに失敗しました。理由: ${error.message}`, "error");
+  }
+}
+
 async function handleImportGoogleCsv() {
   if (isPublicStaticPage) {
     setGoogleImportMessage("GitHub Pages版ではサーバー保存はできません。CSV確認と取込チェックCSV保存はこの画面で使えます。回答を保存する場合はローカル版を起動してください。", "info");
@@ -2526,6 +2545,7 @@ downloadCompanySummaryCsv.addEventListener("click", handleDownloadCompanySummary
 printParticipantQrSheet.addEventListener("click", handlePrintParticipantQrSheet);
 printPendingQrSheet.addEventListener("click", handlePrintPendingQrSheet);
 previewGoogleCsv.addEventListener("click", handlePreviewGoogleCsv);
+loadSampleCsv.addEventListener("click", handleLoadSampleCsv);
 importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
