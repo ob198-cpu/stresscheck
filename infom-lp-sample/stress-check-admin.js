@@ -33,6 +33,7 @@ const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResu
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const downloadImplementationRecordHtml = document.querySelector("#downloadImplementationRecordHtml");
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
+const downloadRetentionManifestCsv = document.querySelector("#downloadRetentionManifestCsv");
 const loadSampleCsv = document.querySelector("#loadSampleCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
@@ -662,6 +663,43 @@ function buildOperationLogCsv() {
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function buildRetentionManifestCsv(rows = googleImportRows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const settings = getImplementationSettings();
+  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  const uncheckedLegalChecks = getLegalOperationChecks().filter((item) => !item.checked).length;
+  const names = recommendedFileNames(rows);
+  const files = [
+    ["本人向け結果PDF", names.personal, hasOperation("本人向け結果") ? "出力済み" : "未出力"],
+    ["企業向け集団分析PDF", names.company, hasOperation("企業向け集団分析") ? "出力済み" : "未出力"],
+    ["実施記録PDF", names.implementation, hasOperation("実施記録") ? "出力済み" : "未出力"],
+    ["個人分析CSV", names.individualCsv, hasOperation("個人分析CSV保存") ? "保存済み" : "未保存"],
+    ["取込チェックCSV", names.importCheck, "任意"],
+    ["実施ログCSV", names.operationLog, hasOperation("実施ログCSV") ? "保存済み" : "未保存"],
+    ["保管ファイル一覧CSV", names.retentionManifest, "このファイル"],
+  ];
+  const output = [
+    ["項目", "値"],
+    ["実施ID", currentRunId || ""],
+    ["作成日時", new Date().toISOString()],
+    ["CSV読込件数", rows.length],
+    ["判定可能件数", scoreableCount],
+    ["判定不可件数", analyses.length - scoreableCount],
+    ["高ストレス該当件数", highStressCount],
+    ["表示集団数", groupAnalysis.visibleGroups.length],
+    ["非表示集団数", groupAnalysis.suppressedGroups.length],
+    ["未入力案内項目数", missingGuidance],
+    ["未確認実施前チェック数", uncheckedLegalChecks],
+    [],
+    ["保管対象", "推奨ファイル名", "状態"],
+    ...files,
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
 function getLegalOperationChecks() {
   if (!legalOperationChecklist) return [];
   return Array.from(legalOperationChecklist.querySelectorAll("[data-legal-check]")).map((input) => ({
@@ -700,6 +738,7 @@ function recommendedFileNames(rows = googleImportRows) {
     importCheck: fileNameWithRunId("google-form-import-check", "csv"),
     individualCsv: fileNameWithRunId("stress-check-individual-analysis-mhlw57", "csv"),
     operationLog: fileNameWithRunId("stress-check-operation-log", "csv"),
+    retentionManifest: fileNameWithRunId("stress-check-retention-manifest", "csv"),
   };
 }
 
@@ -726,6 +765,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
     statusItem("企業向け集団分析を開く", hasOperation("企業向け集団分析"), groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件` : "10人以上の集団なし"),
     statusItem("実施記録を開く", hasOperation("実施記録"), "PDF保存して保管"),
     statusItem("実施ログCSV", hasOperation("実施ログCSV"), operationLog.length ? `${operationLog.length}件のログ` : "ログなし"),
+    statusItem("保管ファイル一覧CSV", hasOperation("保管ファイル一覧CSV"), "監査用フォルダの台帳"),
   ];
   completionChecklist.innerHTML = `
     <strong>完了状況</strong>
@@ -737,6 +777,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
       <span>${escapeHtml(names.implementation)}</span>
       <span>${escapeHtml(names.individualCsv)}</span>
       <span>${escapeHtml(names.operationLog)}</span>
+      <span>${escapeHtml(names.retentionManifest)}</span>
     </div>
   `;
 }
@@ -1859,6 +1900,7 @@ function renderIndividualAnalysisPreview(rows) {
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
     if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = true;
+    if (downloadRetentionManifestCsv) downloadRetentionManifestCsv.disabled = true;
     return;
   }
 
@@ -1876,6 +1918,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
   if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = !rows.length;
+  if (downloadRetentionManifestCsv) downloadRetentionManifestCsv.disabled = !rows.length;
   renderCompletionChecklist(rows);
 
   individualAnalysisPreview.innerHTML = [
@@ -2612,6 +2655,16 @@ function handleDownloadOperationLogCsv() {
   downloadTextFile(fileNameWithRunId("stress-check-operation-log", "csv"), `\uFEFF${buildOperationLogCsv()}`, "text/csv;charset=utf-8");
 }
 
+function handleDownloadRetentionManifestCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  addOperationLog("保管ファイル一覧CSV保存", { rows: googleImportRows.length });
+  downloadTextFile(fileNameWithRunId("stress-check-retention-manifest", "csv"), `\uFEFF${buildRetentionManifestCsv()}`, "text/csv;charset=utf-8");
+  setGoogleImportMessage(`保管ファイル一覧CSVを保存しました。実施ID: ${currentRunId || "-"}`, "success");
+}
+
 async function loadSummary() {
   if (isPublicStaticPage) {
     setMessage("公開サイト上では管理APIを利用できません。ローカルサーバーで開いてください。", "info");
@@ -2664,6 +2717,7 @@ downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResul
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
 downloadImplementationRecordHtml.addEventListener("click", handleDownloadImplementationRecordHtml);
 downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
+downloadRetentionManifestCsv.addEventListener("click", handleDownloadRetentionManifestCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 legalOperationChecklist?.addEventListener("change", () => {
@@ -2702,6 +2756,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadPersonalResultHtml.disabled = true;
   downloadCompanyGroupHtml.disabled = true;
   downloadImplementationRecordHtml.disabled = true;
+  downloadRetentionManifestCsv.disabled = true;
   downloadOperationLogCsv.disabled = !operationLog.length;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
