@@ -56,6 +56,7 @@ let qrAvailable = false;
 let submittedMap = new Map();
 let submittedCodeMap = new Map();
 let operationLog = [];
+let currentRunId = "";
 
 const localSettingsKey = "stressCheckAdminOperationSettings";
 
@@ -618,6 +619,12 @@ function setGoogleImportMessage(text, type = "info") {
   googleImportMessage.textContent = text;
 }
 
+function createRunId(prefix = "SC") {
+  const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `${prefix}-${timestamp}-${suffix}`;
+}
+
 function operationLogDetail(detail = {}) {
   const blockedKeys = new Set([
     "respondentId",
@@ -637,6 +644,7 @@ function operationLogDetail(detail = {}) {
 function addOperationLog(action, detail = {}) {
   operationLog.push({
     timestamp: new Date().toISOString(),
+    runId: currentRunId,
     action,
     totalRows: googleImportRows.length || "",
     scoreableRows: googleImportRows.filter?.((row) => buildMhlwIndividualAnalysis(row).canScore).length || "",
@@ -648,8 +656,8 @@ function addOperationLog(action, detail = {}) {
 
 function buildOperationLogCsv() {
   const output = [
-    ["日時", "操作", "読取件数", "判定可能件数", "詳細"],
-    ...operationLog.map((entry) => [entry.timestamp, entry.action, entry.totalRows, entry.scoreableRows, entry.detail]),
+    ["日時", "実施ID", "操作", "読取件数", "判定可能件数", "詳細"],
+    ...operationLog.map((entry) => [entry.timestamp, entry.runId, entry.action, entry.totalRows, entry.scoreableRows, entry.detail]),
   ];
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
@@ -698,7 +706,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
   const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]);
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const items = [
-    statusItem("CSV確認", rows.length > 0, `${rows.length}件`),
+    statusItem("CSV確認", rows.length > 0, `${rows.length}件 / 実施ID ${currentRunId || "-"}`),
     statusItem("本人通知・面接指導案内の入力", !missingGuidance.length, missingGuidance.length ? `${missingGuidance.length}項目未入力` : "入力済み"),
     statusItem("実施前チェック", uncheckedCount === 0, uncheckedCount ? `${uncheckedCount}項目未確認` : "全項目確認済み"),
     statusItem("本人向け結果を開く", hasOperation("本人向け結果"), scoreableCount ? `対象 ${scoreableCount}件` : "判定可能な回答なし"),
@@ -1253,6 +1261,7 @@ function buildPersonalResultHtml(record) {
       <div><strong>性別</strong><br>${escapeHtml(analysis.gender || "-")}</div>
       <div><strong>実施者</strong><br>${escapeHtml(settings.operator || "-")}</div>
       <div><strong>通知日</strong><br>${escapeHtml(new Date().toLocaleDateString("ja-JP"))}</div>
+      <div><strong>実施ID</strong><br>${escapeHtml(currentRunId || "-")}</div>
     </div>
     <div class="notice ${resultClass}">
       ${escapeHtml(personalRiskText(analysis))}
@@ -1550,6 +1559,7 @@ function buildCompanyGroupHtml(rows) {
       <div class="box"><span>分析対象</span><strong>${escapeHtml(summary.scoreableRows)}</strong></div>
       <div class="box"><span>表示集団</span><strong>${escapeHtml(summary.visibleGroups.length)}</strong></div>
       <div class="box"><span>非表示集団</span><strong>${escapeHtml(summary.suppressedGroups.length)}</strong></div>
+      <div class="box"><span>実施ID</span><strong style="font-size:1rem">${escapeHtml(currentRunId || "-")}</strong></div>
     </div>
     ${overall ? `
       <h2>会社全体</h2>
@@ -1622,9 +1632,10 @@ function buildImplementationRecordHtml(rows) {
   `).join("");
   const logRows = operationLog.map((item) => `
     <tr>
-      <td>${escapeHtml(item.createdAt)}</td>
+      <td>${escapeHtml(item.timestamp)}</td>
+      <td>${escapeHtml(item.runId || "-")}</td>
       <td>${escapeHtml(item.action)}</td>
-      <td>${escapeHtml(JSON.stringify(item.detail || {}))}</td>
+      <td>${escapeHtml(item.detail || "")}</td>
     </tr>
   `).join("");
   const legalCheckRows = legalChecks.map((item) => `
@@ -1673,6 +1684,7 @@ function buildImplementationRecordHtml(rows) {
       <div class="box"><span>判定可能</span><strong>${escapeHtml(scoreableCount)}</strong></div>
       <div class="box"><span>判定不可</span><strong>${escapeHtml(analyses.length - scoreableCount)}</strong></div>
       <div class="box"><span>高ストレス該当</span><strong>${escapeHtml(highStressCount)}</strong></div>
+      <div class="box"><span>実施ID</span><strong style="font-size:1rem">${escapeHtml(currentRunId || "-")}</strong></div>
     </div>
     <div class="notice">
       <strong>運用確認</strong>
@@ -1725,7 +1737,7 @@ function buildImplementationRecordHtml(rows) {
     <p class="fine">操作ログには個人名、受検者ID、配布コード、回答内容、点数、高ストレス判定を記録しません。</p>
     ${logRows ? `
       <table>
-        <thead><tr><th>日時</th><th>操作</th><th>詳細</th></tr></thead>
+        <thead><tr><th>日時</th><th>実施ID</th><th>操作</th><th>詳細</th></tr></thead>
         <tbody>${logRows}</tbody>
       </table>
     ` : `<p>この画面で記録された操作ログはまだありません。</p>`}
@@ -1967,6 +1979,7 @@ function renderGoogleImportPreview(rows) {
 
   googleImportPreview.innerHTML = [
     `<div class="suppressed-item"><strong>確認サマリー</strong><span>回答 ${rows.length}件 / 設問 ${answerCount}/57 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
+    `<div class="suppressed-item"><strong>実施ID</strong><span>${escapeHtml(currentRunId || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>次にやること</strong><span>${escapeHtml(nextAction)}</span></div>`,
     warningLabels.length ? `<div class="suppressed-item"><strong>不足している基本情報</strong><span>${escapeHtml(warningLabels.join("、"))}</span></div>` : `<div class="suppressed-item"><strong>不足している基本情報</strong><span>ありません</span></div>`,
     issueLabels.length || answerMissingRows ? `<div class="suppressed-item"><strong>保存不可の理由</strong><span>${escapeHtml(issueLabels.join("、") || "回答不足があります")}</span></div>` : `<div class="suppressed-item"><strong>保存不可の理由</strong><span>ありません</span></div>`,
@@ -1999,6 +2012,7 @@ async function handlePreviewGoogleCsv() {
 
   try {
     const text = await file.text();
+    currentRunId = createRunId("SC");
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -2022,6 +2036,7 @@ async function handleLoadSampleCsv() {
     const response = await fetch("sample-group-analysis.csv", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
+    currentRunId = createRunId("SAMPLE");
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -2647,6 +2662,7 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, missingGuidance });
 });
 googleCsvFile.addEventListener("change", () => {
+  currentRunId = "";
   googleImportRows = [];
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
