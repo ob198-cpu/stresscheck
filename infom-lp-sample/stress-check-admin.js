@@ -101,6 +101,29 @@ const mhlwRiskDomains = {
   ],
 };
 
+const workStressJudgementCoefficients = {
+  male: {
+    quantityMean: 8.7,
+    quantityCoef: 0.076,
+    controlMean: 7.9,
+    controlCoef: -0.089,
+    supervisorMean: 7.6,
+    supervisorCoef: -0.097,
+    coworkerMean: 8.1,
+    coworkerCoef: -0.097,
+  },
+  female: {
+    quantityMean: 7.9,
+    quantityCoef: 0.048,
+    controlMean: 7.2,
+    controlCoef: -0.056,
+    supervisorMean: 6.6,
+    supervisorCoef: -0.097,
+    coworkerMean: 8.2,
+    coworkerCoef: -0.097,
+  },
+};
+
 adminKeyInput.value = sessionStorage.getItem("stressCheckAdminKey") || "";
 
 function setMessage(text, type = "info") {
@@ -877,6 +900,65 @@ function scalePointText(analysis, id) {
   return scale?.point || "";
 }
 
+function scaleRawScore(analysis, id) {
+  const scale = analysis.scales.find((item) => item.id === id);
+  return Number.isFinite(Number(scale?.rawScore)) ? Number(scale.rawScore) : "";
+}
+
+function roundHealthRisk(value) {
+  if (!Number.isFinite(value)) return "";
+  return Math.round(value);
+}
+
+function calculateRiskBySex(scoredRecords, sex) {
+  const targets = scoredRecords.filter(({ record }) => normalizeGenderForMhlw(record.gender) === sex);
+  if (!targets.length) return null;
+  const coef = workStressJudgementCoefficients[sex];
+  const quantity = average(targets.map(({ analysis }) => scaleRawScore(analysis, "A_QUANTITY")));
+  const control = average(targets.map(({ analysis }) => scaleRawScore(analysis, "A_CONTROL")));
+  const supervisor = average(targets.map(({ analysis }) => scaleRawScore(analysis, "C_SUPERVISOR")));
+  const coworker = average(targets.map(({ analysis }) => scaleRawScore(analysis, "C_COWORKER")));
+  const loadControl = 100 * Math.exp(
+    (quantity - coef.quantityMean) * coef.quantityCoef +
+    (control - coef.controlMean) * coef.controlCoef,
+  );
+  const support = 100 * Math.exp(
+    (supervisor - coef.supervisorMean) * coef.supervisorCoef +
+    (coworker - coef.coworkerMean) * coef.coworkerCoef,
+  );
+  return {
+    sex,
+    count: targets.length,
+    quantity,
+    control,
+    supervisor,
+    coworker,
+    loadControl,
+    support,
+    total: (loadControl * support) / 100,
+  };
+}
+
+function calculateWorkStressHealthRisk(scoredRecords) {
+  const sexRisks = ["male", "female"].map((sex) => calculateRiskBySex(scoredRecords, sex)).filter(Boolean);
+  const totalCount = sexRisks.reduce((sum, item) => sum + item.count, 0);
+  if (!totalCount) return null;
+  const weighted = (key) => sexRisks.reduce((sum, item) => sum + item[key] * item.count, 0) / totalCount;
+  return {
+    loadControl: roundHealthRisk(weighted("loadControl")),
+    support: roundHealthRisk(weighted("support")),
+    total: roundHealthRisk((weighted("loadControl") * weighted("support")) / 100),
+    source: sexRisks.length === 2 ? "男女別係数を人数加重" : (sexRisks[0].sex === "male" ? "男性係数" : "女性係数"),
+    sexBreakdown: sexRisks.map((item) => ({
+      sex: item.sex,
+      count: item.count,
+      loadControl: roundHealthRisk(item.loadControl),
+      support: roundHealthRisk(item.support),
+      total: roundHealthRisk(item.total),
+    })),
+  };
+}
+
 function buildIndividualAnalysisCsv(rows) {
   const scaleHeaders = mhlwScaleDefinitions.flatMap((definition) => [`${definition.label} 素点`, `${definition.label} 評価点`]);
   const output = [
@@ -1151,10 +1233,17 @@ function percent(count, total) {
 }
 
 function summarizeGroup(records, label) {
-  const analyses = records.map(buildMhlwIndividualAnalysis).filter((analysis) => analysis.canScore);
+  const scoredRecords = records
+    .map((record) => ({ record, analysis: buildMhlwIndividualAnalysis(record) }))
+    .filter(({ analysis }) => analysis.canScore);
+  const analyses = scoredRecords.map(({ analysis }) => analysis);
   const scaleAverages = Object.fromEntries(mhlwScaleDefinitions.map((definition) => [
     definition.id,
     average(analyses.map((analysis) => scalePointText(analysis, definition.id))),
+  ]));
+  const rawScaleAverages = Object.fromEntries(mhlwScaleDefinitions.map((definition) => [
+    definition.id,
+    average(analyses.map((analysis) => scaleRawScore(analysis, definition.id))),
   ]));
   return {
     label,
@@ -1164,6 +1253,8 @@ function summarizeGroup(records, label) {
     reactionAverage: average(analyses.map((analysis) => analysis.reactionTotal)),
     factorSupportAverage: average(analyses.map((analysis) => analysis.factorSupportTotal)),
     scaleAverages,
+    rawScaleAverages,
+    healthRisk: calculateWorkStressHealthRisk(scoredRecords),
   };
 }
 
@@ -1220,6 +1311,7 @@ function groupJudgementSvg(summary, mode) {
         yLabel: "仕事のコントロール",
         xId: "A_QUANTITY",
         yId: "A_CONTROL",
+        riskKey: "loadControl",
         note: "右下に近いほど、仕事量が多く裁量が低い状態として注意が必要です。",
       }
     : {
@@ -1228,32 +1320,36 @@ function groupJudgementSvg(summary, mode) {
         yLabel: "同僚からのサポート",
         xId: "C_SUPERVISOR",
         yId: "C_COWORKER",
+        riskKey: "support",
         note: "左下に近いほど、支援が少ない状態として注意が必要です。",
       };
   const size = 420;
   const pad = 58;
   const plot = size - pad * 2;
-  const pointFor = (value) => pad + ((Number(value) - 1) / 4) * plot;
-  const yFor = (value) => pad + ((5 - Number(value)) / 4) * plot;
+  const pointFor = (value) => pad + ((Number(value) - 3) / 9) * plot;
+  const yFor = (value) => pad + ((12 - Number(value)) / 9) * plot;
   const points = targets.map((target, index) => ({
     label: target.label,
-    x: pointFor(target.scaleAverages[config.xId] || 3),
-    y: yFor(target.scaleAverages[config.yId] || 3),
+    risk: target.healthRisk?.[config.riskKey] || "",
+    x: pointFor(target.rawScaleAverages[config.xId] || 7.5),
+    y: yFor(target.rawScaleAverages[config.yId] || 7.5),
     color: index === 0 ? "#9f1239" : "#2f9493",
   }));
   return `
     <section class="chart-card">
       <h2>${escapeHtml(config.title)}</h2>
-      <p class="fine">${escapeHtml(config.note)} 正式な健康リスク曲線の代替ではなく、集団別の4尺度位置を確認するための図です。</p>
+      <p class="fine">${escapeHtml(config.note)} 点横の数値は、東京大学「仕事のストレス判定図」テクニカルノートの式で算出した健康リスクです。</p>
       <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${escapeHtml(config.title)}">
         <rect x="${pad}" y="${pad}" width="${plot}" height="${plot}" fill="#fff" stroke="#d8e2e8" />
         <line x1="${pad}" y1="${pad + plot / 2}" x2="${pad + plot}" y2="${pad + plot / 2}" stroke="#d8e2e8" />
         <line x1="${pad + plot / 2}" y1="${pad}" x2="${pad + plot / 2}" y2="${pad + plot}" stroke="#d8e2e8" />
-        <text x="${pad + plot / 2}" y="${size - 16}" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.xLabel)} 低 ← → 高</text>
-        <text x="18" y="${pad + plot / 2}" transform="rotate(-90 18 ${pad + plot / 2})" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.yLabel)} 高 ← → 低</text>
+        <text x="${pad}" y="${size - 18}" text-anchor="middle" font-size="11" fill="#526173">3</text>
+        <text x="${pad + plot}" y="${size - 18}" text-anchor="middle" font-size="11" fill="#526173">12</text>
+        <text x="${pad + plot / 2}" y="${size - 16}" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.xLabel)} 素点</text>
+        <text x="18" y="${pad + plot / 2}" transform="rotate(-90 18 ${pad + plot / 2})" text-anchor="middle" font-size="13" fill="#526173">${escapeHtml(config.yLabel)} 素点</text>
         ${points.map((point) => `
           <circle cx="${point.x}" cy="${point.y}" r="7" fill="${point.color}" />
-          <text x="${point.x + 10}" y="${point.y - 8}" font-size="11" fill="#111827">${escapeHtml(point.label)}</text>
+          <text x="${point.x + 10}" y="${point.y - 8}" font-size="11" fill="#111827">${escapeHtml(point.label)}${point.risk ? ` ${escapeHtml(point.risk)}` : ""}</text>
         `).join("")}
       </svg>
     </section>
@@ -1269,6 +1365,9 @@ function buildCompanyGroupHtml(rows) {
       <td>${escapeHtml(group.highStressRate)}</td>
       <td>${escapeHtml(group.reactionAverage)}</td>
       <td>${escapeHtml(group.factorSupportAverage)}</td>
+      <td>${escapeHtml(group.healthRisk?.loadControl || "-")}</td>
+      <td>${escapeHtml(group.healthRisk?.support || "-")}</td>
+      <td>${escapeHtml(group.healthRisk?.total || "-")}</td>
     </tr>
   `).join("");
   const suppressedRows = summary.suppressedGroups.map((group) => `
@@ -1329,6 +1428,12 @@ function buildCompanyGroupHtml(rows) {
         <div class="box"><span>心身反応6尺度 平均</span><strong>${escapeHtml(overall.reactionAverage)}</strong></div>
         <div class="box"><span>要因+サポート12尺度 平均</span><strong>${escapeHtml(overall.factorSupportAverage)}</strong></div>
       </div>
+      <div class="summary">
+        <div class="box"><span>量-コントロール健康リスク</span><strong>${escapeHtml(overall.healthRisk?.loadControl || "-")}</strong></div>
+        <div class="box"><span>職場の支援健康リスク</span><strong>${escapeHtml(overall.healthRisk?.support || "-")}</strong></div>
+        <div class="box"><span>総合健康リスク</span><strong>${escapeHtml(overall.healthRisk?.total || "-")}</strong></div>
+        <div class="box"><span>算出</span><strong style="font-size:1rem">${escapeHtml(overall.healthRisk?.source || "-")}</strong></div>
+      </div>
     ` : `<div class="notice"><strong>会社全体の数値は表示できません。</strong><br>判定可能な回答が${summary.minSize}人未満です。</div>`}
 
     <div class="chart-grid">
@@ -1339,7 +1444,7 @@ function buildCompanyGroupHtml(rows) {
     <h2>集団別サマリー</h2>
     ${summary.visibleGroups.length ? `
       <table>
-        <thead><tr><th>集団</th><th>人数</th><th>高ストレス者割合</th><th>心身反応6尺度 平均</th><th>要因+サポート12尺度 平均</th></tr></thead>
+        <thead><tr><th>集団</th><th>人数</th><th>高ストレス者割合</th><th>心身反応6尺度 平均</th><th>要因+サポート12尺度 平均</th><th>量-コントロール</th><th>職場の支援</th><th>総合健康リスク</th></tr></thead>
         <tbody>${visibleRows}</tbody>
       </table>
     ` : `<p>10人以上の表示可能な集団はありません。</p>`}
