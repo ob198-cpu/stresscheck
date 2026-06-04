@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=open-results-without-dialog" />
+  <link rel="stylesheet" href="styles.css?v=open-individual-analysis-csv" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -152,6 +152,7 @@
             <div class="participant-actions analysis-actions">
               <button type="button" id="previewGoogleCsv" class="btn btn-outline">2. CSVを確認</button>
               <button type="button" id="downloadIndividualAnalysisCsv" class="btn btn-primary" disabled>3. 個人分析CSVを保存</button>
+              <button type="button" id="openIndividualAnalysisCsv" class="btn btn-outline" disabled>3. 個人分析CSVを開く</button>
               <button type="button" id="downloadPersonalResultHtml" class="btn btn-primary" disabled>本人向け結果を開く</button>
               <button type="button" id="downloadPersonalDeliveryCsv" class="btn btn-outline" disabled>本人配布チェックCSV</button>
               <button type="button" id="downloadCompanyGroupHtml" class="btn btn-primary" disabled>企業向け集団分析を開く</button>
@@ -318,6 +319,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=open-results-without-dialog"></script>
+  <script src="stress-check-admin.js?v=open-individual-analysis-csv"></script>
 </body>
 </html>

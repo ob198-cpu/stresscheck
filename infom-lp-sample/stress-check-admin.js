@@ -32,6 +32,7 @@ const downloadGoogleFormItemList = document.querySelector("#downloadGoogleFormIt
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
 const downloadFixListCsv = document.querySelector("#downloadFixListCsv");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
+const openIndividualAnalysisCsv = document.querySelector("#openIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const downloadCompanyDisclosureCsv = document.querySelector("#downloadCompanyDisclosureCsv");
@@ -2246,6 +2247,7 @@ function renderIndividualAnalysisPreview(rows) {
     renderCompletionChecklist([]);
     if (downloadFixListCsv) downloadFixListCsv.disabled = true;
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
+    if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = true;
     if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
@@ -2266,6 +2268,7 @@ function renderIndividualAnalysisPreview(rows) {
   const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
   if (downloadFixListCsv) downloadFixListCsv.disabled = !fixListCount;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
+  if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = !rows.length;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
@@ -3082,6 +3085,20 @@ function handleDownloadIndividualAnalysisCsv() {
   addOperationLog("個人分析CSV保存");
 }
 
+function handleOpenIndividualAnalysisCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const csv = `\uFEFF${buildIndividualAnalysisCsv(googleImportRows)}`;
+  const blob = new Blob([csv], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const opened = window.open(url, "_blank", "noopener,noreferrer");
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  setGoogleImportMessage(opened ? "個人分析CSVを別タブで開きました。保存する場合は「個人分析CSVを保存」を押してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("個人分析CSV表示", { rows: googleImportRows.length });
+}
+
 function handleDownloadPersonalResultHtml() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
@@ -3249,6 +3266,7 @@ downloadGoogleFormItemList.addEventListener("click", handleDownloadGoogleFormIte
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
+openIndividualAnalysisCsv.addEventListener("click", handleOpenIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
 downloadCompanyDisclosureCsv.addEventListener("click", handleDownloadCompanyDisclosureCsv);
@@ -3295,6 +3313,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadGoogleImportCheck.disabled = true;
   downloadFixListCsv.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
+  openIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadPersonalDeliveryCsv.disabled = true;
   downloadCompanyGroupHtml.disabled = true;
