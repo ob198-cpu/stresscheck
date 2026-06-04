@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=labour-office-report" />
+  <link rel="stylesheet" href="styles.css?v=guided-legal-flow" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -135,7 +135,19 @@
               <textarea id="basicInfoSource" rows="4" placeholder="受検者ID,氏名,性別,職場コード,職場名,部署&#10;SC-0001,山田 太郎,男性,D001,営業部,営業部"></textarea>
             </label>
             <div class="implementation-settings" aria-label="本人通知と面接指導案内">
-              <strong>本人通知・面接指導案内 <small>このブラウザに自動保存</small></strong>
+              <strong>法定実施に必要な基本情報 <small>このブラウザに自動保存</small></strong>
+              <label>
+                <span>事業場名</span>
+                <input id="establishmentName" type="text" placeholder="例: 株式会社サンプル 札幌事業場" />
+              </label>
+              <label>
+                <span>在籍労働者数</span>
+                <input id="workerCount" type="number" min="0" inputmode="numeric" placeholder="例: 80" />
+              </label>
+              <label>
+                <span>報告対象年</span>
+                <input id="reportYear" type="text" placeholder="例: 2026" />
+              </label>
               <label>
                 <span>実施者名</span>
                 <input id="implementationOperator" type="text" placeholder="例: 産業医 〇〇 / 実施者 〇〇" />
@@ -184,6 +196,7 @@
               <label><input type="checkbox" data-legal-check="集団分析は10人未満の集団を非表示にし、個人が特定されない形で共有する">集団分析は10人未満の集団を非表示にし、個人が特定されない形で共有する</label>
               <label><input type="checkbox" data-legal-check="実施記録・操作ログ・出力ファイルの保管先と管理者を決めた">実施記録・操作ログ・出力ファイルの保管先と管理者を決めた</label>
             </div>
+            <div id="requirementsGuide" class="requirements-guide"></div>
             <div id="googleImportMessage" class="form-message info" hidden></div>
             <div id="basicInfoEditor" class="basic-info-editor"></div>
             <div id="completionChecklist" class="completion-checklist" hidden></div>
@@ -323,6 +336,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=labour-office-report"></script>
+  <script src="stress-check-admin.js?v=guided-legal-flow"></script>
 </body>
 </html>

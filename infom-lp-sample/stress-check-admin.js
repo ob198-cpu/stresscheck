@@ -50,10 +50,14 @@ const loadSampleCsv = document.querySelector("#loadSampleCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
 const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const legalOperationChecklist = document.querySelector("#legalOperationChecklist");
+const establishmentName = document.querySelector("#establishmentName");
+const workerCount = document.querySelector("#workerCount");
+const reportYear = document.querySelector("#reportYear");
 const implementationOperator = document.querySelector("#implementationOperator");
 const interviewContact = document.querySelector("#interviewContact");
 const interviewDeadline = document.querySelector("#interviewDeadline");
 const completionChecklist = document.querySelector("#completionChecklist");
+const requirementsGuide = document.querySelector("#requirementsGuide");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
@@ -729,6 +733,7 @@ function addOperationLog(action, detail = {}) {
     detail: operationLogDetail(detail),
   });
   if (downloadOperationLogCsv) downloadOperationLogCsv.disabled = !operationLog.length;
+  renderRequirementsGuide(googleImportRows);
   renderCompletionChecklist(googleImportRows);
 }
 
@@ -1008,11 +1013,11 @@ function buildLabourOfficeReportCsv(rows = googleImportRows) {
   const output = [
     ["項目", "値", "転記・確認メモ"],
     ["帳票名", "心理的な負担の程度を把握するための検査結果等報告書", "労基署報告用の転記確認"],
-    ["事業場名", "", "会社側で入力"],
+    ["事業場名", settings.establishmentName || "", "会社側で確認"],
     ["事業場所在地", "", "会社側で入力"],
     ["労働保険番号", "", "会社側で入力"],
-    ["対象年", "", "会社側で入力"],
-    ["在籍労働者数", "", "会社側で入力。報告書の対象労働者数"],
+    ["対象年", settings.reportYear || "", "会社側で確認"],
+    ["在籍労働者数", settings.workerCount || "", "会社側で確認。報告書の対象労働者数"],
     ["検査を受けた労働者数", scoreableCount, "判定可能な回答数。事業場の正式集計と照合"],
     ["CSV読込件数", rows.length, "回答CSVの総行数"],
     ["判定不可件数", analyses.length - scoreableCount, "修正リストCSVで確認"],
@@ -1042,6 +1047,9 @@ function getLegalOperationChecks() {
 
 function getImplementationSettings() {
   return {
+    establishmentName: cleanText(establishmentName?.value),
+    workerCount: cleanText(workerCount?.value),
+    reportYear: cleanText(reportYear?.value),
     operator: cleanText(implementationOperator?.value),
     interviewContact: cleanText(interviewContact?.value),
     interviewDeadline: cleanText(interviewDeadline?.value),
@@ -1054,6 +1062,52 @@ function missingGuidanceLabels(settings = getImplementationSettings()) {
     !settings.interviewContact ? "面接指導の申出先" : "",
     !settings.interviewDeadline ? "申出期限" : "",
   ].filter(Boolean);
+}
+
+function missingReportLabels(settings = getImplementationSettings()) {
+  return [
+    !settings.establishmentName ? "事業場名" : "",
+    !settings.workerCount ? "在籍労働者数" : "",
+    !settings.reportYear ? "報告対象年" : "",
+  ].filter(Boolean);
+}
+
+function guideItem(label, done, detail) {
+  return `
+    <div class="requirement-item ${done ? "ok" : "todo"}">
+      <strong>${done ? "OK" : "要確認"}</strong>
+      <span>${escapeHtml(label)}<em>${escapeHtml(detail)}</em></span>
+    </div>
+  `;
+}
+
+function renderRequirementsGuide(rows = googleImportRows) {
+  if (!requirementsGuide) return;
+  const settings = getImplementationSettings();
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const missingGuidance = missingGuidanceLabels(settings);
+  const missingReport = missingReportLabels(settings);
+  const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
+  const questionnaireReady = !googleImportDiagnostics || googleImportDiagnostics.recognizedQuestionCount === questionOrder.length;
+  const reportRequired = Number(settings.workerCount || 0) >= 50;
+  const items = [
+    guideItem("実施体制・個人結果の取扱い", uncheckedCount === 0, uncheckedCount ? `実施前チェック ${uncheckedCount}件が未確認です。` : "実施前チェックは確認済みです。"),
+    guideItem("本人通知・面接指導案内", missingGuidance.length === 0, missingGuidance.length ? `未入力: ${missingGuidance.join("、")}` : "本人向け結果に必要な案内を反映できます。"),
+    guideItem("質問紙57項目", questionnaireReady, googleImportDiagnostics ? `認識 ${googleImportDiagnostics.recognizedQuestionCount}/57。質問紙照合CSVで厚労省PDFと照合してください。` : "CSV確認後に57項目認識を表示します。"),
+    guideItem("回答CSVの取得・反映", rows.length > 0 && scoreableCount > 0, rows.length ? `読込 ${rows.length}件 / 判定可能 ${scoreableCount}件。` : "Googleフォーム回答CSVを読み込んでください。"),
+    guideItem("本人結果・面接指導", scoreableCount > 0, highStressCount ? `高ストレス者 ${highStressCount}件。面接指導対応CSVで管理してください。` : scoreableCount ? "本人向け結果を出力できます。" : "判定可能な回答が必要です。"),
+    guideItem("集団分析の会社共有", Boolean(groupAnalysis.overall || groupAnalysis.visibleGroups.length), groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示 ${groupAnalysis.suppressedGroups.length}件。` : "10人以上の集団がない場合は会社共有用の数値を出しません。"),
+    guideItem("労基署報告準備", !reportRequired || missingReport.length === 0, reportRequired ? (missingReport.length ? `50人以上想定。未入力: ${missingReport.join("、")}` : "労基署報告用集計CSVに転記できます。") : "50人未満なら通常は報告対象外です。"),
+    guideItem("厚労省アプリ突合", hasOperation("厚労省アプリ突合CSV"), hasOperation("厚労省アプリ突合CSV") ? "突合CSVを保存済みです。" : "本番前に厚労省アプリ突合CSVで結果一致を確認してください。"),
+  ];
+  requirementsGuide.innerHTML = `
+    <strong>法定実施ナビ</strong>
+    <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
+    <div class="requirements-grid">${items.join("")}</div>
+  `;
 }
 
 function confirmOutputReadiness(outputLabel, options = {}) {
@@ -1108,6 +1162,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
   if (!rows.length) {
     completionChecklist.hidden = true;
     completionChecklist.innerHTML = "";
+    renderRequirementsGuide(rows);
     return;
   }
   completionChecklist.hidden = false;
@@ -1156,6 +1211,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
       <span>${escapeHtml(names.completionPackage)}</span>
     </div>
   `;
+  renderRequirementsGuide(rows);
 }
 
 function saveOperationSettings() {
@@ -1170,6 +1226,9 @@ function restoreOperationSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(localSettingsKey) || "{}");
     const implementation = saved.implementation || {};
+    if (establishmentName) establishmentName.value = implementation.establishmentName || "";
+    if (workerCount) workerCount.value = implementation.workerCount || "";
+    if (reportYear) reportYear.value = implementation.reportYear || "";
     if (implementationOperator) implementationOperator.value = implementation.operator || "";
     if (interviewContact) interviewContact.value = implementation.interviewContact || "";
     if (interviewDeadline) interviewDeadline.value = implementation.interviewDeadline || "";
@@ -1177,6 +1236,7 @@ function restoreOperationSettings() {
     legalOperationChecklist?.querySelectorAll("[data-legal-check]").forEach((input) => {
       input.checked = checkedByLabel.get(input.dataset.legalCheck) || false;
     });
+    renderRequirementsGuide(googleImportRows);
   } catch {
     localStorage.removeItem(localSettingsKey);
   }
@@ -3488,11 +3548,13 @@ reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
 legalOperationChecklist?.addEventListener("change", () => {
   saveOperationSettings();
+  renderRequirementsGuide(googleImportRows);
   if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
 });
-[implementationOperator, interviewContact, interviewDeadline].forEach((input) => {
+[establishmentName, workerCount, reportYear, implementationOperator, interviewContact, interviewDeadline].forEach((input) => {
   input?.addEventListener("input", () => {
     saveOperationSettings();
+    renderRequirementsGuide(googleImportRows);
     if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
   });
 });
