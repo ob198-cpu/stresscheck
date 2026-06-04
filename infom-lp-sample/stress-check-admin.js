@@ -1869,6 +1869,8 @@ function buildImplementationRecordHtml(rows) {
         <tr><th>保存不可行</th><td>${escapeHtml(blockedRows.length)}件</td></tr>
         <tr><th>基本情報不足見込み</th><td>${escapeHtml(warningRows.length)}件</td></tr>
         <tr><th>57項目認識</th><td>${escapeHtml(googleImportDiagnostics?.recognizedQuestionCount || 0)}/57</td></tr>
+        <tr><th>個人シート必須列不足</th><td>${escapeHtml((googleImportDiagnostics?.missingRequiredMetaFields || []).join("、") || "なし")}</td></tr>
+        <tr><th>不足設問列</th><td>${escapeHtml((googleImportDiagnostics?.missingQuestionKeys || []).slice(0, 30).join("、") || "なし")}</td></tr>
         <tr><th>未認識列</th><td>${escapeHtml((googleImportDiagnostics?.unknownHeaders || []).slice(0, 20).join("、") || "なし")}</td></tr>
       </tbody>
     </table>
@@ -2045,10 +2047,24 @@ function googleImportKey(row) {
 }
 
 function buildGoogleImportDiagnostics(headers, fields, records) {
+  const requiredMetaFields = [
+    ["respondentId", "受検者ID"],
+    ["personName", "氏名"],
+    ["kanaName", "フリガナ"],
+    ["birthDate", "生年月日"],
+    ["gender", "性別"],
+    ["workplaceCode", "職場コード"],
+    ["workplaceName", "職場名"],
+  ];
   const recognizedQuestions = Array.from(new Set(fields
     .filter((field) => field.startsWith("answer:"))
     .map((field) => field.slice("answer:".length))));
+  const recognizedMetaFields = Array.from(new Set(fields.filter((field) => field && !field.startsWith("answer:"))));
   const recognizedMeta = fields.filter((field) => field && !field.startsWith("answer:")).length;
+  const missingRequiredMetaFields = requiredMetaFields
+    .filter(([field]) => !recognizedMetaFields.includes(field))
+    .map(([, label]) => label);
+  const missingQuestionKeys = questionOrder.filter((key) => !recognizedQuestions.includes(key));
   const unknownHeaders = headers
     .map((header, index) => ({ header, index, field: fields[index] }))
     .filter((item) => item.header && !item.field)
@@ -2060,6 +2076,8 @@ function buildGoogleImportDiagnostics(headers, fields, records) {
     headers,
     recognizedQuestionCount: recognizedQuestions.length,
     recognizedMetaCount: recognizedMeta,
+    missingRequiredMetaFields,
+    missingQuestionKeys,
     unknownHeaders,
     duplicateKeys,
     completeRows,
@@ -2122,6 +2140,8 @@ function renderGoogleImportPreview(rows) {
   const duplicateCount = rows.filter((row) => row.csvDuplicate).length;
   const answerCount = diagnostics.recognizedQuestionCount || 0;
   const unknownHeaders = diagnostics.unknownHeaders || [];
+  const missingRequiredMetaFields = diagnostics.missingRequiredMetaFields || [];
+  const missingQuestionKeys = diagnostics.missingQuestionKeys || [];
   const warningLabels = Array.from(new Set(rows.flatMap((row) => importWarnings(row))));
   const issueLabels = Array.from(new Set(rows.flatMap((row) => importIssues(row))));
   const answerMissingRows = rows.filter((row) => missingAnswerKeys(row).length).length;
@@ -2141,10 +2161,12 @@ function renderGoogleImportPreview(rows) {
     `<div class="suppressed-item"><strong>実施ID</strong><span>${escapeHtml(currentRunId || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>CSV元照合</strong><span>${escapeHtml(currentCsvSourceName || "-")} / SHA-256 ${escapeHtml(currentCsvHash || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>次にやること</strong><span>${escapeHtml(nextAction)}</span></div>`,
+    missingRequiredMetaFields.length ? `<div class="suppressed-item"><strong>個人シート作成に必要な列が不足</strong><span>${escapeHtml(missingRequiredMetaFields.join("、"))}。Googleフォームに項目を追加するか、基本情報補完CSVで補ってください。</span></div>` : `<div class="suppressed-item"><strong>個人シート作成に必要な列</strong><span>受検者ID・氏名・フリガナ・生年月日・性別・職場コード・職場名を認識しました。</span></div>`,
+    missingQuestionKeys.length ? `<div class="suppressed-item"><strong>不足している57項目の列</strong><span>${escapeHtml(missingQuestionKeys.slice(0, 20).join("、"))}${missingQuestionKeys.length > 20 ? " ほか" : ""}</span></div>` : `<div class="suppressed-item"><strong>57項目の列</strong><span>A1〜D2をすべて認識しました。</span></div>`,
     warningLabels.length ? `<div class="suppressed-item"><strong>不足している基本情報</strong><span>${escapeHtml(warningLabels.join("、"))}</span></div>` : `<div class="suppressed-item"><strong>不足している基本情報</strong><span>ありません</span></div>`,
     issueLabels.length || answerMissingRows ? `<div class="suppressed-item"><strong>保存不可の理由</strong><span>${escapeHtml(issueLabels.join("、") || "回答不足があります")}</span></div>` : `<div class="suppressed-item"><strong>保存不可の理由</strong><span>ありません</span></div>`,
     `<div class="suppressed-item"><strong>読込件数</strong><span>${rows.length}件 / 名簿照合 ${matchedRows}件 / 保存不可 ${blockedRows.length}件 / 厚労省CSV不足見込み ${warningRows.length}件</span></div>`,
-    `<div class="suppressed-item"><strong>列認識</strong><span>${escapeHtml(columnStatus)} / 基本項目 ${diagnostics.recognizedMetaCount || 0}列 / 未認識 ${unknownHeaders.length}列</span></div>`,
+    `<div class="suppressed-item"><strong>列認識</strong><span>${escapeHtml(columnStatus)} / 基本項目 ${diagnostics.recognizedMetaCount || 0}列 / 必須列不足 ${missingRequiredMetaFields.length}列 / 未認識 ${unknownHeaders.length}列</span></div>`,
     duplicateCount ? `<div class="suppressed-item"><strong>CSV内重複</strong><span>${duplicateCount}行。同じ受検者がCSV内に複数あります。保存前にCSVを整理してください。</span></div>` : `<div class="suppressed-item"><strong>CSV内重複</strong><span>ありません。</span></div>`,
     unknownHeaders.length ? `<div class="suppressed-item"><strong>未認識列</strong><span>${escapeHtml(unknownHeaders.slice(0, 12).join("、"))}${unknownHeaders.length > 12 ? " ほか" : ""}</span></div>` : "",
     ...rows.slice(0, 12).map((row) => {
