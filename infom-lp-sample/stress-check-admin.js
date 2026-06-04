@@ -44,6 +44,7 @@ const downloadImplementationRecordHtml = document.querySelector("#downloadImplem
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
 const downloadRetentionManifestCsv = document.querySelector("#downloadRetentionManifestCsv");
 const downloadCompletionPackageCsv = document.querySelector("#downloadCompletionPackageCsv");
+const downloadReadinessCsv = document.querySelector("#downloadReadinessCsv");
 const downloadLabourOfficeReportCsv = document.querySelector("#downloadLabourOfficeReportCsv");
 const downloadPersonalDeliveryCsv = document.querySelector("#downloadPersonalDeliveryCsv");
 const loadSampleCsv = document.querySelector("#loadSampleCsv");
@@ -76,6 +77,7 @@ let operationLog = [];
 let currentRunId = "";
 let currentCsvSourceName = "";
 let currentCsvHash = "";
+let latestRequirementSnapshot = null;
 
 const localSettingsKey = "stressCheckAdminOperationSettings";
 
@@ -1234,6 +1236,12 @@ function renderRequirementsGuide(rows = googleImportRows) {
   const items = states.map((item) => guideItem(item.label, item.done, item.detail));
   const nextAction = nextRequirementAction(states);
   const readiness = requirementReadiness(states);
+  latestRequirementSnapshot = {
+    states,
+    nextAction,
+    readiness,
+    checkedAt: new Date().toISOString(),
+  };
   requirementsGuide.innerHTML = `
     <strong>法定実施ナビ</strong>
     <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
@@ -1245,6 +1253,34 @@ function renderRequirementsGuide(rows = googleImportRows) {
     </div>
     <div class="requirements-grid">${items.join("")}</div>
   `;
+}
+
+function buildReadinessCsv(rows = googleImportRows) {
+  if (!latestRequirementSnapshot) renderRequirementsGuide(rows);
+  const snapshot = latestRequirementSnapshot || {
+    states: [],
+    nextAction: { label: "", detail: "" },
+    readiness: { label: "", percent: 0, doneCount: 0, totalCount: 0, remainingCount: 0 },
+    checkedAt: new Date().toISOString(),
+  };
+  const settings = getImplementationSettings();
+  const output = [
+    ["区分", "項目", "状態", "内容", "補足"],
+    ["準備状況", "判定", snapshot.readiness.label, `${snapshot.readiness.percent}%`, snapshot.readiness.detail],
+    ["準備状況", "完了数", `${snapshot.readiness.doneCount}/${snapshot.readiness.totalCount}`, `残り ${snapshot.readiness.remainingCount}件`, ""],
+    ["次アクション", snapshot.nextAction.label || "", "要対応", snapshot.nextAction.detail || "", ""],
+    ["実施情報", "事業場名", settings.establishmentName || "未入力", "労基署報告・実施記録用", ""],
+    ["実施情報", "在籍労働者数", settings.workerCount || "未入力", Number(settings.workerCount || 0) >= 50 ? "50人以上: 労基署報告準備が必要" : "50人未満または未入力", ""],
+    ["実施情報", "報告対象年", settings.reportYear || "未入力", "", ""],
+    ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
+    ["保存情報", "確認日時", snapshot.checkedAt, "このCSVには個人名・受検者ID・点数・高ストレス判定を含めません", ""],
+    [],
+    ["ナビ項目", "項目", "状態", "詳細", "次にやること"],
+  ];
+  snapshot.states.forEach((item) => {
+    output.push(["ナビ項目", item.label, item.done ? "OK" : "要確認", item.detail, item.done ? "" : `${item.next?.label || ""} ${item.next?.detail || ""}`.trim()]);
+  });
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
 function confirmOutputReadiness(outputLabel, options = {}) {
@@ -3566,6 +3602,14 @@ function handleDownloadCompletionPackageCsv() {
   addOperationLog("実施完了チェックCSV保存", { rows: googleImportRows.length });
 }
 
+function handleDownloadReadinessCsv() {
+  renderRequirementsGuide(googleImportRows);
+  downloadTextFile(fileNameWithRunId("stress-check-legal-readiness", "csv"), `\uFEFF${buildReadinessCsv(googleImportRows)}`, "text/csv;charset=utf-8");
+  const remaining = latestRequirementSnapshot?.readiness?.remainingCount ?? 0;
+  setGoogleImportMessage(`法定実施ナビCSVを保存しました。残件 ${remaining}件。個人名・受検者ID・点数・高ストレス判定は含めていません。`, "success");
+  addOperationLog("法定実施ナビCSV保存", { remaining });
+}
+
 function handleDownloadLabourOfficeReportCsv() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
@@ -3679,6 +3723,7 @@ downloadImplementationRecordHtml.addEventListener("click", handleDownloadImpleme
 downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
 downloadRetentionManifestCsv.addEventListener("click", handleDownloadRetentionManifestCsv);
 downloadCompletionPackageCsv.addEventListener("click", handleDownloadCompletionPackageCsv);
+downloadReadinessCsv.addEventListener("click", handleDownloadReadinessCsv);
 downloadLabourOfficeReportCsv.addEventListener("click", handleDownloadLabourOfficeReportCsv);
 downloadPersonalDeliveryCsv.addEventListener("click", handleDownloadPersonalDeliveryCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
