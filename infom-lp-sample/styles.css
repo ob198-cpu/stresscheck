@@ -4146,13 +4146,26 @@ textarea {
   background: #eefbf9;
 }
 
+.readiness-summary-main.sample {
+  border-color: #e9bcc4;
+  background: #fff2f4;
+}
+
+.readiness-summary-main.production span {
+  color: #176c6a;
+}
+
+.readiness-summary-main.sample span {
+  color: #a01838;
+}
+
 .readiness-summary-main strong {
   color: var(--ink);
 }
 
 .readiness-summary-main span {
   font-weight: 700;
-  color: #176c6a;
+  color: var(--muted);
 }
 
 .readiness-summary-main em {

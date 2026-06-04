@@ -78,6 +78,7 @@ let operationLog = [];
 let currentRunId = "";
 let currentCsvSourceName = "";
 let currentCsvHash = "";
+let currentRunMode = "未選択";
 let latestRequirementSnapshot = null;
 
 const localSettingsKey = "stressCheckAdminOperationSettings";
@@ -1150,10 +1151,11 @@ function readinessHtml(readiness) {
 
 function renderReadinessSummary(readiness, nextAction) {
   if (!readinessSummary) return;
+  const modeClass = currentRunMode === "サンプル" ? "sample" : currentRunMode === "本番CSV" ? "production" : "empty";
   readinessSummary.innerHTML = `
-    <div class="readiness-summary-main ${escapeHtml(readiness.level)}">
+    <div class="readiness-summary-main ${escapeHtml(readiness.level)} ${escapeHtml(modeClass)}">
       <strong>本番前サマリー</strong>
-      <span>${escapeHtml(readiness.percent)}% / 残り ${escapeHtml(readiness.remainingCount)}件</span>
+      <span>${escapeHtml(currentRunMode)} / ${escapeHtml(readiness.percent)}% / 残り ${escapeHtml(readiness.remainingCount)}件</span>
       <em>${escapeHtml(nextAction.label || "次にやることなし")}</em>
       <button type="button" class="btn btn-outline btn-sm" data-jump-requirements>詳細を見る</button>
     </div>
@@ -1194,7 +1196,14 @@ function renderRequirementsGuide(rows = googleImportRows) {
   const reportRequired = Number(settings.workerCount || 0) >= 50;
   const guidanceTarget = !settings.operator ? "#implementationOperator" : !settings.interviewContact ? "#interviewContact" : "#interviewDeadline";
   const reportTarget = !settings.establishmentName ? "#establishmentName" : !settings.workerCount ? "#workerCount" : "#reportYear";
+  const productionCsvReady = currentRunMode === "本番CSV";
   const states = [
+    {
+      label: "本番CSV確認",
+      done: productionCsvReady,
+      detail: currentRunMode === "サンプル" ? "100名サンプルCSVを読み込んでいます。本番実施には実際のGoogleフォーム回答CSVへ差し替えてください。" : currentRunMode === "本番CSV" ? "本番CSVとして確認中です。" : "CSVが未選択です。",
+      next: { label: "本番CSVを選択", detail: "サンプルCSVは動作確認用です。本番ではGoogleフォーム回答スプレッドシートから保存したCSVを選択してください。", target: "#googleCsvFile", click: true },
+    },
     {
       label: "実施体制・個人結果の取扱い",
       done: uncheckedCount === 0,
@@ -1287,6 +1296,7 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["実施情報", "在籍労働者数", settings.workerCount || "未入力", Number(settings.workerCount || 0) >= 50 ? "50人以上: 労基署報告準備が必要" : "50人未満または未入力", ""],
     ["実施情報", "報告対象年", settings.reportYear || "未入力", "", ""],
     ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
+    ["CSV情報", "実施区分", currentRunMode, currentRunMode === "サンプル" ? "サンプルCSVは本番実施記録に使わないでください" : "本番CSVであることを実施者側で確認してください", ""],
     ["保存情報", "確認日時", snapshot.checkedAt, "このCSVには個人名・受検者ID・点数・高ストレス判定を含めません", ""],
     [],
     ["ナビ項目", "項目", "状態", "詳細", "次にやること"],
@@ -2759,6 +2769,7 @@ async function handlePreviewGoogleCsv() {
     currentRunId = createRunId("SC");
     currentCsvSourceName = file.name || "selected-csv";
     currentCsvHash = await sha256Text(text);
+    currentRunMode = "本番CSV";
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -2785,6 +2796,7 @@ async function handleLoadSampleCsv() {
     currentRunId = createRunId("SAMPLE");
     currentCsvSourceName = "sample-100-stress-check.csv";
     currentCsvHash = await sha256Text(text);
+    currentRunMode = "サンプル";
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -3782,6 +3794,7 @@ googleCsvFile.addEventListener("change", () => {
   currentRunId = "";
   currentCsvSourceName = "";
   currentCsvHash = "";
+  currentRunMode = "未選択";
   googleImportRows = [];
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
