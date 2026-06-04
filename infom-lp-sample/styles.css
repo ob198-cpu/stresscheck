@@ -3441,6 +3441,15 @@ textarea {
   max-width: 68ch;
 }
 
+.form-hero-action {
+  display: flex;
+  align-items: flex-start;
+}
+
+.form-hero-action .btn {
+  white-space: nowrap;
+}
+
 .form-guard,
 .form-shell,
 .respondent-panel,
@@ -3925,8 +3934,35 @@ textarea {
   padding: 38px 0 26px;
 }
 
+.admin-task-page .form-hero-inner {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-task-page .form-hero-copy {
+  min-width: 0;
+}
+
+.admin-task-page .form-hero-action {
+  justify-content: flex-end;
+  align-self: start;
+}
+
+.admin-task-page .form-guard {
+  grid-column: 1 / -1;
+}
+
 .admin-task-page .form-hero h1 {
   max-width: 12ch;
+}
+
+@media (max-width: 720px) {
+  .admin-task-page .form-hero-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-task-page .form-hero-action {
+    justify-content: flex-start;
+  }
 }
 
 .admin-task-page .admin-shell {

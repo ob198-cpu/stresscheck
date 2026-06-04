@@ -26,6 +26,7 @@ const googleCsvFile = document.querySelector("#googleCsvFile");
 const basicInfoSource = document.querySelector("#basicInfoSource");
 const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
 const importGoogleCsv = document.querySelector("#importGoogleCsv");
+const downloadEntryCsvTemplate = document.querySelector("#downloadEntryCsvTemplate");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
 const downloadGoogleFormItemList = document.querySelector("#downloadGoogleFormItemList");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
@@ -2966,16 +2967,24 @@ function buildGoogleFormItemListCsv() {
   return rows.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
-function handleDownloadGoogleCsvTemplate() {
+function downloadGoogleCsvTemplateFile(filename) {
   const blob = new Blob([`\uFEFF${buildGoogleCsvTemplate()}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "google-form-response-template.csv";
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function handleDownloadGoogleCsvTemplate() {
+  downloadGoogleCsvTemplateFile("google-form-response-template.csv");
+}
+
+function handleDownloadEntryCsvTemplate() {
+  downloadGoogleCsvTemplateFile("stress-check-entry-template.csv");
 }
 
 function handleDownloadGoogleFormItemList() {
@@ -3238,6 +3247,7 @@ previewGoogleCsv.addEventListener("click", handlePreviewGoogleCsv);
 loadSampleCsv.addEventListener("click", handleLoadSampleCsv);
 importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
+downloadEntryCsvTemplate.addEventListener("click", handleDownloadEntryCsvTemplate);
 downloadGoogleFormItemList.addEventListener("click", handleDownloadGoogleFormItemList);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);

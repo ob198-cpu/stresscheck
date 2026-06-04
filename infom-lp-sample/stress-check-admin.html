@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=completion-package" />
+  <link rel="stylesheet" href="styles.css?v=entry-csv-button" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -31,13 +31,16 @@
   <main>
     <section class="form-hero">
       <div class="container form-hero-inner">
-        <div>
+        <div class="form-hero-copy">
           <p class="lp-kicker">Stress Check Admin</p>
           <h1>個人分析ファイル作成</h1>
           <p>
             Googleフォームの回答CSVを読み込み、厚労省57項目の素点換算表方式で
             個人分析CSV、本人向け結果HTML、企業担当者向け集団分析HTMLを出力します。
           </p>
+        </div>
+        <div class="form-hero-action">
+          <button type="button" id="downloadEntryCsvTemplate" class="btn btn-primary">記入用CSVをダウンロード</button>
         </div>
         <aside class="form-guard">
           <strong>法定運用の前提</strong>
@@ -315,6 +318,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=completion-package"></script>
+  <script src="stress-check-admin.js?v=entry-csv-button"></script>
 </body>
 </html>
