@@ -57,6 +57,7 @@ const reportYear = document.querySelector("#reportYear");
 const implementationOperator = document.querySelector("#implementationOperator");
 const interviewContact = document.querySelector("#interviewContact");
 const interviewDeadline = document.querySelector("#interviewDeadline");
+const readinessSummary = document.querySelector("#readinessSummary");
 const completionChecklist = document.querySelector("#completionChecklist");
 const requirementsGuide = document.querySelector("#requirementsGuide");
 const googleImportPreview = document.querySelector("#googleImportPreview");
@@ -1147,6 +1148,18 @@ function readinessHtml(readiness) {
   `;
 }
 
+function renderReadinessSummary(readiness, nextAction) {
+  if (!readinessSummary) return;
+  readinessSummary.innerHTML = `
+    <div class="readiness-summary-main ${escapeHtml(readiness.level)}">
+      <strong>本番前サマリー</strong>
+      <span>${escapeHtml(readiness.percent)}% / 残り ${escapeHtml(readiness.remainingCount)}件</span>
+      <em>${escapeHtml(nextAction.label || "次にやることなし")}</em>
+      <button type="button" class="btn btn-outline btn-sm" data-jump-requirements>詳細を見る</button>
+    </div>
+  `;
+}
+
 function actionButtonHtml(action) {
   if (!action?.target) return "";
   const clickAttr = action.click ? " data-click-target=\"true\"" : "";
@@ -1242,6 +1255,7 @@ function renderRequirementsGuide(rows = googleImportRows) {
     readiness,
     checkedAt: new Date().toISOString(),
   };
+  renderReadinessSummary(readiness, nextAction);
   requirementsGuide.innerHTML = `
     <strong>法定実施ナビ</strong>
     <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
@@ -3728,6 +3742,10 @@ downloadLabourOfficeReportCsv.addEventListener("click", handleDownloadLabourOffi
 downloadPersonalDeliveryCsv.addEventListener("click", handleDownloadPersonalDeliveryCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
+readinessSummary?.addEventListener("click", (event) => {
+  if (!event.target.closest("[data-jump-requirements]")) return;
+  focusRequirementTarget("#requirementsGuide");
+});
 requirementsGuide?.addEventListener("click", (event) => {
   const button = event.target.closest(".requirement-action");
   if (!button) return;
