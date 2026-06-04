@@ -126,6 +126,7 @@ function validateStressCheckPayload(payload) {
   if (!clean(payload.birthDate)) return "生年月日が未入力です。厚労省プログラム取込用CSVに必要です。";
   if (!["男性", "女性"].includes(normalizeGender(payload.gender))) return "性別は男性または女性を選択してください。";
   if (!clean(payload.workplaceCode)) return "職場コードが未入力です。厚労省プログラム取込用CSVに必要です。";
+  if (!clean(payload.workplaceName)) return "職場名が未入力です。個人結果シート作成に必要です。";
   if (!payload.privacyConfirmed || !payload.answerConfirmed) return "送信前の確認に同意してください。";
   if (!payload.answers || typeof payload.answers !== "object") return "回答が見つかりません。";
 
@@ -176,7 +177,17 @@ function normalizeSubmittedAt(value) {
 function validateGoogleImportRecord(payload) {
   const missing = [];
   if (!payload || typeof payload !== "object") return ["record"];
-  if (!clean(payload.respondentId)) missing.push("受検者ID");
+  for (const [key, label] of [
+    ["respondentId", "受検者ID"],
+    ["personName", "氏名"],
+    ["kanaName", "フリガナ"],
+    ["birthDate", "生年月日"],
+    ["gender", "性別"],
+    ["workplaceCode", "職場コード"],
+    ["workplaceName", "職場名"],
+  ]) {
+    if (!clean(payload[key])) missing.push(label);
+  }
   if (!payload.answers || typeof payload.answers !== "object") {
     missing.push("回答");
     return missing;
@@ -339,6 +350,7 @@ function validateMhlwImportRecord(record) {
     ["gender", "性別"],
     ["respondentId", "社員ID"],
     ["workplaceCode", "職場コード"],
+    ["workplaceName", "職場名"],
   ]) {
     if (!clean(record[key])) missing.push(label);
   }

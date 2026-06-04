@@ -74,11 +74,16 @@ const googleCsvTemplateHeaders = [
   "タイムスタンプ",
   "受検者ID",
   "受検コード",
+  "氏名",
+  "フリガナ",
+  "生年月日",
+  "性別",
   "会社名・事業所名",
   "部署",
   "職場コード",
   "職場名",
   "変数値",
+  "前回社員ID",
   ...questionOrder,
   "個人情報の扱いの確認",
   "回答内容の確認",
@@ -1161,7 +1166,7 @@ function buildIndividualAnalysisCsv(rows) {
   const scaleHeaders = mhlwScaleDefinitions.flatMap((definition) => [`${definition.label} 素点`, `${definition.label} 評価点`]);
   const output = [
     [
-      "CSV行", "受検者ID", "受検コード", "氏名", "性別", "部署", "職場コード", "職場名",
+      "CSV行", "受検者ID", "受検コード", "氏名", "フリガナ", "生年月日", "性別", "会社名・事業所名", "部署", "職場コード", "職場名", "変数値", "前回社員ID",
       "判定可否", "高ストレス者判定", "判定根拠", "心身のストレス反応6尺度合計", "仕事のストレス要因+周囲のサポート12尺度合計",
       "条件1_反応6尺度12点以下", "条件2_要因サポート26点以下かつ反応17点以下", "回答不足項目", "基本情報不足",
       ...scaleHeaders,
@@ -1173,10 +1178,15 @@ function buildIndividualAnalysisCsv(rows) {
         analysis.respondentId,
         analysis.participantCode,
         analysis.personName,
+        record.kanaName,
+        record.birthDate,
         analysis.gender,
+        record.organization,
         analysis.department,
         analysis.workplaceCode,
         analysis.workplaceName,
+        record.analysisVariable,
+        record.previousEmployeeId,
         analysis.canScore ? "判定可能" : "判定不可",
         analysis.canScore ? (analysis.highStress ? "該当" : "非該当") : "",
         analysis.reason,
@@ -1971,6 +1981,7 @@ function importWarnings(record) {
     ["birthDate", "生年月日"],
     ["gender", "性別"],
     ["workplaceCode", "職場コード"],
+    ["workplaceName", "職場名"],
   ]) {
     if (!record[key]) warnings.push(label);
   }
@@ -2541,11 +2552,16 @@ function buildGoogleCsvTemplate() {
     タイムスタンプ: "2026/05/30 09:00:00",
     受検者ID: "SC-0001",
     受検コード: "任意。名簿の受検コードを使う場合のみ",
+    氏名: "山田 太郎",
+    フリガナ: "ヤマダ タロウ",
+    生年月日: "1985/04/01",
+    性別: "男性",
     "会社名・事業所名": "株式会社サンプル",
     部署: "営業部",
     職場コード: "D001",
     職場名: "営業部",
     変数値: "営業部",
+    前回社員ID: "",
     個人情報の扱いの確認: "確認しました",
     回答内容の確認: "すべての設問に回答しました",
     ...sampleAnswers,
@@ -2571,7 +2587,7 @@ function handleDownloadGoogleCsvTemplate() {
 
 function buildGoogleImportCheckCsv(rows) {
   const output = [
-    ["CSV行", "受検者ID", "受検コード", "保存判定", "保存不可理由", "厚労省CSV不足", "名簿照合", "回答不足項目"],
+    ["CSV行", "受検者ID", "受検コード", "氏名", "フリガナ", "生年月日", "性別", "会社名・事業所名", "部署", "職場コード", "職場名", "変数値", "前回社員ID", "保存判定", "保存不可理由", "個人シート不足", "名簿照合", "回答不足項目"],
     ...rows.map((row) => {
       const issues = importIssues(row);
       const warnings = importWarnings(row);
@@ -2579,6 +2595,16 @@ function buildGoogleImportCheckCsv(rows) {
         row.sourceRowNumber,
         row.respondentId,
         row.participantCode,
+        row.personName,
+        row.kanaName,
+        row.birthDate,
+        row.gender,
+        row.organization,
+        row.department,
+        row.workplaceCode,
+        row.workplaceName,
+        row.analysisVariable,
+        row.previousEmployeeId,
         issues.length ? "保存不可" : "保存可",
         issues.join(" / "),
         warnings.join(" / "),

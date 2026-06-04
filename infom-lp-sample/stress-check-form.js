@@ -101,7 +101,7 @@ const clearDraftButton = document.querySelector("#clearDraftButton");
 const totalQuestions = 57;
 const draftKey = "infom-stress-check-draft";
 const isPublicStaticPage = location.hostname.endsWith("github.io");
-const mhlwRequiredFields = ["personName", "kanaName", "birthDate", "gender", "workplaceCode"];
+const mhlwRequiredFields = ["personName", "kanaName", "birthDate", "gender", "workplaceCode", "workplaceName"];
 
 function getQuestions(section) {
   if (section.questions) {

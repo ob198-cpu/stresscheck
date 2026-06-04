@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック回答フォーム</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=personal-sheet-fields" />
 </head>
 <body>
   <header class="site-header">
@@ -80,19 +80,19 @@
                 </label>
                 <label>
                   <span>氏名</span>
-                  <input id="personName" name="personName" type="text" autocomplete="name" placeholder="厚労省CSV取込時は必須" />
+                  <input id="personName" name="personName" type="text" autocomplete="name" required placeholder="例: 山田 太郎" />
                 </label>
                 <label>
                   <span>フリガナ</span>
-                  <input id="kanaName" name="kanaName" type="text" autocomplete="off" placeholder="例: ヤマダ タロウ" />
+                  <input id="kanaName" name="kanaName" type="text" autocomplete="off" required placeholder="例: ヤマダ タロウ" />
                 </label>
                 <label>
                   <span>生年月日</span>
-                  <input id="birthDate" name="birthDate" type="date" autocomplete="bday" />
+                  <input id="birthDate" name="birthDate" type="date" autocomplete="bday" required />
                 </label>
                 <label>
                   <span>性別</span>
-                  <select id="gender" name="gender">
+                  <select id="gender" name="gender" required>
                     <option value="">選択してください</option>
                     <option value="男性">男性</option>
                     <option value="女性">女性</option>
@@ -100,11 +100,11 @@
                 </label>
                 <label>
                   <span>職場コード</span>
-                  <input id="workplaceCode" name="workplaceCode" type="text" autocomplete="off" placeholder="例: D001" />
+                  <input id="workplaceCode" name="workplaceCode" type="text" autocomplete="off" required placeholder="例: D001" />
                 </label>
                 <label>
                   <span>職場名</span>
-                  <input id="workplaceName" name="workplaceName" type="text" autocomplete="off" placeholder="例: 営業部" />
+                  <input id="workplaceName" name="workplaceName" type="text" autocomplete="off" required placeholder="例: 営業部" />
                 </label>
                 <label>
                   <span>変数値</span>
@@ -115,7 +115,7 @@
                   <input id="previousEmployeeId" name="previousEmployeeId" type="text" autocomplete="off" placeholder="前回結果と紐づける場合のみ" />
                 </label>
               </div>
-              <p class="form-note-left">本人専用URLで配布する場合、URLには受検コードだけを含めます。厚労省プログラムへCSV取込する場合は、氏名・フリガナ・生年月日・性別・社員ID・職場コード・57項目回答が必要です。</p>
+              <p class="form-note-left">本人専用URLで配布する場合、URLには受検コードだけを含めます。個人結果シート作成のため、社員ID・氏名・フリガナ・生年月日・性別・職場コード・職場名・57項目回答を必須にしています。</p>
             </section>
 
             <div id="questionRoot" class="question-root"></div>
@@ -170,6 +170,6 @@
       });
     }
   </script>
-  <script src="stress-check-form.js"></script>
+  <script src="stress-check-form.js?v=personal-sheet-fields"></script>
 </body>
 </html>
