@@ -1092,6 +1092,59 @@ function nextRequirementAction(states) {
   };
 }
 
+function requirementReadiness(states) {
+  const doneCount = states.filter((item) => item.done).length;
+  const totalCount = states.length || 1;
+  const remainingCount = totalCount - doneCount;
+  const percent = Math.round((doneCount / totalCount) * 100);
+  if (remainingCount === 0) {
+    return {
+      level: "ready",
+      label: "準備確認済み",
+      detail: "ツール上の必須確認は完了しています。本番前に厚労省アプリ突合と実施者・専門家確認を行ってください。",
+      percent,
+      doneCount,
+      totalCount,
+      remainingCount,
+    };
+  }
+  if (percent >= 70) {
+    return {
+      level: "warn",
+      label: "あと少し",
+      detail: `残り ${remainingCount}件を確認すると、本人結果・集団分析・報告準備へ進みやすくなります。`,
+      percent,
+      doneCount,
+      totalCount,
+      remainingCount,
+    };
+  }
+  return {
+    level: "todo",
+    label: "準備中",
+    detail: `残り ${remainingCount}件があります。上から順に埋めると、実施要件の抜け漏れを減らせます。`,
+    percent,
+    doneCount,
+    totalCount,
+    remainingCount,
+  };
+}
+
+function readinessHtml(readiness) {
+  return `
+    <div class="requirements-readiness ${escapeHtml(readiness.level)}">
+      <div>
+        <strong>${escapeHtml(readiness.label)}</strong>
+        <span>${escapeHtml(readiness.doneCount)} / ${escapeHtml(readiness.totalCount)} 完了</span>
+      </div>
+      <div class="readiness-meter" aria-label="準備状況 ${escapeHtml(readiness.percent)}%">
+        <span style="width: ${escapeHtml(readiness.percent)}%"></span>
+      </div>
+      <p>${escapeHtml(readiness.detail)}</p>
+    </div>
+  `;
+}
+
 function actionButtonHtml(action) {
   if (!action?.target) return "";
   const clickAttr = action.click ? " data-click-target=\"true\"" : "";
@@ -1180,9 +1233,11 @@ function renderRequirementsGuide(rows = googleImportRows) {
   ];
   const items = states.map((item) => guideItem(item.label, item.done, item.detail));
   const nextAction = nextRequirementAction(states);
+  const readiness = requirementReadiness(states);
   requirementsGuide.innerHTML = `
     <strong>法定実施ナビ</strong>
     <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
+    ${readinessHtml(readiness)}
     <div class="requirements-next ${nextAction.ok ? "ok" : ""}">
       <strong>次にやること</strong>
       <span>${escapeHtml(nextAction.label)}<em>${escapeHtml(nextAction.detail)}</em></span>
