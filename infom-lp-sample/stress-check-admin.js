@@ -2487,11 +2487,11 @@ async function handlePreviewGoogleCsv() {
 
 async function handleLoadSampleCsv() {
   try {
-    const response = await fetch("sample-group-analysis.csv", { cache: "no-store" });
+    const response = await fetch("sample-100-stress-check.csv", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     currentRunId = createRunId("SAMPLE");
-    currentCsvSourceName = "sample-group-analysis.csv";
+    currentCsvSourceName = "sample-100-stress-check.csv";
     currentCsvHash = await sha256Text(text);
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
