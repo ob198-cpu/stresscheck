@@ -733,6 +733,12 @@ function recommendedFolderName() {
   return `stress-check_${safeFileName(currentRunId || "no-run-id")}`;
 }
 
+function personalResultFileName(record) {
+  const sourceRow = Number(record?.sourceRowNumber);
+  const rowLabel = Number.isFinite(sourceRow) && sourceRow > 0 ? String(sourceRow).padStart(3, "0") : "unknown";
+  return fileNameWithRunId(`personal-result-row-${rowLabel}`, "pdf");
+}
+
 function buildRetentionManifestCsv(rows = googleImportRows) {
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
@@ -744,6 +750,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
   const names = recommendedFileNames(rows);
   const files = [
     ["本人向け結果PDF", names.personal, hasOperation("本人向け結果") ? "出力済み" : "未出力"],
+    ["本人向け個別PDF命名規則", "personal-result-row-CSV行番号_実施ID.pdf", "個別にPDF保存する場合"],
     ["企業向け集団分析PDF", names.company, hasOperation("企業向け集団分析") ? "出力済み" : "未出力"],
     ["実施記録PDF", names.implementation, hasOperation("実施記録") ? "出力済み" : "未出力"],
     ["個人分析CSV", names.individualCsv, hasOperation("個人分析CSV保存") ? "保存済み" : "未保存"],
@@ -803,9 +810,9 @@ function statusItem(label, done, detail = "") {
 }
 
 function recommendedFileNames(rows = googleImportRows) {
-  const scoreableCount = rows.filter((row) => buildMhlwIndividualAnalysis(row).canScore).length;
+  const scoreableRows = rows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
   return {
-    personal: fileNameWithRunId(scoreableCount > 1 ? "personal-results-print" : "personal-result", "pdf"),
+    personal: scoreableRows.length === 1 ? personalResultFileName(scoreableRows[0]) : fileNameWithRunId("personal-results-print", "pdf"),
     company: fileNameWithRunId("company-group-analysis", "pdf"),
     implementation: fileNameWithRunId("implementation-record", "pdf"),
     importCheck: fileNameWithRunId("google-form-import-check", "csv"),
@@ -1340,6 +1347,7 @@ function buildPersonalResultHtml(record) {
   const highStressLabel = analysis.highStress ? "該当" : "非該当";
   const resultClass = analysis.highStress ? "attention" : "stable";
   const names = recommendedFileNames([record]);
+  const personalFileName = personalResultFileName(record);
   const interviewNotice = analysis.highStress
     ? `
       <h2>医師による面接指導の申出</h2>
@@ -1385,6 +1393,7 @@ function buildPersonalResultHtml(record) {
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
     .screen-actions { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 18px; }
+    .screen-actions span { color: #526173; font-size: 0.88rem; font-weight: 700; align-self: center; }
     .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
     .summary { display: grid; gap: 10px; margin-top: 14px; }
     @media (min-width: 720px) { .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -1396,7 +1405,7 @@ function buildPersonalResultHtml(record) {
 </head>
 <body>
   <main>
-    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    <div class="screen-actions"><span>保存名: ${escapeHtml(personalFileName)}</span><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
     <h1>ストレスチェック個人結果</h1>
     <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。PDF保存名の例: ${escapeHtml(names.personal)}</p>
     <div class="meta">
@@ -2013,15 +2022,16 @@ function renderIndividualAnalysisPreview(rows) {
     `<div class="suppressed-item"><strong>企業向け集団分析</strong><span>${groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `会社全体または10人以上の集団を表示できます。表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示集団 ${groupAnalysis.suppressedGroups.length}件。` : "企業向け集団分析を出すには、判定可能な回答が10人以上必要です。"}</span></div>`,
     `<div class="suppressed-item"><strong>本人通知・面接指導案内</strong><span>${missingGuidance.length ? `未入力: ${missingGuidance.join("、")}。本人向け結果を出す前に入力してください。` : "実施者名・申出先・申出期限を本人向け結果に反映します。"}</span></div>`,
     `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
-    ...analyses.slice(0, 12).map((analysis) => {
+    ...analyses.slice(0, 12).map((analysis, index) => {
       const label = analysis.canScore ? (analysis.highStress ? "高ストレス者判定該当" : "非該当") : "判定不可";
       const id = analysis.respondentId || analysis.participantCode || "-";
       const name = analysis.personName || "-";
       const scores = analysis.canScore
         ? `B反応6尺度 ${analysis.reactionTotal}点 / A+C 12尺度 ${analysis.factorSupportTotal}点 / 活気 ${scalePointText(analysis, "B_VIGOR")}・不安 ${scalePointText(analysis, "B_ANXIETY")}・抑うつ ${scalePointText(analysis, "B_DEPRESSION")}`
         : analysis.reason;
+      const fileHint = analysis.canScore ? `PDF保存名: ${personalResultFileName(rows[index])}` : "";
       const action = analysis.canScore ? `<button type="button" class="btn btn-outline btn-sm personal-result-action" data-row-index="${index}">本人向け結果を開く</button>` : "";
-      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}</span>${action}</div>`;
+      return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}${fileHint ? `<br>${escapeHtml(fileHint)}` : ""}</span>${action}</div>`;
     }),
     analyses.length > 12 ? `<div class="suppressed-item">残り ${analyses.length - 12}件は省略表示しています。全件は「個人分析CSVを保存」で確認してください。</div>` : "",
   ].join("");
