@@ -4140,6 +4140,41 @@ textarea {
   color: var(--muted);
 }
 
+.requirements-next {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border: 1px solid #f1d38a;
+  border-radius: 8px;
+  background: #fff8e6;
+}
+
+.requirements-next.ok {
+  border-color: #bfe2df;
+  background: #eefbf9;
+}
+
+.requirements-next strong {
+  color: #8a5a00;
+}
+
+.requirements-next.ok strong {
+  color: #176c6a;
+}
+
+.requirements-next span,
+.requirements-next em {
+  display: block;
+}
+
+.requirements-next em {
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.92rem;
+}
+
 .requirements-grid {
   display: grid;
   gap: 10px;
