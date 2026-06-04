@@ -29,6 +29,9 @@ const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadEntryCsvTemplate = document.querySelector("#downloadEntryCsvTemplate");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
 const downloadGoogleFormItemList = document.querySelector("#downloadGoogleFormItemList");
+const downloadQuestionnaireAuditCsv = document.querySelector("#downloadQuestionnaireAuditCsv");
+const downloadMhlwComparisonCsv = document.querySelector("#downloadMhlwComparisonCsv");
+const openComplianceReport = document.querySelector("#openComplianceReport");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
 const downloadFixListCsv = document.querySelector("#downloadFixListCsv");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
@@ -2246,6 +2249,7 @@ function renderIndividualAnalysisPreview(rows) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
     renderCompletionChecklist([]);
     if (downloadFixListCsv) downloadFixListCsv.disabled = true;
+    if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = true;
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
@@ -2267,6 +2271,7 @@ function renderIndividualAnalysisPreview(rows) {
   const missingGuidance = missingGuidanceLabels(settings);
   const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
   if (downloadFixListCsv) downloadFixListCsv.disabled = !fixListCount;
+  if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = !rows.length;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
@@ -2970,6 +2975,136 @@ function buildGoogleFormItemListCsv() {
   return rows.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function questionnaireAuditRows() {
+  const rows = [
+    ["分類", "順番", "項目キー", "項目名", "必須", "選択肢", "厚労省57項目との照合", "Googleフォーム固定確認", "備考"],
+    ["基本情報", 1, "respondentId", "受検者ID", "必須", "", "制度外の本人照合項目", "", "個人シート作成に必要"],
+    ["基本情報", 2, "personName", "氏名", "必須", "", "制度外の本人通知項目", "", "個人シート作成に必要"],
+    ["基本情報", 3, "kanaName", "フリガナ", "必須", "", "制度外の本人通知項目", "", "個人シート作成に必要"],
+    ["基本情報", 4, "birthDate", "生年月日", "必須", "", "制度外の本人照合項目", "", "個人シート作成に必要"],
+    ["基本情報", 5, "gender", "性別", "必須", "男性 | 女性", "素点換算表に必要", "", "表記ゆれ不可"],
+    ["基本情報", 6, "workplaceCode", "職場コード", "必須", "", "集団分析分類用", "", "職場名と対応させる"],
+    ["基本情報", 7, "workplaceName", "職場名", "必須", "", "集団分析分類用", "", "10人未満非表示判定に影響"],
+  ];
+  let order = 8;
+  for (const section of googleFormSections) {
+    getGoogleFormQuestions(section).forEach((question, index) => {
+      const key = `${section.key}${index + 1}`;
+      rows.push([
+        section.title,
+        order,
+        key,
+        question.text,
+        "必須",
+        section.options.join(" | "),
+        "厚労省 職業性ストレス簡易調査票57項目PDFと文言・順番・選択肢を照合",
+        "",
+        question.group || "",
+      ]);
+      order += 1;
+    });
+  }
+  rows.push(["送信前確認", order, "privacyConfirm", "個人情報の扱いの確認", "必須", "確認しました", "制度運用説明の確認", "", ""]);
+  rows.push(["送信前確認", order + 1, "answerConfirm", "回答内容の確認", "必須", "すべての設問に回答しました", "未回答防止", "", ""]);
+  return rows;
+}
+
+function buildQuestionnaireAuditCsv() {
+  return questionnaireAuditRows().map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function buildMhlwComparisonCsv(rows = googleImportRows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const names = recommendedFileNames(rows);
+  const output = [
+    ["区分", "比較対象", "このシステムの確認値", "厚労省アプリ確認値", "一致判定", "差異メモ", "確認者", "確認日"],
+    ["質問紙", "57項目の文言・順番・選択肢", "質問紙照合CSVで確認", "", "", "厚労省57項目PDFと照合", "", ""],
+    ["CSV取込", "回答件数", rows.length, "", "", "同じCSVを厚労省アプリへ投入", "", ""],
+    ["個人分析", "判定可能件数", scoreableCount, "", "", names.individualCsv, "", ""],
+    ["個人分析", "高ストレス者判定該当件数", highStressCount, "", "", "個人別判定も抽出確認", "", ""],
+    ["個人分析", "本人向けフィードバックの表示項目", "本人向け結果HTML", "", "", "文面は独自。産業医・社労士確認", "", ""],
+    ["集団分析", "会社全体の表示可否", groupAnalysis.overall ? "表示" : "非表示", "", "", "10人以上判定", "", ""],
+    ["集団分析", "表示集団数", groupAnalysis.visibleGroups.length, "", "", names.company, "", ""],
+    ["集団分析", "非表示集団数", groupAnalysis.suppressedGroups.length, "", "", "10人未満は数値非表示", "", ""],
+    ["集団分析", "健康リスク値", "企業向け集団分析HTML", "", "", "厚労省アプリ結果と数値突合", "", ""],
+    ["運用", "本人通知・面接指導案内", missingGuidanceLabels().length ? "未入力あり" : "入力済み", "", "", "本番前に必須確認", "", ""],
+    ["運用", "監査保管ファイル", names.completionPackage, "", "", "実施完了チェックCSVで保存漏れ確認", "", ""],
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function complianceReportRows(rows = googleImportRows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
+  const missingGuidance = missingGuidanceLabels();
+  return [
+    ["質問紙の選定", "改善済み", "職業性ストレス簡易調査票57項目を前提にし、Googleフォーム項目一覧CSVと質問紙照合CSVを出力可能にした。", "厚労省57項目PDFとの最終目視照合は実施者側で行う。"],
+    ["内容の反映", "改善済み", "必須基本情報、性別、職場コード、職場名、57項目認識、修正リストCSVを整備。", fixListCount ? `補完候補 ${fixListCount}件あり。` : "現在の読込データでは補完候補なし。"],
+    ["回答内容の取得", "要運用管理", "GoogleフォームCSV方式。個人情報はブラウザ内で処理し、API連携しない。", "回答スプレッドシート権限、1回回答、重複時採用ルールはGoogle側と運用規程で固定する。"],
+    ["システムへの反映", "改善済み", "取込チェック、修正リスト、個人分析、本人結果、集団分析、各種台帳、完了チェックCSVを整備。", "厚労省アプリとの突合CSVを出力し、数値一致を確認する。"],
+    ["個人分析内容", "要突合", `判定可能 ${scoreableCount}件、高ストレス者 ${highStressCount}件を算出。`, "高ストレス者判定ロジックと本人向け文面は厚労省アプリ・専門家確認が必要。"],
+    ["集団分析内容", "要突合", `表示集団 ${groupAnalysis.visibleGroups.length}件、非表示集団 ${groupAnalysis.suppressedGroups.length}件。`, "健康リスク値と集団フィードバックは厚労省アプリと突合する。10人未満以外も個人推測リスクを人が確認する。"],
+    ["本番前必須", missingGuidance.length ? "未完了" : "完了", missingGuidance.length ? `未入力: ${missingGuidance.join("、")}` : "実施者名・申出先・申出期限は入力済み。", "実施者、実施事務従事者、保存権限、本人通知、面接指導、労基署報告フローを確定する。"],
+  ];
+}
+
+function buildComplianceReportHtml(rows = googleImportRows) {
+  const reportRows = complianceReportRows(rows).map((row) => `
+    <tr><td>${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td><td>${escapeHtml(row[2])}</td><td>${escapeHtml(row[3])}</td></tr>
+  `).join("");
+  const names = recommendedFileNames(rows);
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ストレスチェック制度適合改善レポート</title>
+  <style>
+    body { margin: 0; color: #111827; background: #eef3f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.7; }
+    main { max-width: 1040px; margin: 28px auto; padding: 28px; background: #fff; border: 1px solid #d8e2e8; border-radius: 8px; }
+    h1, h2 { margin: 0; line-height: 1.25; }
+    h2 { margin-top: 28px; font-size: 1.18rem; }
+    table { width: 100%; margin-top: 14px; border-collapse: collapse; font-size: 0.94rem; }
+    th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+    th { background: #edf5f7; }
+    .notice { margin-top: 18px; padding: 12px 14px; border-radius: 8px; background: #fff8db; border: 1px solid #f5df8a; }
+    .fine { color: #5b6678; font-size: 0.9rem; }
+    .screen-actions { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+    .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+    @media print { body { background: #fff; } main { margin: 0; border: 0; } .screen-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    <h1>ストレスチェック制度適合改善レポート</h1>
+    <p class="fine">作成日時: ${escapeHtml(new Date().toLocaleString("ja-JP"))} / 実施ID: ${escapeHtml(currentRunId || "-")} / CSV: ${escapeHtml(currentCsvSourceName || "-")}</p>
+    <div class="notice">このレポートは実施補助システムの改善状況と残課題を整理するものです。法的な最終判断は、実施者、産業医、社労士等の確認と事業場の運用記録に基づいて行ってください。</div>
+    <h2>改善状況と残課題</h2>
+    <table><thead><tr><th>領域</th><th>状態</th><th>改善内容</th><th>残課題・本番前確認</th></tr></thead><tbody>${reportRows}</tbody></table>
+    <h2>追加した確認出力</h2>
+    <table>
+      <tbody>
+        <tr><th>質問紙照合CSV</th><td>57項目の文言・順番・選択肢を厚労省PDFと照合する台帳。</td></tr>
+        <tr><th>厚労省アプリ突合CSV</th><td>個人判定、集団分析、健康リスク値を厚労省アプリ結果と比較する台帳。</td></tr>
+        <tr><th>実施完了チェックCSV</th><td>本人通知、企業共有、面接指導、監査保管の保存漏れ確認。</td></tr>
+      </tbody>
+    </table>
+    <h2>参照資料</h2>
+    <p>厚生労働省 ストレスチェック関連情報: <a href="https://stresscheck.mhlw.go.jp/material.html">https://stresscheck.mhlw.go.jp/material.html</a></p>
+    <p>厚生労働省 職業性ストレス簡易調査票57項目: <a href="https://www.mhlw.go.jp/content/11300000/stress-check_j.pdf">https://www.mhlw.go.jp/content/11300000/stress-check_j.pdf</a></p>
+    <p class="fine">推奨保管名: ${escapeHtml(names.completionPackage)} / ${escapeHtml(names.retentionManifest)}</p>
+  </main>
+</body>
+</html>`;
+}
+
 function downloadGoogleCsvTemplateFile(filename) {
   const blob = new Blob([`\uFEFF${buildGoogleCsvTemplate()}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -3000,6 +3135,28 @@ function handleDownloadGoogleFormItemList() {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function handleDownloadQuestionnaireAuditCsv() {
+  downloadTextFile("stress-check-questionnaire-audit.csv", `\uFEFF${buildQuestionnaireAuditCsv()}`, "text/csv;charset=utf-8");
+  setGoogleImportMessage("質問紙照合CSVを保存しました。厚労省57項目PDFと文言・順番・選択肢を照合してください。", "success");
+  addOperationLog("質問紙照合CSV保存");
+}
+
+function handleDownloadMhlwComparisonCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  downloadTextFile(fileNameWithRunId("mhlw-app-comparison-check", "csv"), `\uFEFF${buildMhlwComparisonCsv(googleImportRows)}`, "text/csv;charset=utf-8");
+  setGoogleImportMessage("厚労省アプリ突合CSVを保存しました。同じCSVを厚労省アプリへ入れ、個人判定・集団分析の一致を確認してください。", "success");
+  addOperationLog("厚労省アプリ突合CSV保存", { rows: googleImportRows.length });
+}
+
+function handleOpenComplianceReport() {
+  const opened = openHtmlDocument(buildComplianceReportHtml(googleImportRows));
+  setGoogleImportMessage(opened ? "制度適合改善レポートを開きました。印刷またはPDF保存できます。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("制度適合改善レポート表示", { rows: googleImportRows.length });
 }
 
 function buildGoogleImportCheckCsv(rows) {
@@ -3263,6 +3420,9 @@ importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
 downloadEntryCsvTemplate.addEventListener("click", handleDownloadEntryCsvTemplate);
 downloadGoogleFormItemList.addEventListener("click", handleDownloadGoogleFormItemList);
+downloadQuestionnaireAuditCsv.addEventListener("click", handleDownloadQuestionnaireAuditCsv);
+downloadMhlwComparisonCsv.addEventListener("click", handleDownloadMhlwComparisonCsv);
+openComplianceReport.addEventListener("click", handleOpenComplianceReport);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
@@ -3312,6 +3472,7 @@ googleCsvFile.addEventListener("change", () => {
   importGoogleCsv.disabled = true;
   downloadGoogleImportCheck.disabled = true;
   downloadFixListCsv.disabled = true;
+  downloadMhlwComparisonCsv.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
   openIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;

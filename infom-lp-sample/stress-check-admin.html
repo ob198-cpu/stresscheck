@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=open-individual-analysis-csv" />
+  <link rel="stylesheet" href="styles.css?v=compliance-review-exports" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -167,6 +167,9 @@
               <a class="btn btn-outline" href="https://stresscheck.mhlw.go.jp/download/List_sample.pdf" target="_blank" rel="noreferrer">厚労省公式サンプルPDF</a>
               <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">見出しテンプレート</button>
               <button type="button" id="downloadGoogleFormItemList" class="btn btn-outline">Googleフォーム項目一覧CSV</button>
+              <button type="button" id="downloadQuestionnaireAuditCsv" class="btn btn-outline">質問紙照合CSV</button>
+              <button type="button" id="downloadMhlwComparisonCsv" class="btn btn-outline" disabled>厚労省アプリ突合CSV</button>
+              <button type="button" id="openComplianceReport" class="btn btn-outline">制度適合改善レポート</button>
               <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSV</button>
               <button type="button" id="downloadFixListCsv" class="btn btn-outline" disabled>修正リストCSV</button>
               <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
@@ -319,6 +322,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=open-individual-analysis-csv"></script>
+  <script src="stress-check-admin.js?v=compliance-review-exports"></script>
 </body>
 </html>
