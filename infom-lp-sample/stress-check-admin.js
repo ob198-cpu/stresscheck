@@ -1880,6 +1880,16 @@ function profileRadarSvg(analysis) {
   `;
 }
 
+function sampleOutputWarningHtml() {
+  if (currentRunMode !== "サンプル") return "";
+  return `
+    <div class="sample-output-warning">
+      <strong>サンプルCSVで作成した帳票です</strong>
+      <span>動作確認用です。本番の本人通知・会社共有・実施記録・労基署報告には使用しないでください。</span>
+    </div>
+  `;
+}
+
 function buildPersonalResultHtml(record) {
   const analysis = buildMhlwIndividualAnalysis(record);
   const settings = getImplementationSettings();
@@ -1938,6 +1948,9 @@ function buildPersonalResultHtml(record) {
     .notice { margin-top: 18px; font-weight: 800; }
     .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
     .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
+    .sample-output-warning { margin: 0 0 18px; padding: 14px 16px; border: 2px solid #e11d48; border-radius: 8px; background: #fff1f2; color: #9f1239; }
+    .sample-output-warning strong, .sample-output-warning span { display: block; }
+    .sample-output-warning strong { font-size: 1.05rem; }
     table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
@@ -1955,6 +1968,7 @@ function buildPersonalResultHtml(record) {
 <body>
   <main>
     <div class="screen-actions"><span>保存名: ${escapeHtml(personalFileName)}</span><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    ${sampleOutputWarningHtml()}
     <h1>ストレスチェック個人結果</h1>
     <p class="fine">この結果は本人通知用です。本人の同意なく、会社担当者へ個人結果や高ストレス者判定を共有しないでください。PDF保存名の例: ${escapeHtml(names.personal)}</p>
     <div class="meta">
@@ -2017,6 +2031,9 @@ function buildAllPersonalResultsHtml(rows) {
     .screen-actions { position: sticky; top: 0; z-index: 3; max-width: 920px; margin: 0 auto; padding: 12px; display: flex; gap: 12px; align-items: center; justify-content: flex-end; background: rgba(238, 243, 246, 0.92); }
     .screen-actions span { color: #526173; font-size: 0.88rem; font-weight: 700; }
     .screen-actions button { min-height: 42px; padding: 9px 15px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+    .sample-output-warning { max-width: 920px; margin: 16px auto; padding: 14px 16px; border: 2px solid #e11d48; border-radius: 8px; background: #fff1f2; color: #9f1239; }
+    .sample-output-warning strong, .sample-output-warning span { display: block; }
+    .sample-output-warning strong { font-size: 1.05rem; }
     .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
     .meta div, .notice, .box, .chart-card { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
     .notice { margin-top: 18px; font-weight: 800; }
@@ -2037,6 +2054,7 @@ function buildAllPersonalResultsHtml(rows) {
 </head>
 <body>
   <div class="screen-actions"><span>PDF保存名の例: ${escapeHtml(names.personal)}</span><button type="button" onclick="window.print()">全員分を印刷 / PDF保存</button></div>
+  ${sampleOutputWarningHtml()}
   ${documents.map((body) => `<main>${body.replace(/<div class="screen-actions">[\s\S]*?<\/div>/, "")}</main>`).join("")}
 </body>
 </html>`;
@@ -2247,6 +2265,9 @@ function buildCompanyGroupHtml(rows) {
     .box strong, .box span { display: block; }
     .box strong { font-size: 1.55rem; line-height: 1.1; }
     .notice { margin-top: 18px; background: #fff8db; }
+    .sample-output-warning { margin: 0 0 18px; padding: 14px 16px; border: 2px solid #e11d48; border-radius: 8px; background: #fff1f2; color: #9f1239; }
+    .sample-output-warning strong, .sample-output-warning span { display: block; }
+    .sample-output-warning strong { font-size: 1.05rem; }
     table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
     th { background: #edf5f7; }
@@ -2263,6 +2284,7 @@ function buildCompanyGroupHtml(rows) {
 <body>
   <main>
     <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    ${sampleOutputWarningHtml()}
     <h1>ストレスチェック集団分析結果</h1>
     <p class="fine">企業担当者向け資料です。個人名、受検者ID、個人別の高ストレス判定は含めていません。10人未満の集団は個人特定防止のため数値を非表示にしています。PDF保存名の例: ${escapeHtml(names.company)}</p>
     <div class="summary">
@@ -2378,6 +2400,9 @@ function buildImplementationRecordHtml(rows) {
     .box strong, .box span { display: block; }
     .box strong { font-size: 1.45rem; line-height: 1.1; }
     .notice { margin-top: 18px; background: #fff8db; }
+    .sample-output-warning { margin: 0 0 18px; padding: 14px 16px; border: 2px solid #e11d48; border-radius: 8px; background: #fff1f2; color: #9f1239; }
+    .sample-output-warning strong, .sample-output-warning span { display: block; }
+    .sample-output-warning strong { font-size: 1.05rem; }
     table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
     th, td { padding: 9px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
     th { background: #edf5f7; }
@@ -2389,6 +2414,7 @@ function buildImplementationRecordHtml(rows) {
 <body>
   <main>
     <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    ${sampleOutputWarningHtml()}
     <h1>ストレスチェック実施記録</h1>
     <p class="fine">この帳票は実施者・事務局向けの保管用記録です。本人向け結果そのもの、個人別の高ストレス判定、個人名は載せていません。PDF保存名の例: ${escapeHtml(names.implementation)}</p>
     <div class="summary">
