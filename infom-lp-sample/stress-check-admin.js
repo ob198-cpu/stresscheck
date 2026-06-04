@@ -1890,6 +1890,16 @@ function sampleOutputWarningHtml() {
   `;
 }
 
+function updateOutputButtonLabels() {
+  const sample = currentRunMode === "サンプル";
+  if (downloadPersonalResultHtml) downloadPersonalResultHtml.textContent = sample ? "サンプル本人向け結果を確認" : "本人向け結果を開く";
+  if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.textContent = sample ? "サンプル集団分析を確認" : "企業向け集団分析を開く";
+  if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.textContent = sample ? "サンプル実施記録を確認" : "実施記録を開く";
+  if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.textContent = sample ? "サンプル本人配布チェックCSV" : "本人配布チェックCSV";
+  if (downloadCompanyDisclosureCsv) downloadCompanyDisclosureCsv.textContent = sample ? "サンプル企業共有チェックCSV" : "企業共有チェックCSV";
+  if (downloadInterviewFollowupCsv) downloadInterviewFollowupCsv.textContent = sample ? "サンプル面接指導対応CSV" : "面接指導対応CSV";
+}
+
 function buildPersonalResultHtml(record) {
   const analysis = buildMhlwIndividualAnalysis(record);
   const settings = getImplementationSettings();
@@ -2563,6 +2573,7 @@ function refreshAnalysisAfterBasicEdit(redrawEditor = false) {
 
 function renderIndividualAnalysisPreview(rows) {
   if (!individualAnalysisPreview) return;
+  updateOutputButtonLabels();
   if (!rows.length) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
     renderCompletionChecklist([]);
@@ -2618,7 +2629,8 @@ function renderIndividualAnalysisPreview(rows) {
         ? `B反応6尺度 ${analysis.reactionTotal}点 / A+C 12尺度 ${analysis.factorSupportTotal}点 / 活気 ${scalePointText(analysis, "B_VIGOR")}・不安 ${scalePointText(analysis, "B_ANXIETY")}・抑うつ ${scalePointText(analysis, "B_DEPRESSION")}`
         : analysis.reason;
       const fileHint = analysis.canScore ? `PDF保存名: ${personalResultFileName(rows[index])}` : "";
-      const action = analysis.canScore ? `<button type="button" class="btn btn-outline btn-sm personal-result-action" data-row-index="${index}">本人向け結果を開く</button>` : "";
+      const actionLabel = currentRunMode === "サンプル" ? "サンプル本人結果を確認" : "本人向け結果を開く";
+      const action = analysis.canScore ? `<button type="button" class="btn btn-outline btn-sm personal-result-action" data-row-index="${index}">${escapeHtml(actionLabel)}</button>` : "";
       return `<div class="suppressed-item"><strong>${escapeHtml(`CSV ${analysis.sourceRowNumber}行目 / ${id} / ${name} / ${label}`)}</strong><span>${escapeHtml(scores)}${fileHint ? `<br>${escapeHtml(fileHint)}` : ""}</span>${action}</div>`;
     }),
     analyses.length > 12 ? `<div class="suppressed-item">残り ${analyses.length - 12}件は省略表示しています。全件は「個人分析CSVを保存」で確認してください。</div>` : "",
@@ -3745,6 +3757,7 @@ adminKeyInput.addEventListener("input", () => {
 
 applyAdminKeyToLinks();
 restoreOperationSettings();
+updateOutputButtonLabels();
 loadSummary();
 loadStoredResponses();
 generateParticipantUrls.addEventListener("click", handleGenerateParticipantUrls);
@@ -3821,6 +3834,7 @@ googleCsvFile.addEventListener("change", () => {
   currentCsvSourceName = "";
   currentCsvHash = "";
   currentRunMode = "未選択";
+  updateOutputButtonLabels();
   googleImportRows = [];
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
