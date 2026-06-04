@@ -29,6 +29,7 @@ const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
 const downloadGoogleFormItemList = document.querySelector("#downloadGoogleFormItemList");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
+const downloadFixListCsv = document.querySelector("#downloadFixListCsv");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
@@ -773,6 +774,42 @@ function buildPersonalDeliveryCsv(rows = googleImportRows) {
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function rowFixIssues(row) {
+  const analysis = buildMhlwIndividualAnalysis(row);
+  return [
+    ...importIssues(row),
+    ...importWarnings(row).map((label) => `基本情報不足: ${label}`),
+    !normalizeGenderForMhlw(row.gender) ? "性別が厚労省換算表で判定できない値" : "",
+    row.csvDuplicate ? "重複行の扱い確認" : "",
+    analysis.canScore ? "" : analysis.reason,
+  ].filter(Boolean);
+}
+
+function buildFixListCsv(rows = googleImportRows) {
+  const targets = rows.filter((row) => rowFixIssues(row).length);
+  const output = [
+    ["CSV行", "受検者ID", "氏名", "フリガナ", "職場コード", "職場名", "修正が必要な内容", "不足回答項目", "基本情報不足", "推奨対応", "補完後の確認"],
+    ...targets.map((row) => {
+      const missingAnswers = missingAnswerKeys(row);
+      const warnings = importWarnings(row);
+      return [
+        row.sourceRowNumber || "",
+        row.respondentId || row.participantCode || "",
+        row.personName || "",
+        row.kanaName || "",
+        row.workplaceCode || "",
+        row.workplaceName || row.department || "",
+        Array.from(new Set(rowFixIssues(row))).join(" / "),
+        missingAnswers.join(" "),
+        warnings.join(" / "),
+        missingAnswers.length ? "Googleフォーム回答CSVを確認。回答欠損がある場合は本人確認または再回答を検討。" : "基本情報補完CSVまたは画面上の不足情報入力で補完。",
+        "",
+      ];
+    }),
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
 function buildCompanyDisclosureCsv(rows = googleImportRows) {
   const summary = buildCompanyGroupAnalysis(rows);
   const output = [
@@ -902,6 +939,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["個人分析CSV", names.individualCsv, hasOperation("個人分析CSV保存") ? "保存済み" : "未保存"],
     ["本人配布チェックCSV", names.personalDelivery, hasOperation("本人配布チェックCSV") ? "保存済み" : "未保存"],
     ["取込チェックCSV", names.importCheck, hasOperation("取込チェックCSV保存") ? "保存済み" : "未保存"],
+    ["修正リストCSV", names.fixList, hasOperation("修正リストCSV") ? "保存済み" : "未保存"],
     ["実施ログCSV", names.operationLog, hasOperation("実施ログCSV") ? "保存済み" : "未保存"],
     ["保管ファイル一覧CSV", names.retentionManifest, "このファイル"],
   ];
@@ -989,6 +1027,7 @@ function recommendedFileNames(rows = googleImportRows) {
     interviewFollowup: fileNameWithRunId("interview-guidance-followup", "csv"),
     implementation: fileNameWithRunId("implementation-record", "pdf"),
     importCheck: fileNameWithRunId("google-form-import-check", "csv"),
+    fixList: fileNameWithRunId("stress-check-fix-list", "csv"),
     individualCsv: fileNameWithRunId("stress-check-individual-analysis-mhlw57", "csv"),
     personalDelivery: fileNameWithRunId("personal-result-delivery-check", "csv"),
     operationLog: fileNameWithRunId("stress-check-operation-log", "csv"),
@@ -1023,6 +1062,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
     statusItem("面接指導対応CSV", hasOperation("面接指導対応CSV"), highStressCount ? `対象 ${highStressCount}件 / 実施者管理` : "対象者なし"),
     statusItem("実施記録を開く", hasOperation("実施記録"), "PDF保存して保管"),
     statusItem("取込チェックCSV", hasOperation("取込チェックCSV保存"), "読込結果の確認用"),
+    statusItem("修正リストCSV", hasOperation("修正リストCSV"), `${rows.filter((row) => rowFixIssues(row).length).length}件の補完候補`),
     statusItem("実施ログCSV", hasOperation("実施ログCSV"), operationLog.length ? `${operationLog.length}件のログ` : "ログなし"),
     statusItem("保管ファイル一覧CSV", hasOperation("保管ファイル一覧CSV"), "監査用フォルダの台帳"),
   ];
@@ -1039,6 +1079,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
       <span>${escapeHtml(names.interviewFollowup)}</span>
       <span>${escapeHtml(names.implementation)}</span>
       <span>${escapeHtml(names.individualCsv)}</span>
+      <span>${escapeHtml(names.fixList)}</span>
       <span>${escapeHtml(names.personalDelivery)}</span>
       <span>${escapeHtml(names.operationLog)}</span>
       <span>${escapeHtml(names.retentionManifest)}</span>
@@ -2171,6 +2212,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (!rows.length) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
     renderCompletionChecklist([]);
+    if (downloadFixListCsv) downloadFixListCsv.disabled = true;
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = true;
@@ -2188,6 +2230,8 @@ function renderIndividualAnalysisPreview(rows) {
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
   const missingGuidance = missingGuidanceLabels(settings);
+  const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
+  if (downloadFixListCsv) downloadFixListCsv.disabled = !fixListCount;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = !rows.length;
@@ -2962,6 +3006,22 @@ function handleDownloadGoogleImportCheck() {
   addOperationLog("取込チェックCSV保存", { rows: googleImportRows.length });
 }
 
+function handleDownloadFixListCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  const count = googleImportRows.filter((row) => rowFixIssues(row).length).length;
+  if (!count) {
+    setGoogleImportMessage("修正が必要な行はありません。本人向け結果の出力に進めます。", "success");
+    return;
+  }
+  const names = recommendedFileNames(googleImportRows);
+  downloadTextFile(names.fixList, `\uFEFF${buildFixListCsv(googleImportRows)}`, "text/csv;charset=utf-8");
+  setGoogleImportMessage(`修正リストCSVを保存しました。${count}件の不足情報・判定不可理由を確認できます。`, "success");
+  addOperationLog("修正リストCSV保存", { rows: count });
+}
+
 function handleDownloadIndividualAnalysisCsv() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
@@ -3136,6 +3196,7 @@ importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
 downloadGoogleFormItemList.addEventListener("click", handleDownloadGoogleFormItemList);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
+downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
@@ -3181,6 +3242,7 @@ googleCsvFile.addEventListener("change", () => {
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
   downloadGoogleImportCheck.disabled = true;
+  downloadFixListCsv.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadPersonalDeliveryCsv.disabled = true;
