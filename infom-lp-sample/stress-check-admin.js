@@ -44,6 +44,7 @@ const downloadImplementationRecordHtml = document.querySelector("#downloadImplem
 const downloadOperationLogCsv = document.querySelector("#downloadOperationLogCsv");
 const downloadRetentionManifestCsv = document.querySelector("#downloadRetentionManifestCsv");
 const downloadCompletionPackageCsv = document.querySelector("#downloadCompletionPackageCsv");
+const downloadLabourOfficeReportCsv = document.querySelector("#downloadLabourOfficeReportCsv");
 const downloadPersonalDeliveryCsv = document.querySelector("#downloadPersonalDeliveryCsv");
 const loadSampleCsv = document.querySelector("#loadSampleCsv");
 const googleImportMessage = document.querySelector("#googleImportMessage");
@@ -992,7 +993,41 @@ function buildCompletionPackageCsv(rows = googleImportRows) {
     [9, "監査保管", "実施記録PDFを保存", names.implementation, "個人結果を含まない実施記録", hasOperation("実施記録") ? "済" : "未", ""],
     [10, "監査保管", "実施ログCSVを保存", names.operationLog, `${operationLog.length}件のログ`, hasOperation("実施ログCSV") ? "済" : "未", ""],
     [11, "監査保管", "保管ファイル一覧CSVを保存", names.retentionManifest, recommendedFolderName(), hasOperation("保管ファイル一覧CSV") ? "済" : "未", ""],
-    [12, "監査保管", "この実施完了チェックCSVを保存", names.completionPackage, "最終確認用", "このファイル", ""],
+    [12, "労基署報告", "労基署報告用集計CSVを保存し、会社側情報を補完", fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), "50人以上の事業場は報告対象", hasOperation("労基署報告用集計CSV") ? "済" : "未", ""],
+    [13, "監査保管", "この実施完了チェックCSVを保存", names.completionPackage, "最終確認用", "このファイル", ""],
+  ];
+  return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
+function buildLabourOfficeReportCsv(rows = googleImportRows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const groupAnalysis = buildCompanyGroupAnalysis(rows);
+  const settings = getImplementationSettings();
+  const output = [
+    ["項目", "値", "転記・確認メモ"],
+    ["帳票名", "心理的な負担の程度を把握するための検査結果等報告書", "労基署報告用の転記確認"],
+    ["事業場名", "", "会社側で入力"],
+    ["事業場所在地", "", "会社側で入力"],
+    ["労働保険番号", "", "会社側で入力"],
+    ["対象年", "", "会社側で入力"],
+    ["在籍労働者数", "", "会社側で入力。報告書の対象労働者数"],
+    ["検査を受けた労働者数", scoreableCount, "判定可能な回答数。事業場の正式集計と照合"],
+    ["CSV読込件数", rows.length, "回答CSVの総行数"],
+    ["判定不可件数", analyses.length - scoreableCount, "修正リストCSVで確認"],
+    ["高ストレス者判定該当件数", highStressCount, "労基署報告書へ個人名は記載しない"],
+    ["面接指導の申出者数", "", "実施者側の面接指導対応CSVで確定"],
+    ["面接指導を受けた労働者数", "", "実施者・産業医の記録で確定"],
+    ["集団分析実施の有無", groupAnalysis.overall || groupAnalysis.visibleGroups.length ? "有" : "無", "10人以上の集団分析を表示できる場合は有"],
+    ["表示集団数", groupAnalysis.visibleGroups.length, "企業共有チェックCSVで確認"],
+    ["非表示集団数", groupAnalysis.suppressedGroups.length, "10人未満等で非表示"],
+    ["実施者名", settings.operator || "", "本番前に必ず確認"],
+    ["面接指導の申出先", settings.interviewContact || "", "本人向け結果と一致させる"],
+    ["申出期限", settings.interviewDeadline || "", "本人向け結果と一致させる"],
+    ["提出者", "", "会社または委任された社労士等"],
+    ["提出方法", "電子申請または所轄労働基準監督署の指定方法", "最新の提出方法は厚労省・e-Govで確認"],
+    ["個人情報注意", "個人名・個人結果・高ストレス者個人情報は労基署報告用CSVに含めない", "会社共有禁止情報と混同しない"],
   ];
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
@@ -2260,6 +2295,7 @@ function renderIndividualAnalysisPreview(rows) {
     if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = true;
     if (downloadRetentionManifestCsv) downloadRetentionManifestCsv.disabled = true;
     if (downloadCompletionPackageCsv) downloadCompletionPackageCsv.disabled = true;
+    if (downloadLabourOfficeReportCsv) downloadLabourOfficeReportCsv.disabled = true;
     return;
   }
 
@@ -2282,6 +2318,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadImplementationRecordHtml) downloadImplementationRecordHtml.disabled = !rows.length;
   if (downloadRetentionManifestCsv) downloadRetentionManifestCsv.disabled = !rows.length;
   if (downloadCompletionPackageCsv) downloadCompletionPackageCsv.disabled = !rows.length;
+  if (downloadLabourOfficeReportCsv) downloadLabourOfficeReportCsv.disabled = !rows.length;
   renderCompletionChecklist(rows);
 
   individualAnalysisPreview.innerHTML = [
@@ -3332,6 +3369,16 @@ function handleDownloadCompletionPackageCsv() {
   addOperationLog("実施完了チェックCSV保存", { rows: googleImportRows.length });
 }
 
+function handleDownloadLabourOfficeReportCsv() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。", "error");
+    return;
+  }
+  downloadTextFile(fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), `\uFEFF${buildLabourOfficeReportCsv(googleImportRows)}`, "text/csv;charset=utf-8");
+  setGoogleImportMessage("労基署報告用集計CSVを保存しました。事業場名・在籍労働者数・面接指導人数などは会社側記録で補完してください。", "success");
+  addOperationLog("労基署報告用集計CSV保存", { rows: googleImportRows.length });
+}
+
 function handleDownloadPersonalDeliveryCsv() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
@@ -3435,6 +3482,7 @@ downloadImplementationRecordHtml.addEventListener("click", handleDownloadImpleme
 downloadOperationLogCsv.addEventListener("click", handleDownloadOperationLogCsv);
 downloadRetentionManifestCsv.addEventListener("click", handleDownloadRetentionManifestCsv);
 downloadCompletionPackageCsv.addEventListener("click", handleDownloadCompletionPackageCsv);
+downloadLabourOfficeReportCsv.addEventListener("click", handleDownloadLabourOfficeReportCsv);
 downloadPersonalDeliveryCsv.addEventListener("click", handleDownloadPersonalDeliveryCsv);
 reloadStoredResponses.addEventListener("click", loadStoredResponses);
 downloadResponseAdminCsv.addEventListener("click", handleDownloadResponseAdminCsv);
@@ -3483,6 +3531,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadImplementationRecordHtml.disabled = true;
   downloadRetentionManifestCsv.disabled = true;
   downloadCompletionPackageCsv.disabled = true;
+  downloadLabourOfficeReportCsv.disabled = true;
   downloadOperationLogCsv.disabled = !operationLog.length;
   googleImportMessage.hidden = true;
   renderEmpty(googleImportPreview, "CSVを選択したら「CSVを確認」を押してください。");
