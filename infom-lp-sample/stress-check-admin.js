@@ -745,7 +745,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
-  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  const missingGuidance = missingGuidanceLabels(settings).length;
   const uncheckedLegalChecks = getLegalOperationChecks().filter((item) => !item.checked).length;
   const names = recommendedFileNames(rows);
   const files = [
@@ -796,6 +796,30 @@ function getImplementationSettings() {
   };
 }
 
+function missingGuidanceLabels(settings = getImplementationSettings()) {
+  return [
+    !settings.operator ? "実施者名" : "",
+    !settings.interviewContact ? "面接指導の申出先" : "",
+    !settings.interviewDeadline ? "申出期限" : "",
+  ].filter(Boolean);
+}
+
+function confirmOutputReadiness(outputLabel, options = {}) {
+  const missingGuidance = missingGuidanceLabels();
+  const uncheckedLegalChecks = getLegalOperationChecks().filter((item) => !item.checked);
+  const issues = [];
+  if (missingGuidance.length) {
+    issues.push(`本人通知・面接指導案内の未入力: ${missingGuidance.join("、")}`);
+  }
+  if (options.requireLegalChecks && uncheckedLegalChecks.length) {
+    issues.push(`実施前チェックの未確認: ${uncheckedLegalChecks.length}件`);
+  }
+  if (!issues.length) return true;
+  const message = `${outputLabel}を開く前に確認してください。\n\n${issues.join("\n")}\n\nこのまま開くとPDFに未入力・未確認が残る可能性があります。\nキャンセルすると画面に戻ります。`;
+  setGoogleImportMessage(`${outputLabel}の出力前確認: ${issues.join(" / ")}`, "error");
+  return window.confirm(message);
+}
+
 function hasOperation(actionPrefix) {
   return operationLog.some((entry) => entry.action.startsWith(actionPrefix));
 }
@@ -834,7 +858,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
-  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]);
+  const missingGuidance = missingGuidanceLabels(settings);
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const names = recommendedFileNames(rows);
   const items = [
@@ -2004,11 +2028,7 @@ function renderIndividualAnalysisPreview(rows) {
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
-  const missingGuidance = [
-    !settings.operator ? "実施者名" : "",
-    !settings.interviewContact ? "面接指導の申出先" : "",
-    !settings.interviewDeadline ? "申出期限" : "",
-  ].filter(Boolean);
+  const missingGuidance = missingGuidanceLabels(settings);
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
@@ -2804,12 +2824,12 @@ function handleDownloadPersonalResultHtml() {
     return;
   }
   const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
-  const settings = getImplementationSettings();
-  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  const missingGuidance = missingGuidanceLabels().length;
   if (!scoreableRows.length) {
     setGoogleImportMessage("本人向け結果を出力できる行がありません。57項目回答と性別を確認してください。", "error");
     return;
   }
+  if (!confirmOutputReadiness("本人向け結果", { requireLegalChecks: true })) return;
   if (scoreableRows.length === 1) {
     const opened = openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]));
     setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。下の本人別ボタンからもう一度開いてください。", opened ? "success" : "error");
@@ -2831,6 +2851,7 @@ function handleDownloadCompanyGroupHtml() {
     setGoogleImportMessage("企業向け集団分析を出力できません。判定可能な回答が10人以上必要です。", "error");
     return;
   }
+  if (!confirmOutputReadiness("企業向け集団分析", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildCompanyGroupHtml(googleImportRows));
   setGoogleImportMessage(opened ? "企業向け集団分析を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   if (opened) addOperationLog("企業向け集団分析表示", { visibleGroups: summary.visibleGroups.length, suppressedGroups: summary.suppressedGroups.length });
@@ -2842,8 +2863,8 @@ function handleDownloadImplementationRecordHtml() {
     return;
   }
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
-  const settings = getImplementationSettings();
-  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  const missingGuidance = missingGuidanceLabels().length;
+  if (!confirmOutputReadiness("実施記録", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
   setGoogleImportMessage(opened ? "実施記録を開きました。開いた画面の「印刷 / PDF保存」で保管してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length, uncheckedLegalChecks: uncheckedCount, missingGuidance });
@@ -2941,10 +2962,10 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   if (!button) return;
   const row = googleImportRows[Number(button.dataset.rowIndex)];
   if (!row) return;
+  if (!confirmOutputReadiness("本人向け結果", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildPersonalResultHtml(row));
   setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  const settings = getImplementationSettings();
-  const missingGuidance = ["operator", "interviewContact", "interviewDeadline"].filter((key) => !settings[key]).length;
+  const missingGuidance = missingGuidanceLabels().length;
   if (opened) addOperationLog("本人向け結果個別表示", { row: row.sourceRowNumber, missingGuidance });
 });
 googleCsvFile.addEventListener("change", () => {
