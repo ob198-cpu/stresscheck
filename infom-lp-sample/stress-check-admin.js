@@ -27,6 +27,7 @@ const basicInfoSource = document.querySelector("#basicInfoSource");
 const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
 const importGoogleCsv = document.querySelector("#importGoogleCsv");
 const downloadGoogleCsvTemplate = document.querySelector("#downloadGoogleCsvTemplate");
+const downloadGoogleFormItemList = document.querySelector("#downloadGoogleFormItemList");
 const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportCheck");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
@@ -87,6 +88,57 @@ const googleCsvTemplateHeaders = [
   ...questionOrder,
   "個人情報の扱いの確認",
   "回答内容の確認",
+];
+
+const googleFormSections = [
+  {
+    key: "A",
+    title: "A あなたの仕事について",
+    options: ["そうだ", "まあそうだ", "ややちがう", "ちがう"],
+    questions: [
+      "非常にたくさんの仕事をしなければならない",
+      "時間内に仕事が処理しきれない",
+      "一生懸命働かなければならない",
+      "かなり注意を集中する必要がある",
+      "高度の知識や技術が必要なむずかしい仕事だ",
+      "勤務時間中はいつも仕事のことを考えていなければならない",
+      "からだを大変よく使う仕事だ",
+      "自分のペースで仕事ができる",
+      "自分で仕事の順番・やり方を決めることができる",
+      "職場の仕事の方針に自分の意見を反映できる",
+      "自分の技能や知識を仕事で使うことが少ない",
+      "私の部署内で意見のくい違いがある",
+      "私の部署と他の部署とはうまが合わない",
+      "私の職場の雰囲気は友好的である",
+      "私の職場の作業環境（騒音、照明、温度、換気など）はよくない",
+      "仕事の内容は自分にあっている",
+      "働きがいのある仕事だ",
+    ],
+  },
+  {
+    key: "B",
+    title: "B 最近1か月間のあなたの状態について",
+    options: ["ほとんどなかった", "ときどきあった", "しばしばあった", "ほとんどいつもあった"],
+    questions: [
+      "活気がわいてくる", "元気がいっぱいだ", "生き生きする", "怒りを感じる", "内心腹立たしい", "イライラしている", "ひどく疲れた", "へとへとだ", "だるい", "気がはりつめている", "不安だ", "落着かない", "ゆううつだ", "何をするのも面倒だ", "物事に集中できない", "気分が晴れない", "仕事が手につかない", "悲しいと感じる", "めまいがする", "体のふしぶしが痛む", "頭が重かったり頭痛がする", "首筋や肩がこる", "腰が痛い", "目が疲れる", "動悸や息切れがする", "胃腸の具合が悪い", "食欲がない", "便秘や下痢をする", "よく眠れない",
+    ],
+  },
+  {
+    key: "C",
+    title: "C あなたの周りの方々について",
+    options: ["非常に", "かなり", "多少", "全くない"],
+    groups: [
+      { label: "次の人たちはどのくらい気軽に話ができますか？", questions: ["上司", "職場の同僚", "配偶者、家族、友人等"] },
+      { label: "あなたが困った時、次の人たちはどのくらい頼りになりますか？", questions: ["上司", "職場の同僚", "配偶者、家族、友人等"] },
+      { label: "あなたの個人的な問題を相談したら、次の人たちはどのくらいきいてくれますか？", questions: ["上司", "職場の同僚", "配偶者、家族、友人等"] },
+    ],
+  },
+  {
+    key: "D",
+    title: "D 満足度について",
+    options: ["満足", "まあ満足", "やや不満足", "不満足"],
+    questions: ["仕事に満足だ", "家庭生活に満足だ"],
+  },
 ];
 
 const mhlwScaleDefinitions = [
@@ -2573,12 +2625,74 @@ function buildGoogleCsvTemplate() {
   return rows.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function getGoogleFormQuestions(section) {
+  if (section.questions) return section.questions.map((text) => ({ text, group: "" }));
+  return section.groups.flatMap((group) => group.questions.map((text) => ({ text, group: group.label })));
+}
+
+function buildGoogleFormItemListCsv() {
+  const baseItems = [
+    ["1", "記述式", "受検者ID", "必須", "", "個人シート作成に必要"],
+    ["2", "記述式", "氏名", "必須", "", "個人シート作成に必要"],
+    ["3", "記述式", "フリガナ", "必須", "", "個人シート作成に必要"],
+    ["4", "日付", "生年月日", "必須", "", "個人シート作成に必要"],
+    ["5", "ラジオボタン", "性別", "必須", "男性 | 女性", "個人シート作成に必要"],
+    ["6", "記述式", "職場コード", "必須", "", "個人シート作成に必要"],
+    ["7", "記述式", "職場名", "必須", "", "個人シート作成に必要"],
+    ["8", "記述式", "受検コード", "任意", "", "名簿照合用"],
+    ["9", "記述式", "会社名・事業所名", "任意", "", "管理用"],
+    ["10", "記述式", "部署", "任意", "", "管理用"],
+    ["11", "記述式", "変数値", "任意", "", "集団分析の分類用"],
+    ["12", "記述式", "前回社員ID", "任意", "", "前回結果と紐づける場合"],
+  ];
+  const questionRows = [];
+  let order = baseItems.length + 1;
+  for (const section of googleFormSections) {
+    const questions = getGoogleFormQuestions(section);
+    questions.forEach((question, index) => {
+      const key = `${section.key}${index + 1}`;
+      questionRows.push([
+        String(order),
+        "ラジオボタン",
+        `${key}. ${question.text}`,
+        "必須",
+        section.options.join(" | "),
+        question.group || section.title,
+      ]);
+      order += 1;
+    });
+  }
+  const confirmRows = [
+    [String(order), "チェックボックス", "個人情報の扱いの確認", "必須", "確認しました", "送信前確認"],
+    [String(order + 1), "チェックボックス", "回答内容の確認", "必須", "すべての設問に回答しました", "送信前確認"],
+  ];
+  const rows = [
+    ["順番", "Googleフォーム項目タイプ", "フォーム項目名", "必須", "選択肢", "用途・メモ"],
+    ...baseItems,
+    ...questionRows,
+    ...confirmRows,
+  ];
+  return rows.map((line) => line.map(csvCell).join(",")).join("\r\n");
+}
+
 function handleDownloadGoogleCsvTemplate() {
   const blob = new Blob([`\uFEFF${buildGoogleCsvTemplate()}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = "google-form-response-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function handleDownloadGoogleFormItemList() {
+  const blob = new Blob([`\uFEFF${buildGoogleFormItemListCsv()}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "google-form-item-list-stress-check57.csv";
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -2765,6 +2879,7 @@ previewGoogleCsv.addEventListener("click", handlePreviewGoogleCsv);
 loadSampleCsv.addEventListener("click", handleLoadSampleCsv);
 importGoogleCsv.addEventListener("click", handleImportGoogleCsv);
 downloadGoogleCsvTemplate.addEventListener("click", handleDownloadGoogleCsvTemplate);
+downloadGoogleFormItemList.addEventListener("click", handleDownloadGoogleFormItemList);
 downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCheck);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);

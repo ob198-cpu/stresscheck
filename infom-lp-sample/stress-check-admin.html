@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=personal-sheet-fields" />
+  <link rel="stylesheet" href="styles.css?v=google-form-item-list" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -158,6 +158,7 @@
               <a class="btn btn-outline" href="sample-group-analysis.csv" download>集団分析サンプルCSV</a>
               <a class="btn btn-outline" href="https://stresscheck.mhlw.go.jp/download/List_sample.pdf" target="_blank" rel="noreferrer">厚労省公式サンプルPDF</a>
               <button type="button" id="downloadGoogleCsvTemplate" class="btn btn-outline">見出しテンプレート</button>
+              <button type="button" id="downloadGoogleFormItemList" class="btn btn-outline">Googleフォーム項目一覧CSV</button>
               <button type="button" id="downloadGoogleImportCheck" class="btn btn-outline" disabled>取込チェックCSV</button>
               <button type="button" id="importGoogleCsv" class="btn btn-outline" disabled>ローカル保存</button>
             </div>
@@ -309,6 +310,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=personal-sheet-fields"></script>
+  <script src="stress-check-admin.js?v=google-form-item-list"></script>
 </body>
 </html>
