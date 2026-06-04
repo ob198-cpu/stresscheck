@@ -732,7 +732,22 @@ function buildOperationLogCsv() {
 
 function buildPersonalDeliveryCsv(rows = googleImportRows) {
   const output = [
-    ["CSV行", "受検者ID", "氏名", "フリガナ", "職場コード", "職場名", "本人向けPDF推奨保存名", "出力可否", "確認メモ"],
+    [
+      "CSV行",
+      "受検者ID",
+      "氏名",
+      "フリガナ",
+      "職場コード",
+      "職場名",
+      "本人向けPDF推奨保存名",
+      "出力可否",
+      "PDF保存済み",
+      "本人通知日",
+      "通知方法",
+      "通知済み確認",
+      "備考",
+      "確認メモ",
+    ],
     ...rows.map((row) => {
       const analysis = buildMhlwIndividualAnalysis(row);
       return [
@@ -744,6 +759,11 @@ function buildPersonalDeliveryCsv(rows = googleImportRows) {
         row.workplaceName || row.department || "",
         analysis.canScore ? personalResultFileName(row) : "",
         analysis.canScore ? "出力可能" : "出力不可",
+        "",
+        "",
+        "",
+        "",
+        "",
         analysis.canScore ? "本人へ直接通知。会社担当者へ個人結果を渡さない。" : analysis.reason,
       ];
     }),
@@ -891,7 +911,7 @@ function renderCompletionChecklist(rows = googleImportRows) {
     statusItem("本人通知・面接指導案内の入力", !missingGuidance.length, missingGuidance.length ? `${missingGuidance.length}項目未入力` : "入力済み"),
     statusItem("実施前チェック", uncheckedCount === 0, uncheckedCount ? `${uncheckedCount}項目未確認` : "全項目確認済み"),
     statusItem("本人向け結果を開く", hasOperation("本人向け結果"), scoreableCount ? `対象 ${scoreableCount}件` : "判定可能な回答なし"),
-    statusItem("本人配布チェックCSV", hasOperation("本人配布チェックCSV"), "本人別PDF保存名と配布照合用"),
+    statusItem("本人配布チェックCSV", hasOperation("本人配布チェックCSV"), "PDF保存・本人通知の作業台帳"),
     statusItem("企業向け集団分析を開く", hasOperation("企業向け集団分析"), groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件` : "10人以上の集団なし"),
     statusItem("実施記録を開く", hasOperation("実施記録"), "PDF保存して保管"),
     statusItem("取込チェックCSV", hasOperation("取込チェックCSV保存"), "読込結果の確認用"),
@@ -2921,7 +2941,7 @@ function handleDownloadPersonalDeliveryCsv() {
   }
   const names = recommendedFileNames(googleImportRows);
   downloadTextFile(names.personalDelivery, `\uFEFF${buildPersonalDeliveryCsv(googleImportRows)}`, "text/csv;charset=utf-8");
-  setGoogleImportMessage(`本人配布チェックCSVを保存しました。本人別PDF保存名と配布照合に使ってください。実施ID: ${currentRunId || "-"}`, "success");
+  setGoogleImportMessage(`本人配布チェックCSVを保存しました。PDF保存済み・本人通知日・通知方法を記録する作業台帳として使ってください。実施ID: ${currentRunId || "-"}`, "success");
   addOperationLog("本人配布チェックCSV保存", { rows: googleImportRows.length });
 }
 
