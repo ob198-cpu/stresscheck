@@ -4121,6 +4121,24 @@ textarea {
   font: inherit;
 }
 
+.production-csv-confirm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #f1d38a;
+  border-radius: 8px;
+  background: #fff8e6;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.production-csv-confirm input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
 .readiness-summary {
   margin-top: 12px;
 }

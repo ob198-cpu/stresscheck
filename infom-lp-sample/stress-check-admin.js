@@ -23,6 +23,7 @@ const printParticipantQrSheet = document.querySelector("#printParticipantQrSheet
 const printPendingQrSheet = document.querySelector("#printPendingQrSheet");
 const participantQrSheet = document.querySelector("#participantQrSheet");
 const googleCsvFile = document.querySelector("#googleCsvFile");
+const productionCsvConfirm = document.querySelector("#productionCsvConfirm");
 const basicInfoSource = document.querySelector("#basicInfoSource");
 const previewGoogleCsv = document.querySelector("#previewGoogleCsv");
 const importGoogleCsv = document.querySelector("#importGoogleCsv");
@@ -1197,12 +1198,19 @@ function renderRequirementsGuide(rows = googleImportRows) {
   const guidanceTarget = !settings.operator ? "#implementationOperator" : !settings.interviewContact ? "#interviewContact" : "#interviewDeadline";
   const reportTarget = !settings.establishmentName ? "#establishmentName" : !settings.workerCount ? "#workerCount" : "#reportYear";
   const productionCsvReady = currentRunMode === "本番CSV";
+  const productionCsvDetail = currentRunMode === "サンプル"
+    ? "100名サンプルCSVを読み込んでいます。本番実施には実際のGoogleフォーム回答CSVへ差し替えてください。"
+    : currentRunMode === "本番CSV"
+      ? "本番CSVとして確認済みです。"
+      : currentRunMode === "本番CSV未確認"
+        ? "CSVは選択済みですが、本番CSVである確認チェックが未完了です。"
+        : "CSVが未選択です。";
   const states = [
     {
       label: "本番CSV確認",
       done: productionCsvReady,
-      detail: currentRunMode === "サンプル" ? "100名サンプルCSVを読み込んでいます。本番実施には実際のGoogleフォーム回答CSVへ差し替えてください。" : currentRunMode === "本番CSV" ? "本番CSVとして確認中です。" : "CSVが未選択です。",
-      next: { label: "本番CSVを選択", detail: "サンプルCSVは動作確認用です。本番ではGoogleフォーム回答スプレッドシートから保存したCSVを選択してください。", target: "#googleCsvFile", click: true },
+      detail: productionCsvDetail,
+      next: { label: "本番CSVを確認", detail: "本番ではGoogleフォーム回答スプレッドシートから保存したCSVを選び、確認チェックを入れてください。", target: currentRunMode === "本番CSV未確認" ? "#productionCsvConfirm" : "#googleCsvFile", click: currentRunMode !== "本番CSV未確認" },
     },
     {
       label: "実施体制・個人結果の取扱い",
@@ -1898,6 +1906,15 @@ function updateOutputButtonLabels() {
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.textContent = sample ? "サンプル本人配布チェックCSV" : "本人配布チェックCSV";
   if (downloadCompanyDisclosureCsv) downloadCompanyDisclosureCsv.textContent = sample ? "サンプル企業共有チェックCSV" : "企業共有チェックCSV";
   if (downloadInterviewFollowupCsv) downloadInterviewFollowupCsv.textContent = sample ? "サンプル面接指導対応CSV" : "面接指導対応CSV";
+}
+
+function updateRunModeForSelectedCsv() {
+  if (!googleCsvFile?.files?.[0]) {
+    currentRunMode = "未選択";
+  } else {
+    currentRunMode = productionCsvConfirm?.checked ? "本番CSV" : "本番CSV未確認";
+  }
+  updateOutputButtonLabels();
 }
 
 function buildPersonalResultHtml(record) {
@@ -2807,7 +2824,7 @@ async function handlePreviewGoogleCsv() {
     currentRunId = createRunId("SC");
     currentCsvSourceName = file.name || "selected-csv";
     currentCsvHash = await sha256Text(text);
-    currentRunMode = "本番CSV";
+    updateRunModeForSelectedCsv();
     googleImportRows = parseGoogleFormCsv(text);
     renderGoogleImportPreview(googleImportRows);
     if (!googleImportRows.length) {
@@ -3833,8 +3850,8 @@ googleCsvFile.addEventListener("change", () => {
   currentRunId = "";
   currentCsvSourceName = "";
   currentCsvHash = "";
-  currentRunMode = "未選択";
-  updateOutputButtonLabels();
+  if (productionCsvConfirm) productionCsvConfirm.checked = false;
+  updateRunModeForSelectedCsv();
   googleImportRows = [];
   googleImportDiagnostics = null;
   importGoogleCsv.disabled = true;
@@ -3858,6 +3875,11 @@ googleCsvFile.addEventListener("change", () => {
   renderBasicInfoEditor([]);
   renderIndividualAnalysisPreview([]);
   if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
+});
+productionCsvConfirm?.addEventListener("change", () => {
+  updateRunModeForSelectedCsv();
+  renderRequirementsGuide(googleImportRows);
+  if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
 });
 basicInfoSource.addEventListener("input", () => {
   if (googleCsvFile.files?.[0]) void handlePreviewGoogleCsv();
