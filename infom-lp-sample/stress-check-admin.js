@@ -3093,7 +3093,6 @@ function handleDownloadPersonalResultHtml() {
     setGoogleImportMessage("本人向け結果を出力できる行がありません。57項目回答と性別を確認してください。", "error");
     return;
   }
-  if (!confirmOutputReadiness("本人向け結果", { requireLegalChecks: true })) return;
   if (scoreableRows.length === 1) {
     const opened = openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]));
     setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。下の本人別ボタンからもう一度開いてください。", opened ? "success" : "error");
@@ -3115,7 +3114,6 @@ function handleDownloadCompanyGroupHtml() {
     setGoogleImportMessage("企業向け集団分析を出力できません。判定可能な回答が10人以上必要です。", "error");
     return;
   }
-  if (!confirmOutputReadiness("企業向け集団分析", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildCompanyGroupHtml(googleImportRows));
   setGoogleImportMessage(opened ? "企業向け集団分析を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   if (opened) addOperationLog("企業向け集団分析表示", { visibleGroups: summary.visibleGroups.length, suppressedGroups: summary.suppressedGroups.length });
@@ -3128,7 +3126,6 @@ function handleDownloadImplementationRecordHtml() {
   }
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const missingGuidance = missingGuidanceLabels().length;
-  if (!confirmOutputReadiness("実施記録", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
   setGoogleImportMessage(opened ? "実施記録を開きました。開いた画面の「印刷 / PDF保存」で保管してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   if (opened) addOperationLog("実施記録表示", { rows: googleImportRows.length, uncheckedLegalChecks: uncheckedCount, missingGuidance });
@@ -3283,7 +3280,6 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   if (!button) return;
   const row = googleImportRows[Number(button.dataset.rowIndex)];
   if (!row) return;
-  if (!confirmOutputReadiness("本人向け結果", { requireLegalChecks: true })) return;
   const opened = openHtmlDocument(buildPersonalResultHtml(row));
   setGoogleImportMessage(opened ? "本人向け結果を開きました。開いた画面の「印刷 / PDF保存」を使ってください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
   const missingGuidance = missingGuidanceLabels().length;
