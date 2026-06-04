@@ -4142,7 +4142,8 @@ textarea {
 
 .requirements-next {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+  align-items: center;
   gap: 12px;
   margin: 0 0 12px;
   padding: 14px 16px;
@@ -4173,6 +4174,12 @@ textarea {
   color: var(--muted);
   font-style: normal;
   font-size: 0.92rem;
+}
+
+.attention-pulse {
+  outline: 3px solid rgba(42, 169, 166, 0.35);
+  outline-offset: 3px;
+  transition: outline-color 0.2s ease;
 }
 
 .requirements-grid {
