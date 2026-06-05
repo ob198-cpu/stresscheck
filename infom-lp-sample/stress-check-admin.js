@@ -1094,6 +1094,7 @@ function missingReportLabels(settings = getImplementationSettings()) {
   return [
     !settings.establishmentName ? "事業場名" : "",
     !settings.workerCount ? "在籍労働者数" : "",
+    !settings.workerCountSource ? "労働者数の確認元" : "",
     !settings.reportYear ? "報告対象年" : "",
   ].filter(Boolean);
 }
@@ -1109,6 +1110,16 @@ function labourReportState(settings = getImplementationSettings()) {
       missing: missingReportLabels(settings),
       detail: "在籍労働者数が未入力または不正です。50人以上の報告対象か判定できません。",
       nextDetail: "在籍労働者数を入力し、50人以上の事業場か確認してください。",
+    };
+  }
+  if (!settings.workerCountSource) {
+    return {
+      required: true,
+      done: false,
+      critical: true,
+      missing: ["労働者数の確認元"],
+      detail: "労働者数の確認元が未入力です。50人以上・50人未満の判定根拠を記録してください。",
+      nextDetail: "人事台帳や会社担当者確認など、在籍労働者数の確認元を入力してください。",
     };
   }
   if (workerCountValue < 50) {
@@ -1305,7 +1316,7 @@ function renderRequirementsGuide(rows = googleImportRows) {
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const questionnaireReady = !googleImportDiagnostics || googleImportDiagnostics.recognizedQuestionCount === questionOrder.length;
   const guidanceTarget = !settings.operator ? "#implementationOperator" : !settings.interviewContact ? "#interviewContact" : "#interviewDeadline";
-  const reportTarget = !settings.workerCount ? "#workerCount" : !settings.establishmentName ? "#establishmentName" : "#reportYear";
+  const reportTarget = !settings.workerCount ? "#workerCount" : !settings.workerCountSource ? "#workerCountSource" : !settings.establishmentName ? "#establishmentName" : "#reportYear";
   const productionCsvReady = currentRunMode === "本番CSV";
   const productionCsvDetail = currentRunMode === "サンプル"
     ? "100名サンプルCSVを読み込んでいます。本番実施には実際のGoogleフォーム回答CSVへ差し替えてください。"
