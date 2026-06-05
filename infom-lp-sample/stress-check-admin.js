@@ -980,6 +980,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["未確認実施前チェック数", uncheckedLegalChecks],
     ["法定実施ナビ準備率", `${readiness.percent || 0}%`],
     ["法定実施ナビ重大残件数", readiness.criticalRemainingCount || 0],
+    ["労基署報告判定", labourReportStatusText(settings)],
     [],
     ["保管対象", "推奨ファイル名", "状態"],
     ...files,
@@ -998,6 +999,7 @@ function buildCompletionPackageCsv(rows = googleImportRows) {
   const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const names = recommendedFileNames(rows);
+  const reportState = labourReportState();
   const output = [
     ["順番", "区分", "やること", "推奨ファイル名", "必要条件", "状態", "確認欄"],
     [1, "取込確認", "CSVを確認し、読込件数・列認識・不足情報を確認", names.importCheck, `${rows.length}件読込`, hasOperation("取込チェックCSV保存") ? "済" : "未", ""],
@@ -1011,7 +1013,7 @@ function buildCompletionPackageCsv(rows = googleImportRows) {
     [9, "監査保管", "実施記録PDFを保存", names.implementation, "個人結果を含まない実施記録", hasOperation("実施記録") ? "済" : "未", ""],
     [10, "監査保管", "実施ログCSVを保存", names.operationLog, `${operationLog.length}件のログ`, hasOperation("実施ログCSV") ? "済" : "未", ""],
     [11, "監査保管", "保管ファイル一覧CSVを保存", names.retentionManifest, recommendedFolderName(), hasOperation("保管ファイル一覧CSV") ? "済" : "未", ""],
-    [12, "労基署報告", "労基署報告用集計CSVを保存し、会社側情報を補完", fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), "50人以上の事業場は報告対象", hasOperation("労基署報告用集計CSV") ? "済" : "未", ""],
+    [12, "労基署報告", reportState.required ? "労基署報告用集計CSVを保存し、会社側情報を補完" : "50人未満のため報告対象外であることを確認", fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), reportState.detail, reportState.required ? (hasOperation("労基署報告用集計CSV") ? "済" : "未") : "対象外確認済み", ""],
     [13, "監査保管", "この実施完了チェックCSVを保存", names.completionPackage, "最終確認用", "このファイル", ""],
     [],
     ["法定実施ナビ", "項目", "状態", "内容", "補足", "", ""],
@@ -1028,8 +1030,10 @@ function buildLabourOfficeReportCsv(rows = googleImportRows) {
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
+  const reportState = labourReportState(settings);
   const output = [
     ["項目", "値", "転記・確認メモ"],
+    ["労基署報告判定", labourReportStatusText(settings), reportState.detail],
     ["帳票名", "心理的な負担の程度を把握するための検査結果等報告書", "労基署報告用の転記確認"],
     ["事業場名", settings.establishmentName || "", "会社側で確認"],
     ["事業場所在地", "", "会社側で入力"],
@@ -1122,6 +1126,12 @@ function labourReportState(settings = getImplementationSettings()) {
     detail: missing.length ? `50人以上想定。未入力: ${missing.join("、")}` : "50人以上想定。労基署報告用集計CSVに転記できます。",
     nextDetail: missing.length ? `50人以上の事業場は報告準備が必要です。未入力: ${missing.join("、")}` : "労基署報告用集計CSVを保存し、様式へ転記してください。",
   };
+}
+
+function labourReportStatusText(settings = getImplementationSettings()) {
+  const state = labourReportState(settings);
+  if (!state.done) return "要確認";
+  return state.required ? "報告準備確認済み" : "報告対象外確認済み";
 }
 
 function guideItem(label, done, detail, why = "", critical = false) {
@@ -1417,6 +1427,7 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["次アクション", snapshot.nextAction.label || "", "要対応", snapshot.nextAction.detail || "", ""],
     ["実施情報", "事業場名", settings.establishmentName || "未入力", "労基署報告・実施記録用", ""],
     ["実施情報", "在籍労働者数", settings.workerCount || "未入力", labourReportState(settings).required ? "報告対象判定または報告準備の確認が必要" : "50人未満: 通常は報告対象外", ""],
+    ["実施情報", "労基署報告判定", labourReportStatusText(settings), labourReportState(settings).detail, ""],
     ["実施情報", "報告対象年", settings.reportYear || "未入力", "", ""],
     ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
     ["CSV情報", "実施区分", currentRunMode, currentRunMode === "サンプル" ? "サンプルCSVは本番実施記録に使わないでください" : "本番CSVであることを実施者側で確認してください", ""],
