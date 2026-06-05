@@ -4318,6 +4318,57 @@ textarea {
   background: linear-gradient(90deg, #2aa9a6, #256fd5);
 }
 
+.critical-issues {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 14px 16px;
+  border: 1px solid #e9bcc4;
+  border-radius: 8px;
+  background: #fff8fa;
+}
+
+.critical-issues > strong {
+  color: #a01838;
+}
+
+.critical-issues > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.critical-issue-button {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 240px;
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid #e9bcc4;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.critical-issue-button span {
+  font-weight: 800;
+}
+
+.critical-issue-button em {
+  color: #a01838;
+  font-size: 0.84rem;
+  font-style: normal;
+}
+
+.critical-issue-button:hover {
+  border-color: #d66b80;
+  background: #fff1f2;
+}
+
 .requirements-next {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr) auto;

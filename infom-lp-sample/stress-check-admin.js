@@ -1200,6 +1200,24 @@ function actionButtonHtml(action) {
   return `<button type="button" class="btn btn-outline btn-sm requirement-action" data-target="${escapeHtml(action.target)}"${clickAttr}>ここを直す</button>`;
 }
 
+function criticalIssuesHtml(states) {
+  const items = states.filter((item) => item.critical && !item.done);
+  if (!items.length) return "";
+  return `
+    <div class="critical-issues">
+      <strong>先に確認する重大未完了</strong>
+      <div>
+        ${items.map((item) => `
+          <button type="button" class="critical-issue-button" data-target="${escapeHtml(item.next?.target || "#requirementsGuide")}"${item.next?.click ? " data-click-target=\"true\"" : ""}>
+            <span>${escapeHtml(item.label)}</span>
+            <em>${escapeHtml(item.next?.label || "確認する")}</em>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function focusRequirementTarget(selector, shouldClick = false) {
   const target = document.querySelector(selector);
   if (!target) return;
@@ -1327,6 +1345,7 @@ function renderRequirementsGuide(rows = googleImportRows) {
     <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
     ${officialSourceLinksHtml()}
     ${readinessHtml(readiness)}
+    ${criticalIssuesHtml(states)}
     <div class="requirements-next ${nextAction.ok ? "ok" : ""}">
       <strong>次にやること</strong>
       <span>${escapeHtml(nextAction.label)}<em>${escapeHtml(nextAction.detail)}</em></span>
@@ -3884,7 +3903,7 @@ readinessSummary?.addEventListener("click", (event) => {
   focusRequirementTarget("#requirementsGuide");
 });
 requirementsGuide?.addEventListener("click", (event) => {
-  const button = event.target.closest(".requirement-action");
+  const button = event.target.closest(".requirement-action, .critical-issue-button");
   if (!button) return;
   focusRequirementTarget(button.dataset.target, button.dataset.clickTarget === "true");
 });
