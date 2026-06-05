@@ -1090,6 +1090,40 @@ function missingReportLabels(settings = getImplementationSettings()) {
   ].filter(Boolean);
 }
 
+function labourReportState(settings = getImplementationSettings()) {
+  const workerCountText = cleanText(settings.workerCount);
+  const workerCountValue = Number(workerCountText);
+  if (!workerCountText || !Number.isFinite(workerCountValue)) {
+    return {
+      required: true,
+      done: false,
+      critical: true,
+      missing: missingReportLabels(settings),
+      detail: "在籍労働者数が未入力または不正です。50人以上の報告対象か判定できません。",
+      nextDetail: "在籍労働者数を入力し、50人以上の事業場か確認してください。",
+    };
+  }
+  if (workerCountValue < 50) {
+    return {
+      required: false,
+      done: true,
+      critical: false,
+      missing: [],
+      detail: `在籍労働者数 ${workerCountValue}人。50人未満なら通常は報告対象外です。`,
+      nextDetail: "",
+    };
+  }
+  const missing = missingReportLabels(settings);
+  return {
+    required: true,
+    done: missing.length === 0,
+    critical: true,
+    missing,
+    detail: missing.length ? `50人以上想定。未入力: ${missing.join("、")}` : "50人以上想定。労基署報告用集計CSVに転記できます。",
+    nextDetail: missing.length ? `50人以上の事業場は報告準備が必要です。未入力: ${missing.join("、")}` : "労基署報告用集計CSVを保存し、様式へ転記してください。",
+  };
+}
+
 function guideItem(label, done, detail, why = "", critical = false) {
   return `
     <div class="requirement-item ${done ? "ok" : "todo"} ${critical && !done ? "critical" : ""}">
@@ -1253,12 +1287,11 @@ function renderRequirementsGuide(rows = googleImportRows) {
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const missingGuidance = missingGuidanceLabels(settings);
-  const missingReport = missingReportLabels(settings);
+  const reportState = labourReportState(settings);
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const questionnaireReady = !googleImportDiagnostics || googleImportDiagnostics.recognizedQuestionCount === questionOrder.length;
-  const reportRequired = Number(settings.workerCount || 0) >= 50;
   const guidanceTarget = !settings.operator ? "#implementationOperator" : !settings.interviewContact ? "#interviewContact" : "#interviewDeadline";
-  const reportTarget = !settings.establishmentName ? "#establishmentName" : !settings.workerCount ? "#workerCount" : "#reportYear";
+  const reportTarget = !settings.workerCount ? "#workerCount" : !settings.establishmentName ? "#establishmentName" : "#reportYear";
   const productionCsvReady = currentRunMode === "本番CSV";
   const productionCsvDetail = currentRunMode === "サンプル"
     ? "100名サンプルCSVを読み込んでいます。本番実施には実際のGoogleフォーム回答CSVへ差し替えてください。"
@@ -1328,11 +1361,11 @@ function renderRequirementsGuide(rows = googleImportRows) {
     },
     {
       label: "労基署報告準備",
-      done: !reportRequired || missingReport.length === 0,
-      critical: reportRequired,
-      detail: reportRequired ? (missingReport.length ? `50人以上想定。未入力: ${missingReport.join("、")}` : "労基署報告用集計CSVに転記できます。") : "50人未満なら通常は報告対象外です。",
+      done: reportState.done,
+      critical: reportState.critical,
+      detail: reportState.detail,
       why: "確認観点: 50人以上の事業場では、報告様式へ転記できる集計情報を揃える。",
-      next: { label: "労基署報告情報を入力", detail: `50人以上の事業場は報告準備が必要です。未入力: ${missingReport.join("、")}`, target: reportTarget },
+      next: { label: "労基署報告情報を入力", detail: reportState.nextDetail || "在籍労働者数と報告対象年を確認してください。", target: reportTarget },
     },
     {
       label: "厚労省アプリ突合",
@@ -1383,7 +1416,7 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["準備状況", "完了数", `${snapshot.readiness.doneCount}/${snapshot.readiness.totalCount}`, `残り ${snapshot.readiness.remainingCount}件`, `重大残 ${snapshot.readiness.criticalRemainingCount || 0}件`],
     ["次アクション", snapshot.nextAction.label || "", "要対応", snapshot.nextAction.detail || "", ""],
     ["実施情報", "事業場名", settings.establishmentName || "未入力", "労基署報告・実施記録用", ""],
-    ["実施情報", "在籍労働者数", settings.workerCount || "未入力", Number(settings.workerCount || 0) >= 50 ? "50人以上: 労基署報告準備が必要" : "50人未満または未入力", ""],
+    ["実施情報", "在籍労働者数", settings.workerCount || "未入力", labourReportState(settings).required ? "報告対象判定または報告準備の確認が必要" : "50人未満: 通常は報告対象外", ""],
     ["実施情報", "報告対象年", settings.reportYear || "未入力", "", ""],
     ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
     ["CSV情報", "実施区分", currentRunMode, currentRunMode === "サンプル" ? "サンプルCSVは本番実施記録に使わないでください" : "本番CSVであることを実施者側で確認してください", ""],
