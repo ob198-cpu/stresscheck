@@ -1150,6 +1150,21 @@ function readinessHtml(readiness) {
   `;
 }
 
+function officialSourceLinksHtml() {
+  const links = [
+    ["厚労省関連資料", "https://stresscheck.mhlw.go.jp/material.html"],
+    ["57項目調査票PDF", "https://www.mhlw.go.jp/bunya/roudoukijun/anzeneisei12/dl/stress-check_j.pdf"],
+    ["労基署報告様式", "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/anzen/anzeneisei36/24.html"],
+    ["厚労省版実施プログラム", "https://stresscheck.mhlw.go.jp/about.html"],
+  ];
+  return `
+    <div class="official-source-links" aria-label="厚生労働省公式資料">
+      <strong>公式資料</strong>
+      ${links.map(([label, href]) => `<a href="${escapeHtml(href)}" target="_blank" rel="noreferrer">${escapeHtml(label)}</a>`).join("")}
+    </div>
+  `;
+}
+
 function renderReadinessSummary(readiness, nextAction) {
   if (!readinessSummary) return;
   const modeClass = currentRunMode === "サンプル" ? "sample" : currentRunMode === "本番CSV" ? "production" : "empty";
@@ -1276,6 +1291,7 @@ function renderRequirementsGuide(rows = googleImportRows) {
   requirementsGuide.innerHTML = `
     <strong>法定実施ナビ</strong>
     <p>上から順に埋めると、本人通知・面接指導・集団分析・労基署報告の抜け漏れを減らせます。</p>
+    ${officialSourceLinksHtml()}
     ${readinessHtml(readiness)}
     <div class="requirements-next ${nextAction.ok ? "ok" : ""}">
       <strong>次にやること</strong>
@@ -1306,6 +1322,8 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
     ["CSV情報", "実施区分", currentRunMode, currentRunMode === "サンプル" ? "サンプルCSVは本番実施記録に使わないでください" : "本番CSVであることを実施者側で確認してください", ""],
     ["保存情報", "確認日時", snapshot.checkedAt, "このCSVには個人名・受検者ID・点数・高ストレス判定を含めません", ""],
+    ["公式資料", "厚労省関連資料", "参照", "https://stresscheck.mhlw.go.jp/material.html", ""],
+    ["公式資料", "労基署報告様式", "参照", "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/anzen/anzeneisei36/24.html", ""],
     [],
     ["ナビ項目", "項目", "状態", "詳細", "次にやること"],
   ];

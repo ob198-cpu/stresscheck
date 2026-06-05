@@ -4225,6 +4225,39 @@ textarea {
   color: var(--muted);
 }
 
+.official-source-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.official-source-links strong {
+  margin-right: 2px;
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.official-source-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #d8e2e8;
+  border-radius: 999px;
+  background: #f8fbfc;
+  color: #176c6a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.official-source-links a:hover {
+  border-color: #9ccfcb;
+  background: #eefbf9;
+}
+
 .requirements-readiness {
   display: grid;
   gap: 8px;
