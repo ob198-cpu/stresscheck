@@ -938,6 +938,8 @@ function personalResultFileName(record) {
 }
 
 function buildRetentionManifestCsv(rows = googleImportRows) {
+  renderRequirementsGuide(rows);
+  const readiness = latestRequirementSnapshot?.readiness || {};
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
@@ -976,6 +978,8 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["非表示集団数", groupAnalysis.suppressedGroups.length],
     ["未入力案内項目数", missingGuidance],
     ["未確認実施前チェック数", uncheckedLegalChecks],
+    ["法定実施ナビ準備率", `${readiness.percent || 0}%`],
+    ["法定実施ナビ重大残件数", readiness.criticalRemainingCount || 0],
     [],
     ["保管対象", "推奨ファイル名", "状態"],
     ...files,
@@ -984,6 +988,10 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
 }
 
 function buildCompletionPackageCsv(rows = googleImportRows) {
+  renderRequirementsGuide(rows);
+  const readiness = latestRequirementSnapshot?.readiness || {};
+  const nextAction = latestRequirementSnapshot?.nextAction || {};
+  const criticalItems = (latestRequirementSnapshot?.states || []).filter((item) => item.critical && !item.done);
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
   const highStressCount = analyses.filter((item) => item.highStress).length;
@@ -1005,6 +1013,11 @@ function buildCompletionPackageCsv(rows = googleImportRows) {
     [11, "監査保管", "保管ファイル一覧CSVを保存", names.retentionManifest, recommendedFolderName(), hasOperation("保管ファイル一覧CSV") ? "済" : "未", ""],
     [12, "労基署報告", "労基署報告用集計CSVを保存し、会社側情報を補完", fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), "50人以上の事業場は報告対象", hasOperation("労基署報告用集計CSV") ? "済" : "未", ""],
     [13, "監査保管", "この実施完了チェックCSVを保存", names.completionPackage, "最終確認用", "このファイル", ""],
+    [],
+    ["法定実施ナビ", "項目", "状態", "内容", "補足", "", ""],
+    ["法定実施ナビ", "準備状況", readiness.label || "", `${readiness.percent || 0}%`, `残り ${readiness.remainingCount || 0}件 / 重大残 ${readiness.criticalRemainingCount || 0}件`, "", ""],
+    ["法定実施ナビ", "次にやること", nextAction.label || "", nextAction.detail || "", "", "", ""],
+    ...criticalItems.map((item) => ["重大未完了", item.label, "要確認", item.detail, item.why || "", item.next?.label || "", item.next?.detail || ""]),
   ];
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
