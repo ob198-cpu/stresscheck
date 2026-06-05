@@ -1290,6 +1290,21 @@ function criticalIssuesHtml(states) {
   `;
 }
 
+function productionReadyHtml(readiness) {
+  if (currentRunMode !== "本番CSV" || readiness.criticalRemainingCount) return "";
+  return `
+    <div class="production-ready">
+      <strong>本番出力へ進めます</strong>
+      <span>重大未完了は0件です。本人向け結果・企業向け集団分析・実施記録を出力し、配布・保管台帳へ進めます。</span>
+      <div>
+        <button type="button" class="production-ready-button" data-target="#downloadPersonalResultHtml">本人向け結果</button>
+        <button type="button" class="production-ready-button" data-target="#downloadCompanyGroupHtml">企業向け集団分析</button>
+        <button type="button" class="production-ready-button" data-target="#downloadImplementationRecordHtml">実施記録</button>
+      </div>
+    </div>
+  `;
+}
+
 function focusRequirementTarget(selector, shouldClick = false) {
   const target = document.querySelector(selector);
   if (!target) return;
@@ -1417,6 +1432,7 @@ function renderRequirementsGuide(rows = googleImportRows) {
     ${officialSourceLinksHtml()}
     ${readinessHtml(readiness)}
     ${criticalIssuesHtml(states)}
+    ${productionReadyHtml(readiness)}
     <div class="requirements-next ${nextAction.ok ? "ok" : ""}">
       <strong>次にやること</strong>
       <span>${escapeHtml(nextAction.label)}<em>${escapeHtml(nextAction.detail)}</em></span>
@@ -4007,7 +4023,7 @@ readinessSummary?.addEventListener("click", (event) => {
   focusRequirementTarget("#requirementsGuide");
 });
 requirementsGuide?.addEventListener("click", (event) => {
-  const button = event.target.closest(".requirement-action, .critical-issue-button");
+  const button = event.target.closest(".requirement-action, .critical-issue-button, .production-ready-button");
   if (!button) return;
   focusRequirementTarget(button.dataset.target, button.dataset.clickTarget === "true");
 });
