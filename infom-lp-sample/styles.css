@@ -4299,6 +4299,11 @@ textarea {
   background: #fff8e6;
 }
 
+.requirements-readiness.critical {
+  border-color: #e9bcc4;
+  background: #fff2f4;
+}
+
 .readiness-meter {
   height: 9px;
   overflow: hidden;
@@ -4372,6 +4377,15 @@ textarea {
 
 .requirement-item strong {
   color: #8a5a00;
+}
+
+.requirement-item.critical {
+  border-color: #e9bcc4;
+  background: #fff8fa;
+}
+
+.requirement-item.critical strong {
+  color: #a01838;
 }
 
 .requirement-item.ok strong {
