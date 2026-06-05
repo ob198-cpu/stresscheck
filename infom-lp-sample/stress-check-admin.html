@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InfoM | ストレスチェック管理</title>
-  <link rel="stylesheet" href="styles.css?v=labour-report-status-text" />
+  <link rel="stylesheet" href="styles.css?v=worker-count-source" />
 </head>
 <body class="admin-task-page">
   <header class="site-header">
@@ -147,6 +147,10 @@
               <label>
                 <span>在籍労働者数</span>
                 <input id="workerCount" type="number" min="0" inputmode="numeric" placeholder="例: 80" />
+              </label>
+              <label>
+                <span>労働者数の確認元</span>
+                <input id="workerCountSource" type="text" placeholder="例: 人事台帳 2026年6月1日時点 / 会社担当者確認" />
               </label>
               <label>
                 <span>報告対象年</span>
@@ -342,6 +346,6 @@
       });
     }
   </script>
-  <script src="stress-check-admin.js?v=labour-report-status-text"></script>
+  <script src="stress-check-admin.js?v=worker-count-source"></script>
 </body>
 </html>

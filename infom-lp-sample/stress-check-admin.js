@@ -54,6 +54,7 @@ const basicInfoEditor = document.querySelector("#basicInfoEditor");
 const legalOperationChecklist = document.querySelector("#legalOperationChecklist");
 const establishmentName = document.querySelector("#establishmentName");
 const workerCount = document.querySelector("#workerCount");
+const workerCountSource = document.querySelector("#workerCountSource");
 const reportYear = document.querySelector("#reportYear");
 const implementationOperator = document.querySelector("#implementationOperator");
 const interviewContact = document.querySelector("#interviewContact");
@@ -981,6 +982,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
     ["法定実施ナビ準備率", `${readiness.percent || 0}%`],
     ["法定実施ナビ重大残件数", readiness.criticalRemainingCount || 0],
     ["労基署報告判定", labourReportStatusText(settings)],
+    ["労働者数の確認元", settings.workerCountSource || ""],
     [],
     ["保管対象", "推奨ファイル名", "状態"],
     ...files,
@@ -1040,6 +1042,7 @@ function buildLabourOfficeReportCsv(rows = googleImportRows) {
     ["労働保険番号", "", "会社側で入力"],
     ["対象年", settings.reportYear || "", "会社側で確認"],
     ["在籍労働者数", settings.workerCount || "", "会社側で確認。報告書の対象労働者数"],
+    ["労働者数の確認元", settings.workerCountSource || "", "人事台帳・会社担当者確認など、人数判定の根拠"],
     ["検査を受けた労働者数", scoreableCount, "判定可能な回答数。事業場の正式集計と照合"],
     ["CSV読込件数", rows.length, "回答CSVの総行数"],
     ["判定不可件数", analyses.length - scoreableCount, "修正リストCSVで確認"],
@@ -1071,6 +1074,7 @@ function getImplementationSettings() {
   return {
     establishmentName: cleanText(establishmentName?.value),
     workerCount: cleanText(workerCount?.value),
+    workerCountSource: cleanText(workerCountSource?.value),
     reportYear: cleanText(reportYear?.value),
     operator: cleanText(implementationOperator?.value),
     interviewContact: cleanText(interviewContact?.value),
@@ -1427,6 +1431,7 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["次アクション", snapshot.nextAction.label || "", "要対応", snapshot.nextAction.detail || "", ""],
     ["実施情報", "事業場名", settings.establishmentName || "未入力", "労基署報告・実施記録用", ""],
     ["実施情報", "在籍労働者数", settings.workerCount || "未入力", labourReportState(settings).required ? "報告対象判定または報告準備の確認が必要" : "50人未満: 通常は報告対象外", ""],
+    ["実施情報", "労働者数の確認元", settings.workerCountSource || "未入力", "人事台帳・会社担当者確認など", ""],
     ["実施情報", "労基署報告判定", labourReportStatusText(settings), labourReportState(settings).detail, ""],
     ["実施情報", "報告対象年", settings.reportYear || "未入力", "", ""],
     ["CSV情報", "読込元", currentCsvSourceName || "未選択", `回答 ${rows.length}件`, currentCsvHash ? `SHA-256 ${currentCsvHash}` : ""],
@@ -1561,6 +1566,7 @@ function restoreOperationSettings() {
     const implementation = saved.implementation || {};
     if (establishmentName) establishmentName.value = implementation.establishmentName || "";
     if (workerCount) workerCount.value = implementation.workerCount || "";
+    if (workerCountSource) workerCountSource.value = implementation.workerCountSource || "";
     if (reportYear) reportYear.value = implementation.reportYear || "";
     if (implementationOperator) implementationOperator.value = implementation.operator || "";
     if (interviewContact) interviewContact.value = implementation.interviewContact || "";
@@ -2599,6 +2605,16 @@ function buildImplementationRecordHtml(rows) {
         <tr><th>実施者名</th><td>${escapeHtml(settings.operator || "未入力")}</td></tr>
         <tr><th>面接指導の申出先</th><td>${escapeHtml(settings.interviewContact || "未入力")}</td></tr>
         <tr><th>申出期限</th><td>${escapeHtml(settings.interviewDeadline || "未入力")}</td></tr>
+      </tbody>
+    </table>
+
+    <h2>労基署報告判定</h2>
+    <table>
+      <tbody>
+        <tr><th>在籍労働者数</th><td>${escapeHtml(settings.workerCount || "未入力")}</td></tr>
+        <tr><th>労働者数の確認元</th><td>${escapeHtml(settings.workerCountSource || "未入力")}</td></tr>
+        <tr><th>報告判定</th><td>${escapeHtml(labourReportStatusText(settings))}</td></tr>
+        <tr><th>判定メモ</th><td>${escapeHtml(labourReportState(settings).detail)}</td></tr>
       </tbody>
     </table>
 
@@ -3989,7 +4005,7 @@ legalOperationChecklist?.addEventListener("change", () => {
   renderRequirementsGuide(googleImportRows);
   if (googleImportRows.length) refreshAnalysisAfterBasicEdit(false);
 });
-[establishmentName, workerCount, reportYear, implementationOperator, interviewContact, interviewDeadline].forEach((input) => {
+[establishmentName, workerCount, workerCountSource, reportYear, implementationOperator, interviewContact, interviewDeadline].forEach((input) => {
   input?.addEventListener("input", () => {
     saveOperationSettings();
     renderRequirementsGuide(googleImportRows);
