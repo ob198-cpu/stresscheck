@@ -3666,12 +3666,24 @@ function requireProductionCsvConfirmation(outputLabel) {
   return false;
 }
 
+function requireNoCriticalLegalIssues(outputLabel) {
+  if (currentRunMode !== "本番CSV") return true;
+  renderRequirementsGuide(googleImportRows);
+  const criticalItems = (latestRequirementSnapshot?.states || []).filter((item) => item.critical && !item.done);
+  if (!criticalItems.length) return true;
+  const labels = criticalItems.slice(0, 4).map((item) => item.label).join("、");
+  setGoogleImportMessage(`${outputLabel}の前に、重大未完了を確認してください。残件: ${labels}${criticalItems.length > 4 ? " ほか" : ""}`, "error");
+  focusRequirementTarget("#requirementsGuide");
+  return false;
+}
+
 function handleDownloadIndividualAnalysisCsv() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
     return;
   }
   if (!requireProductionCsvConfirmation("個人分析CSV保存")) return;
+  if (!requireNoCriticalLegalIssues("個人分析CSV保存")) return;
   const blob = new Blob([`\uFEFF${buildIndividualAnalysisCsv(googleImportRows)}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -3691,6 +3703,7 @@ function handleOpenIndividualAnalysisCsv() {
     return;
   }
   if (!requireProductionCsvConfirmation("個人分析CSV表示")) return;
+  if (!requireNoCriticalLegalIssues("個人分析CSV表示")) return;
   const csv = `\uFEFF${buildIndividualAnalysisCsv(googleImportRows)}`;
   const blob = new Blob([csv], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -3706,6 +3719,7 @@ function handleDownloadPersonalResultHtml() {
     return;
   }
   if (!requireProductionCsvConfirmation("本人向け結果出力")) return;
+  if (!requireNoCriticalLegalIssues("本人向け結果出力")) return;
   const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
   const missingGuidance = missingGuidanceLabels().length;
   if (!scoreableRows.length) {
@@ -3729,6 +3743,7 @@ function handleDownloadCompanyGroupHtml() {
     return;
   }
   if (!requireProductionCsvConfirmation("企業向け集団分析出力")) return;
+  if (!requireNoCriticalLegalIssues("企業向け集団分析出力")) return;
   const summary = buildCompanyGroupAnalysis(googleImportRows);
   if (!summary.overall && !summary.visibleGroups.length) {
     setGoogleImportMessage("企業向け集団分析を出力できません。判定可能な回答が10人以上必要です。", "error");
@@ -3745,6 +3760,7 @@ function handleDownloadImplementationRecordHtml() {
     return;
   }
   if (!requireProductionCsvConfirmation("実施記録出力")) return;
+  if (!requireNoCriticalLegalIssues("実施記録出力")) return;
   const uncheckedCount = getLegalOperationChecks().filter((item) => !item.checked).length;
   const missingGuidance = missingGuidanceLabels().length;
   const opened = openHtmlDocument(buildImplementationRecordHtml(googleImportRows));
@@ -3794,6 +3810,7 @@ function handleDownloadLabourOfficeReportCsv() {
     return;
   }
   if (!requireProductionCsvConfirmation("労基署報告用集計CSV保存")) return;
+  if (!requireNoCriticalLegalIssues("労基署報告用集計CSV保存")) return;
   downloadTextFile(fileNameWithRunId("labour-office-stress-check-report-summary", "csv"), `\uFEFF${buildLabourOfficeReportCsv(googleImportRows)}`, "text/csv;charset=utf-8");
   setGoogleImportMessage("労基署報告用集計CSVを保存しました。事業場名・在籍労働者数・面接指導人数などは会社側記録で補完してください。", "success");
   addOperationLog("労基署報告用集計CSV保存", { rows: googleImportRows.length });
@@ -3805,6 +3822,7 @@ function handleDownloadPersonalDeliveryCsv() {
     return;
   }
   if (!requireProductionCsvConfirmation("本人配布チェックCSV保存")) return;
+  if (!requireNoCriticalLegalIssues("本人配布チェックCSV保存")) return;
   const names = recommendedFileNames(googleImportRows);
   downloadTextFile(names.personalDelivery, `\uFEFF${buildPersonalDeliveryCsv(googleImportRows)}`, "text/csv;charset=utf-8");
   setGoogleImportMessage(`本人配布チェックCSVを保存しました。PDF保存済み・本人通知日・通知方法を記録する作業台帳として使ってください。実施ID: ${currentRunId || "-"}`, "success");
@@ -3817,6 +3835,7 @@ function handleDownloadCompanyDisclosureCsv() {
     return;
   }
   if (!requireProductionCsvConfirmation("企業共有チェックCSV保存")) return;
+  if (!requireNoCriticalLegalIssues("企業共有チェックCSV保存")) return;
   const summary = buildCompanyGroupAnalysis(googleImportRows);
   const names = recommendedFileNames(googleImportRows);
   downloadTextFile(names.companyDisclosure, `\uFEFF${buildCompanyDisclosureCsv(googleImportRows)}`, "text/csv;charset=utf-8");
@@ -3830,6 +3849,7 @@ function handleDownloadInterviewFollowupCsv() {
     return;
   }
   if (!requireProductionCsvConfirmation("面接指導対応CSV保存")) return;
+  if (!requireNoCriticalLegalIssues("面接指導対応CSV保存")) return;
   const highStressCount = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).highStress).length;
   if (!highStressCount) {
     setGoogleImportMessage("面接指導対応CSVの対象者がいません。高ストレス者判定該当がある場合に保存できます。", "info");
@@ -3941,6 +3961,7 @@ individualAnalysisPreview.addEventListener("click", (event) => {
   const button = event.target.closest(".personal-result-action");
   if (!button) return;
   if (!requireProductionCsvConfirmation("本人向け結果個別表示")) return;
+  if (!requireNoCriticalLegalIssues("本人向け結果個別表示")) return;
   const row = googleImportRows[Number(button.dataset.rowIndex)];
   if (!row) return;
   const opened = openHtmlDocument(buildPersonalResultHtml(row));
