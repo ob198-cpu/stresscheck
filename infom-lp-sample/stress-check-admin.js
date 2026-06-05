@@ -1077,11 +1077,11 @@ function missingReportLabels(settings = getImplementationSettings()) {
   ].filter(Boolean);
 }
 
-function guideItem(label, done, detail) {
+function guideItem(label, done, detail, why = "") {
   return `
     <div class="requirement-item ${done ? "ok" : "todo"}">
       <strong>${done ? "OK" : "要確認"}</strong>
-      <span>${escapeHtml(label)}<em>${escapeHtml(detail)}</em></span>
+      <span>${escapeHtml(label)}<em>${escapeHtml(detail)}</em>${why ? `<small>${escapeHtml(why)}</small>` : ""}</span>
     </div>
   `;
 }
@@ -1225,24 +1225,28 @@ function renderRequirementsGuide(rows = googleImportRows) {
       label: "本番CSV確認",
       done: productionCsvReady,
       detail: productionCsvDetail,
+      why: "確認観点: サンプル・別フォーム・途中保存CSVを本番記録に混ぜない。",
       next: { label: "本番CSVを確認", detail: "本番ではGoogleフォーム回答スプレッドシートから保存したCSVを選び、確認チェックを入れてください。", target: currentRunMode === "本番CSV未確認" ? "#productionCsvConfirm" : "#googleCsvFile", click: currentRunMode !== "本番CSV未確認" },
     },
     {
       label: "実施体制・個人結果の取扱い",
       done: uncheckedCount === 0,
       detail: uncheckedCount ? `実施前チェック ${uncheckedCount}件が未確認です。` : "実施前チェックは確認済みです。",
+      why: "確認観点: 実施者・実施事務従事者・個人結果の非開示範囲を決める。",
       next: { label: "実施前チェックを確認", detail: `未確認の実施前チェック ${uncheckedCount}件を確認し、個人結果を会社担当者が見ない運用にしてください。`, target: "#legalOperationChecklist" },
     },
     {
       label: "本人通知・面接指導案内",
       done: missingGuidance.length === 0,
       detail: missingGuidance.length ? `未入力: ${missingGuidance.join("、")}` : "本人向け結果に必要な案内を反映できます。",
+      why: "確認観点: 本人が結果を受け取り、面接指導を申し出られる案内になっているか。",
       next: { label: "本人通知の必須情報を入力", detail: `実施者名・面接指導の申出先・申出期限を入力してください。未入力: ${missingGuidance.join("、")}`, target: guidanceTarget },
     },
     {
       label: "質問紙57項目",
       done: questionnaireReady,
       detail: googleImportDiagnostics ? `認識 ${googleImportDiagnostics.recognizedQuestionCount}/57。質問紙照合CSVで厚労省PDFと照合してください。` : "CSV確認後に57項目認識を表示します。",
+      why: "確認観点: 厚労省推奨の57項目と設問・順番・回答形式を照合する。",
       next: googleImportDiagnostics
         ? { label: "フォーム設問を修正", detail: "57項目が不足しています。質問紙照合CSVを保存し、Googleフォームの欠落・重複・順番違いを直してください。", target: "#downloadQuestionnaireAuditCsv" }
         : { label: "CSVを確認", detail: "Googleフォーム回答CSVを選択し、「2. CSVを確認」を押して57項目の認識状態を確認してください。", target: "#googleCsvFile", click: true },
@@ -1251,34 +1255,39 @@ function renderRequirementsGuide(rows = googleImportRows) {
       label: "回答CSVの取得・反映",
       done: rows.length > 0 && scoreableCount > 0,
       detail: rows.length ? `読込 ${rows.length}件 / 判定可能 ${scoreableCount}件。` : "Googleフォーム回答CSVを読み込んでください。",
+      why: "確認観点: 途中回答・不足情報・表記ゆれ・重複が分析に混ざらないようにする。",
       next: { label: "判定可能な回答に整える", detail: rows.length ? "修正リストCSVで不足情報・未回答・表記ゆれを直し、個人分析できる状態にしてください。" : "Googleフォーム回答CSVを読み込んでください。", target: rows.length ? "#downloadFixListCsv" : "#googleCsvFile", click: !rows.length },
     },
     {
       label: "本人結果・面接指導",
       done: scoreableCount > 0,
       detail: highStressCount ? `高ストレス者 ${highStressCount}件。面接指導対応CSVで管理してください。` : scoreableCount ? "本人向け結果を出力できます。" : "判定可能な回答が必要です。",
+      why: "確認観点: 本人通知用と実施者管理用を分け、会社担当者へ個人判定を渡さない。",
       next: { label: "本人向け結果を出力", detail: "本人向け結果を開き、印刷またはPDF保存してください。配布後は本人配布チェックCSVで通知日を管理してください。", target: "#downloadPersonalResultHtml" },
     },
     {
       label: "集団分析の会社共有",
       done: Boolean(groupAnalysis.overall || groupAnalysis.visibleGroups.length),
       detail: groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示 ${groupAnalysis.suppressedGroups.length}件。` : "10人以上の集団がない場合は会社共有用の数値を出しません。",
+      why: "確認観点: 10人未満や小集団の組み合わせで個人推測できない形にする。",
       next: { label: "集団分析単位を確認", detail: "10人以上の職場単位だけを会社共有対象にし、小集団の組み合わせで個人推測できないか確認してください。", target: "#downloadCompanyGroupHtml" },
     },
     {
       label: "労基署報告準備",
       done: !reportRequired || missingReport.length === 0,
       detail: reportRequired ? (missingReport.length ? `50人以上想定。未入力: ${missingReport.join("、")}` : "労基署報告用集計CSVに転記できます。") : "50人未満なら通常は報告対象外です。",
+      why: "確認観点: 50人以上の事業場では、報告様式へ転記できる集計情報を揃える。",
       next: { label: "労基署報告情報を入力", detail: `50人以上の事業場は報告準備が必要です。未入力: ${missingReport.join("、")}`, target: reportTarget },
     },
     {
       label: "厚労省アプリ突合",
       done: hasOperation("厚労省アプリ突合CSV"),
       detail: hasOperation("厚労省アプリ突合CSV") ? "突合CSVを保存済みです。" : "本番前に厚労省アプリ突合CSVで結果一致を確認してください。",
+      why: "確認観点: 独自実装の判定・集団分析が厚労省アプリ結果とずれていないか検証する。",
       next: { label: "厚労省アプリと突合", detail: "厚労省アプリ突合CSVを保存し、同じCSVで個人判定・集団分析が一致するか本番前に確認してください。", target: "#downloadMhlwComparisonCsv" },
     },
   ];
-  const items = states.map((item) => guideItem(item.label, item.done, item.detail));
+  const items = states.map((item) => guideItem(item.label, item.done, item.detail, item.why));
   const nextAction = nextRequirementAction(states);
   const readiness = requirementReadiness(states);
   latestRequirementSnapshot = {
@@ -1325,10 +1334,10 @@ function buildReadinessCsv(rows = googleImportRows) {
     ["公式資料", "厚労省関連資料", "参照", "https://stresscheck.mhlw.go.jp/material.html", ""],
     ["公式資料", "労基署報告様式", "参照", "https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/koyou_roudou/roudoukijun/anzen/anzeneisei36/24.html", ""],
     [],
-    ["ナビ項目", "項目", "状態", "詳細", "次にやること"],
+    ["ナビ項目", "項目", "状態", "詳細", "確認観点", "次にやること"],
   ];
   snapshot.states.forEach((item) => {
-    output.push(["ナビ項目", item.label, item.done ? "OK" : "要確認", item.detail, item.done ? "" : `${item.next?.label || ""} ${item.next?.detail || ""}`.trim()]);
+    output.push(["ナビ項目", item.label, item.done ? "OK" : "要確認", item.detail, item.why || "", item.done ? "" : `${item.next?.label || ""} ${item.next?.detail || ""}`.trim()]);
   });
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
