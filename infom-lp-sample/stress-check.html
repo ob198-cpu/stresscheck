@@ -36,7 +36,7 @@
           <h1>ストレスの状態を、やさしく見える化する。</h1>
           <p class="lp-lead">
             これまでのストレスチェックに、満足していますか。
-            数分のチェックで、こころと身体のサインを整理。結果をわかりやすく可視化し、必要なケアや相談につなげます。
+            57項目の回答から、こころと身体のサインを整理。結果をわかりやすく可視化し、必要なケアや相談につなげます。
           </p>
           <p class="lp-source-note">
             厚生労働省は、ストレスチェック制度を、本人のストレスへの気づきと職場改善を通じてメンタルヘルス不調を未然に防ぐ仕組みとして説明しています。
@@ -53,17 +53,17 @@
             <span>会社は個人結果を閲覧不可</span>
           </div>
         </div>
-        <aside class="interactive-stress-demo" data-stress-demo aria-label="回答が状態マップになるデモ">
+        <aside class="interactive-stress-demo" data-stress-demo aria-label="本人向け結果の表示イメージ">
           <div class="demo-glow" aria-hidden="true"></div>
           <div class="demo-header">
             <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <strong>Stress Insight Lab</strong>
+            <strong>Result Preview</strong>
           </div>
 
           <div class="demo-title">
-            <span>INTERACTIVE CHECK</span>
-            <h2>回答が、こころの状態マップになる</h2>
-            <p>TAP OR DRAG TO ANALYZE</p>
+            <span>SAMPLE VIEW</span>
+            <h2>本人向け結果を、読みやすく整理する</h2>
+            <p>OUTPUT IMAGE</p>
           </div>
 
           <button type="button" class="demo-input" data-demo-trigger aria-label="分析デモを開始する">
@@ -81,7 +81,7 @@
             <div class="score-block">
               <div class="score-meter" data-score-meter><span>72</span></div>
               <div>
-                <p>Stress Balance Score</p>
+                <p>本人向け結果の表示例</p>
                 <strong>睡眠・疲労・集中度のサインを整理しました。</strong>
                 <em>無理のないケアから始めましょう。</em>
               </div>
@@ -97,13 +97,13 @@
           <div class="demo-stage-track" aria-label="分析の進行">
             <span data-stage-label>Answer</span>
             <div><i data-stage-bar></i></div>
-            <span>Care Plan</span>
+            <span>Guide</span>
           </div>
 
           <div class="demo-step-grid">
             <div class="demo-step active" data-demo-step="0"><span>01</span><strong>Answer</strong><em>質問に答える</em></div>
-            <div class="demo-step" data-demo-step="1"><span>02</span><strong>Analyze</strong><em>状態を整理する</em></div>
-            <div class="demo-step" data-demo-step="2"><span>03</span><strong>Care</strong><em>次の行動を提案</em></div>
+            <div class="demo-step" data-demo-step="1"><span>02</span><strong>Check</strong><em>結果を確認する</em></div>
+            <div class="demo-step" data-demo-step="2"><span>03</span><strong>Guide</strong><em>相談先を案内</em></div>
           </div>
         </aside>
       </div>
@@ -127,7 +127,7 @@
           <div class="answer-stack">
             <div><strong>本人へ</strong><span>気づき、カウンセリング、必要な相談先へつなぐ。</span></div>
             <div><strong>組織へ</strong><span>ストレッサーをアセスメントし、改善策を一緒に考える。</span></div>
-            <div><strong>業務へ</strong><span>仕組み化・AI活用で、分かっていてもできない負担を減らす。</span></div>
+            <div><strong>業務へ</strong><span>AI・システムで、案内、集計、帳票作成の負担を減らす。</span></div>
           </div>
         </div>
       </div>
@@ -292,6 +292,28 @@
       </div>
     </section>
 
+    <section class="lp-section">
+      <div class="container">
+        <p class="lp-kicker centered">Before Start</p>
+        <h2 class="lp-title centered">本番前に決めることを、抜け漏れなく確認します。</h2>
+        <div class="lp-scope-table" role="table" aria-label="本番前の確認事項">
+          <div class="lp-scope-head" role="row">
+            <span role="columnheader">確認項目</span>
+            <span role="columnheader">決める内容</span>
+            <span role="columnheader">理由</span>
+          </div>
+          <div role="row"><span>実施体制</span><span>実施者、実施事務従事者、会社担当者の役割</span><span>個人結果を扱える人を明確にするため。</span></div>
+          <div role="row"><span>本人通知</span><span>通知方法、通知日、未通知者の確認方法</span><span>結果を本人へ確実に届けるため。</span></div>
+          <div role="row"><span>面接指導申出</span><span>申出先、申出期限、申出後に会社へ伝わる情報</span><span>本人が安心して申出できるようにするため。</span></div>
+          <div role="row"><span>回答原票の管理</span><span>Googleフォーム回答、CSV、結果ファイルの閲覧権限</span><span>会社担当者が個人結果を見ない運用にするため。</span></div>
+          <div role="row"><span>フォーム固定</span><span>57項目、回答選択肢、基本情報、編集権限</span><span>設問の欠落や表記ゆれを防ぐため。</span></div>
+          <div role="row"><span>集団分析単位</span><span>職場コード、職場名、10人未満部署の扱い</span><span>個人推測を避け、比較可能な単位にするため。</span></div>
+          <div role="row"><span>労基署報告</span><span>50人以上事業場か、報告に必要な人数情報</span><span>報告義務の有無と提出情報を確認するため。</span></div>
+          <div role="row"><span>公式資料との確認</span><span>厚労省資料、厚労省アプリとの突合結果</span><span>独自実装のずれを本番前に見つけるため。</span></div>
+        </div>
+      </div>
+    </section>
+
     <section class="lp-section lp-muted">
       <div class="container">
         <p class="lp-kicker centered">How It Works</p>
@@ -349,7 +371,7 @@
           <div><strong>対象者数</strong><span>人数、部署、10人未満部署の有無。</span></div>
           <div><strong>回答方法</strong><span>Googleフォーム、スマホ、PC、紙対応の必要性。</span></div>
           <div><strong>実施後の支援</strong><span>産業医連携、カウンセリング、職場改善、講義。</span></div>
-          <div><strong>仕組み化</strong><span>AIやWebシステムで、管理・集計・改善提案の負担を減らす。</span></div>
+          <div><strong>仕組み化</strong><span>AI・Webシステムで、管理・集計・帳票作成の負担を減らす。</span></div>
         </div>
         <div class="notice-panel">
           <strong>伴走するパートナーです</strong>

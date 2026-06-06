@@ -8,7 +8,7 @@
   const stageLabel = demo.querySelector("[data-stage-label]");
   const stageBar = demo.querySelector("[data-stage-bar]");
   const steps = Array.from(demo.querySelectorAll("[data-demo-step]"));
-  const labels = ["Answer", "Analyze", "Insight", "Care Plan"];
+  const labels = ["Answer", "Check", "Result", "Guide"];
   let progress = reduceMotion ? 100 : 0;
   let dragging = false;
   let autoTimer = null;
