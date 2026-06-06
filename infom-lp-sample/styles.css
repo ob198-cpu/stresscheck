@@ -2928,6 +2928,13 @@ textarea {
   background: rgba(255, 255, 255, 0.5);
 }
 
+.lp-subtitle {
+  margin: 30px 0 14px;
+  color: #111827;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
 .lp-intro {
   padding-top: 32px;
 }
