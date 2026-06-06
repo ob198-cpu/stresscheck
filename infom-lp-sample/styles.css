@@ -1274,6 +1274,7 @@ textarea {
 }
 
 .sample-document {
+  position: relative;
   max-width: 920px;
   margin: 28px auto;
   padding: 28px;
@@ -1282,6 +1283,27 @@ textarea {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 8px;
   box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.sample-document[data-watermark]::before {
+  content: attr(data-watermark);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(3rem, 14vw, 8rem);
+  font-weight: 800;
+  color: rgba(15, 23, 42, 0.045);
+  letter-spacing: 0.18em;
+  transform: rotate(-18deg);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sample-document > section {
+  position: relative;
+  z-index: 1;
 }
 
 .sample-document-actions {
