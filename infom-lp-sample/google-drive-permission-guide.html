@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InfoM | Googleフォーム権限設定手順</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="sample-document">
+    <section>
+      <p class="lp-kicker">Guide</p>
+      <h1>Googleフォーム・回答スプレッドシート権限設定手順</h1>
+      <p>ストレスチェック回答原票、CSV、本人結果、高ストレス判定を、会社担当者が本人同意なしに閲覧できる状態にしないための確認手順です。</p>
+    </section>
+
+    <section>
+      <h2>推奨する権限</h2>
+      <table>
+        <tr><th>対象</th><th>推奨設定</th></tr>
+        <tr><td>Googleフォーム編集者</td><td>実施者または実施事務従事者に限定</td></tr>
+        <tr><td>回答スプレッドシート閲覧者</td><td>実施者または実施事務従事者に限定</td></tr>
+        <tr><td>会社担当者</td><td>受検済み・未受検、集団分析、実施報告に必要な情報のみ受領</td></tr>
+        <tr><td>所属長・人事担当者</td><td>回答原票、点数、個人結果、高ストレス判定は閲覧不可</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>設定手順</h2>
+      <ol>
+        <li>Googleフォームの編集権限を確認する。</li>
+        <li>回答スプレッドシートの共有設定を開く。</li>
+        <li>リンクを知っている全員が閲覧できる設定を避ける。</li>
+        <li>実施者・実施事務従事者だけを個別に追加する。</li>
+        <li>会社担当者へは、受検状況CSVや集団分析レポートだけを共有する。</li>
+        <li>業務終了後の保存・削除・返却ルールを確認する。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>本番前チェック</h2>
+      <ul>
+        <li>回答スプレッドシートを会社人事・所属長が開けないか。</li>
+        <li>ダウンロード済みCSVの保存場所が限定されているか。</li>
+        <li>本人結果を通常メール本文やLINE本文に直接記載していないか。</li>
+        <li>共有リンクを外部へ転送されても開けない設定か。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>注意</h2>
+      <p>Google Workspaceの管理者設定により、共有範囲や外部共有可否が異なります。最終設定は事業場の管理者と確認してください。</p>
+    </section>
+  </main>
+</body>
+</html>
