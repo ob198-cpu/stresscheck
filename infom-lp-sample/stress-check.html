@@ -266,7 +266,7 @@
         <div class="lp-card-grid">
           <article class="lp-card">
             <h3>質問紙の確認</h3>
-            <p>職業性ストレス簡易調査票57項目を前提に、設問、順番、回答形式を厚労省資料と照合します。</p>
+            <p>厚労省PDFのA/B/C/D見出し、57項目の設問文、回答選択肢、順番を原文どおりに照合します。</p>
           </article>
           <article class="lp-card">
             <h3>本人結果の分離</h3>
@@ -334,7 +334,7 @@
           <div role="row"><span>本人通知</span><span>通知方法、通知日、未通知者の確認方法</span><span>結果を本人へ確実に届けるため。</span></div>
           <div role="row"><span>面接指導申出</span><span>申出先、申出期限、申出後に会社へ伝わる情報</span><span>本人が安心して申出できるようにするため。</span></div>
           <div role="row"><span>回答原票の管理</span><span>Googleフォーム回答、CSV、結果ファイルの閲覧権限</span><span>会社担当者が個人結果を見ない運用にするため。</span></div>
-          <div role="row"><span>フォーム固定</span><span>57項目、回答選択肢、基本情報、編集権限</span><span>設問の欠落や表記ゆれを防ぐため。</span></div>
+          <div role="row"><span>フォーム固定</span><span>厚労省PDF原文、A/B/C/D見出し、57項目、回答選択肢、基本情報、編集権限</span><span>設問の欠落、表記ゆれ、順番違いを防ぐため。</span></div>
           <div role="row"><span>集団分析単位</span><span>職場コード、職場名、10人未満部署の扱い</span><span>個人推測を避け、比較可能な単位にするため。</span></div>
           <div role="row"><span>労基署報告</span><span>50人以上事業場か、報告に必要な人数情報</span><span>報告義務の有無と提出情報を確認するため。</span></div>
           <div role="row"><span>公式資料との確認</span><span>厚労省資料、厚労省アプリとの突合結果</span><span>独自実装のずれを本番前に見つけるため。</span></div>
@@ -444,14 +444,37 @@
           <article class="checklist-card">
             <h3>確認資料</h3>
             <ul>
-              <li>厚労省57項目との設問照合</li>
+              <li>厚労省PDFの見出し・57項目・選択肢との完全照合</li>
               <li>厚労省版実施プログラムとの突合結果</li>
+              <li>フォーム化のための操作表現変更記録</li>
               <li>保存期間、削除・返却、外部共有のルール</li>
             </ul>
           </article>
         </div>
         <div class="link-panel">
           <a href="stress-check-preparation-checklist.csv" download>導入前確認CSVをダウンロード</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-muted">
+      <div class="container">
+        <p class="lp-kicker centered">Form Wording Policy</p>
+        <h2 class="lp-title centered">質問紙は、厚労省PDFの原文維持を原則にします。</h2>
+        <div class="lp-scope-table" role="table" aria-label="フォーム文言の運用方針">
+          <div class="lp-scope-head" role="row">
+            <span role="columnheader">対象</span>
+            <span role="columnheader">方針</span>
+            <span role="columnheader">記録</span>
+          </div>
+          <div role="row"><span>厚労省PDFの文言</span><span>A/B/C/Dの見出し、57項目の設問文、回答選択肢をそのまま使います。</span><span>質問紙照合CSVで確認します。</span></div>
+          <div role="row"><span>設問文</span><span>57項目の設問文は一字一句変えません。</span><span>変更不可として本番フォームを固定します。</span></div>
+          <div role="row"><span>回答選択肢</span><span>選択肢の文言と順番を変えません。</span><span>順番違いも不備として扱います。</span></div>
+          <div role="row"><span>Googleフォーム操作説明</span><span>どうしても必要な操作説明だけ追加・補足します。</span><span>フォーム化のための操作表現変更として記録します。</span></div>
+        </div>
+        <div class="notice-panel">
+          <strong>本番フォームの扱い</strong>
+          <p>本番フォームは、厚労省PDFとの照合が完了した版を1つ決め、編集権限を限定します。心理検査としての標準性を損なわないよう、意味が近い表現への置き換えも原則行いません。</p>
         </div>
       </div>
     </section>
@@ -499,6 +522,11 @@
             <h3>厚労省アプリ突合台帳</h3>
             <p>個人判定、集団分析、健康リスク値の一致確認を記録するCSVです。</p>
             <a href="mhlw-app-verification-sheet.csv" download>突合台帳をダウンロード</a>
+          </article>
+          <article class="lp-card">
+            <h3>フォーム文言変更記録</h3>
+            <p>Googleフォーム用に追加・補足した操作説明だけを記録するCSVです。設問文・選択肢の変更は不可として扱います。</p>
+            <a href="form-wording-change-log.csv" download>変更記録CSVをダウンロード</a>
           </article>
           <article class="lp-card">
             <h3>業務範囲確認表</h3>

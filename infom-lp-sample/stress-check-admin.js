@@ -1370,9 +1370,9 @@ function renderRequirementsGuide(rows = googleImportRows) {
       done: questionnaireReady,
       critical: true,
       detail: googleImportDiagnostics ? `認識 ${googleImportDiagnostics.recognizedQuestionCount}/57。質問紙照合CSVで厚労省PDFと照合してください。` : "CSV確認後に57項目認識を表示します。",
-      why: "確認観点: 厚労省推奨の57項目と設問・順番・回答形式を照合する。",
+      why: "確認観点: 厚労省PDFのA/B/C/D見出し、57項目の設問文、回答選択肢、順番を原文どおり照合する。",
       next: googleImportDiagnostics
-        ? { label: "フォーム設問を修正", detail: "57項目が不足しています。質問紙照合CSVを保存し、Googleフォームの欠落・重複・順番違いを直してください。", target: "#downloadQuestionnaireAuditCsv" }
+        ? { label: "フォーム設問を修正", detail: "57項目が不足しています。質問紙照合CSVを保存し、Googleフォームの欠落・重複・順番違いを直してください。設問文は厚労省PDF原文から変えないでください。", target: "#downloadQuestionnaireAuditCsv" }
         : { label: "CSVを確認", detail: "Googleフォーム回答CSVを選択し、「2. CSVを確認」を押して57項目の認識状態を確認してください。", target: "#googleCsvFile", click: true },
     },
     {
@@ -3519,7 +3519,7 @@ function questionnaireAuditRows() {
         question.text,
         "必須",
         section.options.join(" | "),
-        "厚労省 職業性ストレス簡易調査票57項目PDFと文言・順番・選択肢を照合",
+        "厚労省PDFのA/B/C/D見出し・57項目設問文・順番・選択肢を原文どおり照合",
         "",
         question.group || "",
       ]);
@@ -3543,7 +3543,8 @@ function buildMhlwComparisonCsv(rows = googleImportRows) {
   const names = recommendedFileNames(rows);
   const output = [
     ["区分", "比較対象", "このシステムの確認値", "厚労省アプリ確認値", "一致判定", "差異メモ", "確認者", "確認日"],
-    ["質問紙", "57項目の文言・順番・選択肢", "質問紙照合CSVで確認", "", "", "厚労省57項目PDFと照合", "", ""],
+    ["質問紙", "厚労省PDFのA/B/C/D見出し・57項目設問文・順番・選択肢", "質問紙照合CSVで原文確認", "", "", "設問文は一字一句変更しない", "", ""],
+    ["質問紙", "フォーム化のための操作表現変更", "変更記録CSVで確認", "", "", "Googleフォーム用に追加・補足した操作説明のみ記録", "", ""],
     ["CSV取込", "回答件数", rows.length, "", "", "同じCSVを厚労省アプリへ投入", "", ""],
     ["個人分析", "判定可能件数", scoreableCount, "", "", names.individualCsv, "", ""],
     ["個人分析", "高ストレス者判定該当件数", highStressCount, "", "", "個人別判定も抽出確認", "", ""],
@@ -3613,7 +3614,7 @@ function buildComplianceReportHtml(rows = googleImportRows) {
     <h2>追加した確認出力</h2>
     <table>
       <tbody>
-        <tr><th>質問紙照合CSV</th><td>57項目の文言・順番・選択肢を厚労省PDFと照合する台帳。</td></tr>
+        <tr><th>質問紙照合CSV</th><td>厚労省PDFのA/B/C/D見出し・57項目設問文・順番・選択肢を原文どおり照合する台帳。</td></tr>
         <tr><th>厚労省アプリ突合CSV</th><td>個人判定、集団分析、健康リスク値を厚労省アプリ結果と比較する台帳。</td></tr>
         <tr><th>実施完了チェックCSV</th><td>本人通知、企業共有、面接指導、監査保管の保存漏れ確認。</td></tr>
       </tbody>
@@ -3661,7 +3662,7 @@ function handleDownloadGoogleFormItemList() {
 
 function handleDownloadQuestionnaireAuditCsv() {
   downloadTextFile("stress-check-questionnaire-audit.csv", `\uFEFF${buildQuestionnaireAuditCsv()}`, "text/csv;charset=utf-8");
-  setGoogleImportMessage("質問紙照合CSVを保存しました。厚労省57項目PDFと文言・順番・選択肢を照合してください。", "success");
+  setGoogleImportMessage("質問紙照合CSVを保存しました。厚労省PDFのA/B/C/D見出し・57項目設問文・回答選択肢・順番を原文どおり照合してください。", "success");
   addOperationLog("質問紙照合CSV保存");
 }
 
