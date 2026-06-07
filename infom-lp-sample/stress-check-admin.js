@@ -38,6 +38,7 @@ const downloadFixListCsv = document.querySelector("#downloadFixListCsv");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const openIndividualAnalysisCsv = document.querySelector("#openIndividualAnalysisCsv");
 const openDevIndividualAnalysis = document.querySelector("#openDevIndividualAnalysis");
+const openDevPersonalFeedback = document.querySelector("#openDevPersonalFeedback");
 const openDevGroupAnalysis = document.querySelector("#openDevGroupAnalysis");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
@@ -2850,6 +2851,7 @@ function renderIndividualAnalysisPreview(rows) {
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = true;
     if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = true;
+    if (openDevPersonalFeedback) openDevPersonalFeedback.disabled = true;
     if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = true;
@@ -2875,6 +2877,7 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = !rows.length;
   if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = !rows.length;
+  if (openDevPersonalFeedback) openDevPersonalFeedback.disabled = !scoreableCount;
   if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = !rows.length;
@@ -3895,6 +3898,23 @@ function handleOpenDevIndividualAnalysis() {
   if (opened) addOperationLog("開発用個人分析表示", { rows: googleImportRows.length });
 }
 
+function handleOpenDevPersonalFeedback() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
+    return;
+  }
+  const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
+  if (!scoreableRows.length) {
+    setGoogleImportMessage("本人向けフィードバックを表示できる行がありません。57項目回答と性別を確認してください。", "error");
+    return;
+  }
+  const opened = scoreableRows.length === 1
+    ? openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]))
+    : openHtmlDocument(buildAllPersonalResultsHtml(scoreableRows));
+  setGoogleImportMessage(opened ? "開発用の本人向けフィードバックを開きました。本番配布には使わないでください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length });
+}
+
 function handleOpenDevGroupAnalysis() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
@@ -4116,6 +4136,7 @@ downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 openIndividualAnalysisCsv.addEventListener("click", handleOpenIndividualAnalysisCsv);
 openDevIndividualAnalysis?.addEventListener("click", handleOpenDevIndividualAnalysis);
+openDevPersonalFeedback?.addEventListener("click", handleOpenDevPersonalFeedback);
 openDevGroupAnalysis?.addEventListener("click", handleOpenDevGroupAnalysis);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
@@ -4183,6 +4204,7 @@ googleCsvFile.addEventListener("change", () => {
   downloadIndividualAnalysisCsv.disabled = true;
   openIndividualAnalysisCsv.disabled = true;
   if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = true;
+  if (openDevPersonalFeedback) openDevPersonalFeedback.disabled = true;
   if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadPersonalDeliveryCsv.disabled = true;
