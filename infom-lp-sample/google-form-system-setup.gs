@@ -123,7 +123,7 @@ function ensureRequiredFormItems(form) {
 
   let insertIndex = findFirstQuestionIndex(form);
   INFOM_REQUIRED_FORM_ITEMS.forEach((spec) => {
-    const item = existing[spec.title] || createItem(form, spec);
+    const item = prepareFormItem(form, existing[spec.title], spec);
     applyItemSettings(item, spec);
     try {
       form.moveItem(item, insertIndex);
@@ -132,6 +132,31 @@ function ensureRequiredFormItems(form) {
       // If Google changes item movement behavior, the item still exists and remains usable.
     }
   });
+}
+
+function prepareFormItem(form, item, spec) {
+  if (!item) return createItem(form, spec);
+  if (isCompatibleItem(item, spec)) return item;
+
+  const oldTitle = `${spec.title}（旧・型不一致）`;
+  try {
+    item.setTitle(oldTitle);
+  } catch (e) {
+    // Non-editable or unexpected item types are left in place and a correct item is added.
+  }
+  return createItem(form, spec);
+}
+
+function isCompatibleItem(item, spec) {
+  const type = item.getType();
+  if (spec.type === "DATE") return type === FormApp.ItemType.DATE;
+  if (spec.type === "MULTIPLE_CHOICE") {
+    return type === FormApp.ItemType.MULTIPLE_CHOICE || type === FormApp.ItemType.LIST;
+  }
+  if (spec.type === "TEXT") {
+    return type === FormApp.ItemType.TEXT || type === FormApp.ItemType.PARAGRAPH_TEXT;
+  }
+  return false;
 }
 
 function createItem(form, spec) {
@@ -146,9 +171,19 @@ function applyItemSettings(item, spec) {
     return;
   }
   if (spec.type === "MULTIPLE_CHOICE") {
+    if (item.getType() === FormApp.ItemType.LIST) {
+      const list = item.asListItem();
+      list.setHelpText(spec.helpText || "").setRequired(!!spec.required);
+      list.setChoices((spec.choices || []).map((choice) => list.createChoice(choice)));
+      return;
+    }
     const mc = item.asMultipleChoiceItem();
     mc.setHelpText(spec.helpText || "").setRequired(!!spec.required);
     mc.setChoices((spec.choices || []).map((choice) => mc.createChoice(choice)));
+    return;
+  }
+  if (item.getType() === FormApp.ItemType.PARAGRAPH_TEXT) {
+    item.asParagraphTextItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
     return;
   }
   item.asTextItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
