@@ -4176,6 +4176,37 @@ textarea {
   min-width: min(260px, 100%);
 }
 
+.dev-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px dashed #7bc6c3;
+  border-radius: 8px;
+  background: #eefbf9;
+}
+
+.dev-preview-actions strong {
+  color: var(--teal-dark);
+  margin-right: auto;
+}
+
+.dev-preview-actions small {
+  color: #a01838;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.dev-preview-actions .btn {
+  min-height: 42px;
+}
+
+.dev-preview-actions .btn[disabled] {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
 .analysis-actions #importGoogleCsv {
   display: none;
 }

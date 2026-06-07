@@ -37,6 +37,8 @@ const downloadGoogleImportCheck = document.querySelector("#downloadGoogleImportC
 const downloadFixListCsv = document.querySelector("#downloadFixListCsv");
 const downloadIndividualAnalysisCsv = document.querySelector("#downloadIndividualAnalysisCsv");
 const openIndividualAnalysisCsv = document.querySelector("#openIndividualAnalysisCsv");
+const openDevIndividualAnalysis = document.querySelector("#openDevIndividualAnalysis");
+const openDevGroupAnalysis = document.querySelector("#openDevGroupAnalysis");
 const downloadPersonalResultHtml = document.querySelector("#downloadPersonalResultHtml");
 const downloadCompanyGroupHtml = document.querySelector("#downloadCompanyGroupHtml");
 const downloadCompanyDisclosureCsv = document.querySelector("#downloadCompanyDisclosureCsv");
@@ -1983,6 +1985,84 @@ function buildIndividualAnalysisCsv(rows) {
   return output.map((line) => line.map(csvCell).join(",")).join("\r\n");
 }
 
+function buildDevIndividualAnalysisHtml(rows) {
+  const analyses = rows.map(buildMhlwIndividualAnalysis);
+  const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const highStressCount = analyses.filter((item) => item.highStress).length;
+  const scaleHeaders = mhlwScaleDefinitions.map((definition) => `<th>${escapeHtml(definition.label)}<br>評価点</th>`).join("");
+  const bodyRows = analyses.map((analysis) => {
+    const label = analysis.canScore ? (analysis.highStress ? "該当" : "非該当") : "判定不可";
+    const scaleCells = mhlwScaleDefinitions.map((definition) => {
+      const scale = analysis.scales.find((item) => item.id === definition.id);
+      return `<td>${escapeHtml(scale?.point ?? "-")}</td>`;
+    }).join("");
+    return `
+      <tr>
+        <td>${escapeHtml(analysis.sourceRowNumber || "")}</td>
+        <td>${escapeHtml(analysis.respondentId || "-")}</td>
+        <td>${escapeHtml(analysis.personName || "-")}</td>
+        <td>${escapeHtml(analysis.gender || "-")}</td>
+        <td>${escapeHtml(analysis.workplaceName || analysis.department || "-")}</td>
+        <td>${escapeHtml(analysis.canScore ? "判定可能" : "判定不可")}</td>
+        <td class="${analysis.highStress ? "danger" : ""}">${escapeHtml(label)}</td>
+        <td>${escapeHtml(analysis.reactionTotal || "-")}</td>
+        <td>${escapeHtml(analysis.factorSupportTotal || "-")}</td>
+        <td>${escapeHtml(analysis.reason || "")}</td>
+        ${scaleCells}
+      </tr>
+    `;
+  }).join("");
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>開発用 個人分析プレビュー</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #eef3f6; color: #0f1f33; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.6; }
+    main { max-width: 1280px; margin: 24px auto; padding: 24px; background: #fff; border: 1px solid #d8e2ea; border-radius: 8px; }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    p { margin: 0 0 16px; color: #40516f; }
+    .notice { margin: 16px 0; padding: 12px 14px; background: #fff5f5; border: 1px solid #f3b7bf; border-radius: 8px; color: #9f1239; font-weight: 800; }
+    .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+    .summary div { padding: 12px; background: #f8fbfc; border: 1px solid #d8e2ea; border-radius: 8px; }
+    .summary strong { display: block; font-size: 1.5rem; }
+    .table-wrap { overflow: auto; border: 1px solid #d8e2ea; border-radius: 8px; }
+    table { width: 100%; min-width: 1800px; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #e7edf2; text-align: left; vertical-align: top; }
+    th { position: sticky; top: 0; z-index: 1; background: #f1f6f8; color: #0f766e; }
+    .danger { color: #be123c; font-weight: 800; }
+    .screen-actions { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    .screen-actions button { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 0; color: #fff; background: #2f9493; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="screen-actions"><button type="button" onclick="window.print()">印刷 / PDF保存</button></div>
+    <h1>開発用 個人分析プレビュー</h1>
+    <p>CSV読込後の判定結果を確認するための開発用画面です。本番配布・本人通知には「本人向け結果を開く」を使用してください。</p>
+    <div class="notice">開発用プレビューです。本人配布用の正式結果として使わないでください。</div>
+    <div class="summary">
+      <div><span>読込件数</span><strong>${analyses.length}</strong></div>
+      <div><span>判定可能</span><strong>${scoreableCount}</strong></div>
+      <div><span>高ストレス判定該当</span><strong>${highStressCount}</strong></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>CSV行</th><th>受検者ID</th><th>氏名</th><th>性別</th><th>職場</th><th>判定可否</th><th>高ストレス</th><th>反応6尺度</th><th>要因+サポート12尺度</th><th>判定根拠</th>${scaleHeaders}
+          </tr>
+        </thead>
+        <tbody>${bodyRows}</tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>`;
+}
+
 function safeFileName(value) {
   return cleanText(value || "result")
     .normalize("NFKC")
@@ -2769,6 +2849,8 @@ function renderIndividualAnalysisPreview(rows) {
     if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = true;
     if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = true;
     if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = true;
+    if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = true;
+    if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = true;
     if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = true;
     if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = true;
     if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = true;
@@ -2792,6 +2874,8 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = !rows.length;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = !rows.length;
+  if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = !rows.length;
+  if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
   if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = !rows.length;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
@@ -3016,11 +3100,11 @@ async function handlePreviewGoogleCsv() {
 
 async function handleLoadSampleCsv() {
   try {
-    const response = await fetch("sample-100-stress-check.csv", { cache: "no-store" });
+    const response = await fetch("google-form-group-analysis-dummy-100.csv", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     currentRunId = createRunId("SAMPLE");
-    currentCsvSourceName = "sample-100-stress-check.csv";
+    currentCsvSourceName = "google-form-group-analysis-dummy-100.csv";
     currentCsvHash = await sha256Text(text);
     currentRunMode = "サンプル";
     googleImportRows = parseGoogleFormCsv(text);
@@ -3801,6 +3885,31 @@ function handleOpenIndividualAnalysisCsv() {
   if (opened) addOperationLog("個人分析CSV表示", { rows: googleImportRows.length });
 }
 
+function handleOpenDevIndividualAnalysis() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
+    return;
+  }
+  const opened = openHtmlDocument(buildDevIndividualAnalysisHtml(googleImportRows));
+  setGoogleImportMessage(opened ? "開発用の個人分析プレビューを開きました。本番配布には使わないでください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("開発用個人分析表示", { rows: googleImportRows.length });
+}
+
+function handleOpenDevGroupAnalysis() {
+  if (!googleImportRows.length) {
+    setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
+    return;
+  }
+  const summary = buildCompanyGroupAnalysis(googleImportRows);
+  if (!summary.overall && !summary.visibleGroups.length) {
+    setGoogleImportMessage("集団分析を表示できません。判定可能な回答が10人以上必要です。", "error");
+    return;
+  }
+  const opened = openHtmlDocument(buildCompanyGroupHtml(googleImportRows));
+  setGoogleImportMessage(opened ? "開発用の集団分析プレビューを開きました。本番共有前には法定実施ナビを確認してください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
+  if (opened) addOperationLog("開発用集団分析表示", { visibleGroups: summary.visibleGroups.length, suppressedGroups: summary.suppressedGroups.length });
+}
+
 function handleDownloadPersonalResultHtml() {
   if (!googleImportRows.length) {
     setGoogleImportMessage("先にCSVを確認してください。", "error");
@@ -4006,6 +4115,8 @@ downloadGoogleImportCheck.addEventListener("click", handleDownloadGoogleImportCh
 downloadFixListCsv.addEventListener("click", handleDownloadFixListCsv);
 downloadIndividualAnalysisCsv.addEventListener("click", handleDownloadIndividualAnalysisCsv);
 openIndividualAnalysisCsv.addEventListener("click", handleOpenIndividualAnalysisCsv);
+openDevIndividualAnalysis?.addEventListener("click", handleOpenDevIndividualAnalysis);
+openDevGroupAnalysis?.addEventListener("click", handleOpenDevGroupAnalysis);
 downloadPersonalResultHtml.addEventListener("click", handleDownloadPersonalResultHtml);
 downloadCompanyGroupHtml.addEventListener("click", handleDownloadCompanyGroupHtml);
 downloadCompanyDisclosureCsv.addEventListener("click", handleDownloadCompanyDisclosureCsv);
@@ -4071,6 +4182,8 @@ googleCsvFile.addEventListener("change", () => {
   downloadMhlwComparisonCsv.disabled = true;
   downloadIndividualAnalysisCsv.disabled = true;
   openIndividualAnalysisCsv.disabled = true;
+  if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = true;
+  if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = true;
   downloadPersonalResultHtml.disabled = true;
   downloadPersonalDeliveryCsv.disabled = true;
   downloadCompanyGroupHtml.disabled = true;
