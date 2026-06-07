@@ -167,28 +167,37 @@ function createItem(form, spec) {
 
 function applyItemSettings(item, spec) {
   if (spec.type === "DATE") {
-    const dateItem = typeof item.asDateItem === "function" ? item.asDateItem() : item;
+    const dateItem = castItemOrSelf(item, "asDateItem");
     dateItem.setHelpText(spec.helpText || "").setRequired(!!spec.required);
     return;
   }
   if (spec.type === "MULTIPLE_CHOICE") {
     if (item.getType() === FormApp.ItemType.LIST) {
-      const list = item.asListItem();
+      const list = castItemOrSelf(item, "asListItem");
       list.setHelpText(spec.helpText || "").setRequired(!!spec.required);
       list.setChoices((spec.choices || []).map((choice) => list.createChoice(choice)));
       return;
     }
-    const mc = typeof item.asMultipleChoiceItem === "function" ? item.asMultipleChoiceItem() : item;
+    const mc = castItemOrSelf(item, "asMultipleChoiceItem");
     mc.setHelpText(spec.helpText || "").setRequired(!!spec.required);
     mc.setChoices((spec.choices || []).map((choice) => mc.createChoice(choice)));
     return;
   }
   if (item.getType() === FormApp.ItemType.PARAGRAPH_TEXT) {
-    item.asParagraphTextItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
+    castItemOrSelf(item, "asParagraphTextItem").setHelpText(spec.helpText || "").setRequired(!!spec.required);
     return;
   }
-  const textItem = typeof item.asTextItem === "function" ? item.asTextItem() : item;
+  const textItem = castItemOrSelf(item, "asTextItem");
   textItem.setHelpText(spec.helpText || "").setRequired(!!spec.required);
+}
+
+function castItemOrSelf(item, methodName) {
+  try {
+    if (item && typeof item[methodName] === "function") return item[methodName]();
+  } catch (e) {
+    // Newly created items are already concrete item types and do not need casting.
+  }
+  return item;
 }
 
 function findFirstQuestionIndex(form) {
