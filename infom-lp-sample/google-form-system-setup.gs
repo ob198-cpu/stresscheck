@@ -167,7 +167,8 @@ function createItem(form, spec) {
 
 function applyItemSettings(item, spec) {
   if (spec.type === "DATE") {
-    item.asDateItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
+    const dateItem = typeof item.asDateItem === "function" ? item.asDateItem() : item;
+    dateItem.setHelpText(spec.helpText || "").setRequired(!!spec.required);
     return;
   }
   if (spec.type === "MULTIPLE_CHOICE") {
@@ -177,7 +178,7 @@ function applyItemSettings(item, spec) {
       list.setChoices((spec.choices || []).map((choice) => list.createChoice(choice)));
       return;
     }
-    const mc = item.asMultipleChoiceItem();
+    const mc = typeof item.asMultipleChoiceItem === "function" ? item.asMultipleChoiceItem() : item;
     mc.setHelpText(spec.helpText || "").setRequired(!!spec.required);
     mc.setChoices((spec.choices || []).map((choice) => mc.createChoice(choice)));
     return;
@@ -186,7 +187,8 @@ function applyItemSettings(item, spec) {
     item.asParagraphTextItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
     return;
   }
-  item.asTextItem().setHelpText(spec.helpText || "").setRequired(!!spec.required);
+  const textItem = typeof item.asTextItem === "function" ? item.asTextItem() : item;
+  textItem.setHelpText(spec.helpText || "").setRequired(!!spec.required);
 }
 
 function findFirstQuestionIndex(form) {
