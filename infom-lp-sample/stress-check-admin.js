@@ -2091,6 +2091,92 @@ function scaleLevelText(point) {
   return labels[point] || "-";
 }
 
+const personalFeedbackComments = {
+  A_QUANTITY: "仕事の量的な負担が高いようです。業務量、締切、優先順位、分担について見直せる点がないか確認してみましょう。",
+  A_QUALITY: "注意や判断を要する仕事の負担が高いようです。集中を要する作業の連続、確認工程、担当範囲について振り返ってみましょう。",
+  A_PHYSICAL: "仕事上の身体的負担が高いようです。作業姿勢、移動、重量物、休憩の取り方などを確認してみましょう。",
+  A_RELATIONS: "職場の対人関係がストレス要因になっている可能性があります。相談しやすい相手や、業務上の連絡方法を整理してみましょう。",
+  A_ENVIRONMENT: "職場環境がストレス要因になっている可能性があります。騒音、照明、温度、換気、作業場所などで改善できる点がないか確認しましょう。",
+  A_CONTROL: "仕事の進め方を自分で調整しにくい状況があるようです。手順、裁量、相談のタイミングについて上司や担当者に相談することも有効です。",
+  A_SKILL: "技能や知識を活用しにくい状況があるようです。担当業務と経験・得意分野の合い方を振り返ってみましょう。",
+  A_FIT: "仕事の内容が自分に合いにくいと感じている可能性があります。負担が続く場合は、担当業務や役割について相談してみましょう。",
+  A_REWARD: "働きがいを感じにくい状態の可能性があります。仕事の目的、評価、達成感、役割の見え方を整理してみましょう。",
+  B_VIGOR: "活気が低下しているようです。睡眠、休養、業務時間外の回復時間を確保できているか確認してみましょう。",
+  B_IRRITATION: "イライラ感が高まっているようです。負担が続く場面や、感情が強く動く場面を振り返ってみましょう。",
+  B_FATIGUE: "疲労感が高まっているようです。休憩、睡眠、業務量、勤務時間の見直しが必要かもしれません。",
+  B_ANXIETY: "不安感が高まっているようです。一人で抱え込まず、相談先や業務上の不明点を整理してみましょう。",
+  B_DEPRESSION: "抑うつ感が高まっているようです。気分の落ち込みが続く場合は、早めに産業保健スタッフや医療機関へ相談してください。",
+  B_PHYSICAL: "身体面の不調感が出ているようです。症状が続く場合や強い場合は、医療機関や産業保健窓口への相談を検討してください。",
+  C_SUPERVISOR: "上司からのサポートが得にくいと感じている可能性があります。相談の機会、指示の明確さ、業務調整の方法を確認してみましょう。",
+  C_COWORKER: "同僚からのサポートが得にくいと感じている可能性があります。協力体制や情報共有の方法を見直せるか確認してみましょう。",
+  C_FAMILY: "家族・友人など職場外のサポートが得にくいと感じている可能性があります。相談できる相手や休養の取り方を見直してみましょう。",
+  D_SATISFACTION: "仕事や生活への満足度が低めに出ています。仕事面と生活面のどちらに負担感が強いか振り返ってみましょう。",
+};
+
+function analysisScaleById(analysis, id) {
+  return analysis.scales.find((scale) => scale.id === id);
+}
+
+function concernScales(analysis, ids) {
+  return ids
+    .map((id) => analysisScaleById(analysis, id))
+    .filter((scale) => Number(scale?.point) <= 2)
+    .sort((a, b) => Number(a.point) - Number(b.point));
+}
+
+function buildEmployerGuidanceText(analysis, settings) {
+  if (!analysis.canScore) {
+    return "回答または基本情報が不足しているため、今回の結果説明を作成できませんでした。実施者からの案内を確認してください。";
+  }
+  if (analysis.highStress) {
+    const contact = settings.interviewContact || "実施者または産業保健窓口";
+    const deadline = settings.interviewDeadline ? `申出期限は ${settings.interviewDeadline} です。` : "申出期限は実施者からの案内を確認してください。";
+    return `ストレスチェック結果におきまして、厚労省資料の数値基準例に基づく高ストレス者判定に該当しました。医師による面接指導を希望される場合は、${contact} へお申し出ください。${deadline} 体調面で気になることがある場合は、社内外の相談窓口や医療機関もご活用ください。`;
+  }
+  return "ストレスチェック結果におきまして、厚労省資料の数値基準例に基づく高ストレス者判定には該当しませんでした。何かご心配なことがありましたら、社内外の相談窓口や産業医面談もご活用ください。これからもご自身の健康維持と職場環境の改善にご協力をお願いいたします。";
+}
+
+function buildPersonalNarrativeHtml(analysis, settings) {
+  if (!analysis.canScore) {
+    return `
+      <h2>個々の領域においてのストレス状況</h2>
+      <div class="guidance-box">
+        <p>回答または基本情報が不足しているため、領域別コメントを作成できませんでした。実施者からの案内を確認してください。</p>
+      </div>
+    `;
+  }
+  const reactionConcerns = concernScales(analysis, mhlwRiskDomains.reaction);
+  const factorConcerns = concernScales(analysis, mhlwRiskDomains.factorsAndSupport);
+  const satisfactionConcern = concernScales(analysis, ["D_SATISFACTION"]);
+  const allConcerns = [...reactionConcerns, ...factorConcerns, ...satisfactionConcern];
+  const lead = analysis.highStress
+    ? "あなたのストレス状態は高めに出ています。結果を一人で抱え込まず、面接指導の申出や相談窓口の利用を検討してください。"
+    : allConcerns.length
+      ? "あなたのストレス状態は高ストレス判定には該当しませんが、ストレスの原因となる因子や心身反応が一部みられます。"
+      : "あなたのストレス状態は高くありません。今回の範囲では、各領域に大きな問題はみられませんでした。";
+  const reactionText = reactionConcerns.length
+    ? `${reactionConcerns.map((scale) => scale.label).join("、")} に注意が必要です。`
+    : "活気、イライラ感、疲労感、不安感、抑うつ感、身体愁訴について、今回の範囲では大きな問題はみられませんでした。";
+  const factorText = factorConcerns.length
+    ? `ストレスの原因となりうる因子として、${factorConcerns.slice(0, 4).map((scale) => scale.label).join("、")} が低めに出ています。`
+    : "仕事のストレス要因や周囲のサポートについて、今回の範囲では大きな問題はみられませんでした。";
+  const commentItems = allConcerns.length
+    ? allConcerns.slice(0, 6).map((scale) => `<li><strong>${escapeHtml(scale.label)}：</strong>${escapeHtml(personalFeedbackComments[scale.id] || "負担が続く場合は、早めに相談してください。")}</li>`).join("")
+    : `<li>現在のよい状態を維持するため、睡眠・休養・勤務時間外の回復時間を大切にしてください。</li>`;
+  const contact = settings.interviewContact || "実施者または産業保健窓口";
+  return `
+    <h2>個々の領域においてのストレス状況</h2>
+    <div class="guidance-box">
+      <p>ご回答いただいたストレス調査票の結果から、「あなたのストレスプロフィール」を作成しました。このプロフィールから、あなたのストレスの状態をおおよそ把握していただくことができます。</p>
+      <p>結果をごらんいただき、ご自分の心の健康管理にお役立てください。詳しいストレス度や、それに伴うこころの問題については、この結果のみで判断することはできません。ご心配な方は ${escapeHtml(contact)} へご相談ください。</p>
+      <p class="profile-emphasis">${escapeHtml(lead)}</p>
+      <p>${escapeHtml(reactionText)}</p>
+      <p>${escapeHtml(factorText)}</p>
+      <ul class="feedback-comment-list">${commentItems}</ul>
+    </div>
+  `;
+}
+
 function profileRadarSvg(analysis) {
   if (!analysis.canScore) return "";
   const scales = analysis.scales.filter((scale) => scale.domain !== "D");
@@ -2176,6 +2262,8 @@ function buildPersonalResultHtml(record) {
   const resultClass = analysis.highStress ? "attention" : "stable";
   const names = recommendedFileNames([record]);
   const personalFileName = personalResultFileName(record);
+  const employerGuidanceText = buildEmployerGuidanceText(analysis, settings);
+  const personalNarrativeHtml = buildPersonalNarrativeHtml(analysis, settings);
   const interviewNotice = analysis.highStress
     ? `
       <h2>医師による面接指導の申出</h2>
@@ -2215,6 +2303,13 @@ function buildPersonalResultHtml(record) {
     .chart-card { margin-top: 24px; padding: 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
     .chart-card svg { display: block; width: min(100%, 520px); margin: 10px auto 0; }
     .notice { margin-top: 18px; font-weight: 800; }
+    .guidance-heading { margin-top: 24px; text-align: center; font-size: 0.98rem; }
+    .guidance-box { margin-top: 10px; padding: 12px 14px; border: 2px solid #3f3f46; background: #fff; border-radius: 2px; }
+    .guidance-box p { margin-top: 8px; }
+    .guidance-box p:first-child { margin-top: 0; }
+    .profile-emphasis { padding: 8px 10px; border: 2px dashed #111827; font-weight: 800; }
+    .feedback-comment-list { margin: 10px 0 0; padding-left: 1.2rem; }
+    .feedback-comment-list li { margin-top: 7px; }
     .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
     .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
     .sample-output-warning { margin: 0 0 18px; padding: 14px 16px; border: 2px solid #e11d48; border-radius: 8px; background: #fff1f2; color: #9f1239; }
@@ -2249,6 +2344,12 @@ function buildPersonalResultHtml(record) {
       <div><strong>通知日</strong><br>${escapeHtml(new Date().toLocaleDateString("ja-JP"))}</div>
       <div><strong>実施ID</strong><br>${escapeHtml(currentRunId || "-")}</div>
     </div>
+
+    <h2 class="guidance-heading">事業場からのご案内　- 医師による面接指導の要否について -</h2>
+    <div class="guidance-box">
+      <p>${escapeHtml(employerGuidanceText)}</p>
+    </div>
+
     <div class="notice ${resultClass}">
       ${escapeHtml(personalRiskText(analysis))}
     </div>
@@ -2261,6 +2362,7 @@ function buildPersonalResultHtml(record) {
     </div>
 
     ${interviewNotice}
+    ${personalNarrativeHtml}
     ${profileRadarSvg(analysis)}
     <h2>尺度別の結果</h2>
     <p class="fine">評価点は1〜5点です。1点に近いほどストレス状況がよくない方向、5点に近いほどよい方向を示します。</p>
@@ -2306,6 +2408,13 @@ function buildAllPersonalResultsHtml(rows) {
     .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
     .meta div, .notice, .box, .chart-card { padding: 12px 14px; border-radius: 8px; background: #f8fbfc; border: 1px solid #d8e2e8; }
     .notice { margin-top: 18px; font-weight: 800; }
+    .guidance-heading { margin-top: 24px; text-align: center; font-size: 0.98rem; }
+    .guidance-box { margin-top: 10px; padding: 12px 14px; border: 2px solid #3f3f46; background: #fff; border-radius: 2px; }
+    .guidance-box p { margin-top: 8px; }
+    .guidance-box p:first-child { margin-top: 0; }
+    .profile-emphasis { padding: 8px 10px; border: 2px dashed #111827; font-weight: 800; }
+    .feedback-comment-list { margin: 10px 0 0; padding-left: 1.2rem; }
+    .feedback-comment-list li { margin-top: 7px; }
     .attention { background: #fff2f2; border-color: #f5c2c7; color: #9f1239; }
     .stable { background: #e9f7f6; border-color: #bde7e5; color: #176c6a; }
     table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 0.94rem; }
