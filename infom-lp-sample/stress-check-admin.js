@@ -1660,6 +1660,13 @@ function normalizeLoose(value) {
     .replace(/[＿_\-－ー]/g, "");
 }
 
+const questionTextKeyMap = new Map(
+  googleFormSections.flatMap((section) => {
+    const items = section.groups ? section.groups.flatMap((group) => group.questions) : section.questions;
+    return items.map((question, index) => [normalizeLoose(question), `${section.key}${index + 1}`]);
+  }),
+);
+
 function questionKeyFromHeader(header) {
   const normalized = String(header || "").normalize("NFKC").trim().toUpperCase();
   const direct = normalized.match(/(?:^|[^A-Z])([ABCD])\s*0?(\d{1,2})(?=[^0-9]|$)/);
@@ -1667,6 +1674,10 @@ function questionKeyFromHeader(header) {
     const key = `${direct[1]}${Number(direct[2])}`;
     if (questionOrder.includes(key)) return key;
   }
+
+  const looseHeader = normalizeLoose(header);
+  const textMatch = Array.from(questionTextKeyMap.entries()).find(([text]) => text && looseHeader.includes(text));
+  if (textMatch) return textMatch[1];
 
   const sequential = normalized.match(/(?:回答|質問|設問|問)\s*0?(\d{1,2})(?=[^0-9]|$)/);
   if (sequential) {
@@ -1734,6 +1745,14 @@ function parseAnswerValue(value) {
   const text = cleanText(value).normalize("NFKC");
   const match = text.match(/[1-4]/);
   return match ? Number(match[0]) : "";
+}
+
+function mergeDuplicateFieldValue(currentValue, nextValue) {
+  const current = cleanText(currentValue);
+  const next = cleanText(nextValue);
+  if (!current) return next;
+  if (!next) return current;
+  return next;
 }
 
 function buildRosterLookups(extraRows = []) {
@@ -3090,7 +3109,7 @@ function parseGoogleFormCsv(text) {
       if (field.startsWith("answer:")) {
         raw.answers[field.slice("answer:".length)] = parseAnswerValue(value);
       } else {
-        raw[field] = value;
+        raw[field] = mergeDuplicateFieldValue(raw[field], value);
       }
     });
     const enriched = enrichGoogleRecord(raw, lookups);
