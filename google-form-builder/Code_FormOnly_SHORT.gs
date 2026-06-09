@@ -2,9 +2,9 @@ function createStressCheckGoogleFormOnly() {
   const title = "InfoM ストレスチェック回答フォーム（57項目）";
   const form = FormApp.create(title);
   form.setDescription([
-    "このフォームは、厚生労働省が公開している職業性ストレス簡易調査票（57項目）に基づくストレスチェック回答フォームです。",
+    "このフォームはストレスチェック回答用です。案内文に記載された受検者IDで回答してください。",
+    "氏名・メールアドレスは原則として収集しません。",
     "回答内容、点数、高ストレス判定は、本人同意なしに会社担当者へ共有しません。",
-    "会社へ共有する情報は、受検済み・未受検などの受検状況と、個人が特定されない範囲の集団分析を想定します。",
     "個人結果通知は、Googleフォームの自動返信ではなく、実施者から本人へ行います。"
   ].join("\n\n"));
   form.setConfirmationMessage("回答を受け付けました。個人結果は実施者から本人へ通知します。");
@@ -14,10 +14,13 @@ function createStressCheckGoogleFormOnly() {
   form.setAcceptingResponses(true);
   form.setShuffleQuestions(false);
 
-  addHeader(form, "回答前の確認", "本人専用URLまたは案内文に記載された受検者IDで回答してください。氏名やメールアドレスは、このフォームでは原則として収集しません。");
+  addHeader(form, "回答前の確認", "案内文に記載された受検者IDで回答してください。氏名やメールアドレスは、このフォームでは原則として収集しません。");
   form.addTextItem().setTitle("受検者ID").setHelpText("案内文に記載されたIDを入力してください。例: SC-0001").setRequired(true);
+  form.addMultipleChoiceItem().setTitle("性別").setHelpText("結果作成に使用します。").setChoiceValues(["男性", "女性"]).setRequired(true);
   form.addTextItem().setTitle("会社名・事業所名").setHelpText("案内文で指定されている場合のみ入力してください。").setRequired(false);
   form.addTextItem().setTitle("部署").setHelpText("集団分析に使用します。案内文で指定されている表記で入力してください。").setRequired(false);
+  form.addTextItem().setTitle("職場コード").setHelpText("案内文で指定されている場合のみ入力してください。").setRequired(false);
+  form.addTextItem().setTitle("職場名").setHelpText("案内文で指定されている場合のみ入力してください。").setRequired(false);
   form.addCheckboxItem().setTitle("個人情報の扱いの確認").setHelpText("回答内容・点数・高ストレス判定は、本人同意なしに会社担当者へ共有しません。").setChoiceValues(["確認しました"]).setRequired(true);
 
   addSection(form, "A", "A あなたの仕事について", "最もあてはまるものを一つ選んでください。", ["1 そうだ", "2 まあそうだ", "3 ややちがう", "4 ちがう"], `

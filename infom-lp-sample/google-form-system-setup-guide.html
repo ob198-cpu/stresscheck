@@ -15,7 +15,7 @@
     <section>
       <p class="lp-kicker">Setup</p>
       <h1>Googleフォーム・回答シート連携セットアップ</h1>
-      <p>現在のフォーム回答シートに不足している、性別、氏名、フリガナ、生年月日、職場コード、職場名などを安全に扱うためのセットアップ手順です。</p>
+      <p>現在のフォーム回答シートに不足している、性別、職場コード、職場名などを安全に扱うためのセットアップ手順です。氏名、フリガナ、生年月日はフォームでは原則収集せず、名簿補完で扱います。</p>
     </section>
 
     <section>
@@ -23,7 +23,7 @@
       <ul>
         <li>厚労省PDFのA/B/C/D見出し、57項目設問文、回答選択肢、順番は原文どおり使います。</li>
         <li>Googleフォーム用に追加・補足するのは操作説明だけにします。</li>
-        <li>氏名・生年月日などをフォームで集めるか、名簿補完で管理するかは実施者側で決めます。</li>
+        <li>氏名・フリガナ・生年月日はフォームで集めず、名簿補完テンプレートで管理します。</li>
         <li>本人同意なしに、個人結果・高ストレス判定を会社担当者へ共有しません。</li>
       </ul>
     </section>
@@ -34,7 +34,8 @@
         <li>回答スプレッドシートを開く。</li>
         <li>メニューの「拡張機能」から「Apps Script」を開く。</li>
         <li><a href="google-form-system-setup.gs" target="_blank" rel="noreferrer">google-form-system-setup.gs</a> の内容を貼り付ける。</li>
-        <li><code>setupInfoMStressCheck</code> を実行し、権限を許可する。</li>
+        <li>既存の有効回答がない場合は、<code>rebuildLinkedInfoMForm</code> を実行する。既存フォームをきれいな順番で再構成します。</li>
+        <li>既存回答を残したまま最低限の整備だけ行う場合は、<code>setupInfoMStressCheck</code> を実行する。</li>
         <li>フォームに不足項目が追加され、回答シートに名簿補完テンプレート、運用確認、フォーム文言変更記録、InfoM連携手順が作成されたことを確認する。</li>
       </ol>
     </section>
@@ -44,13 +45,16 @@
       <table>
         <tr><th>項目</th><th>扱い</th><th>理由</th></tr>
         <tr><td>受検者ID</td><td>必須</td><td>回答と名簿を照合するため。</td></tr>
-        <tr><td>氏名</td><td>任意</td><td>本人結果作成。安全運用では名簿補完でも可。</td></tr>
-        <tr><td>フリガナ</td><td>任意</td><td>本人確認・同姓同名確認。</td></tr>
-        <tr><td>生年月日</td><td>任意</td><td>本人確認・同姓同名確認。</td></tr>
         <tr><td>性別</td><td>必須</td><td>厚労省資料の素点換算表方式に必要。</td></tr>
         <tr><td>職場コード</td><td>任意</td><td>集団分析単位。名簿補完でも可。</td></tr>
         <tr><td>職場名</td><td>任意</td><td>集団分析表示名。名簿補完でも可。</td></tr>
       </table>
+      <p><code>rebuildLinkedInfoMForm</code> を使った場合、受検者ID、性別、会社名・事業所名、部署、職場コード、職場名、個人情報の扱いの確認は「回答前の確認」にまとまり、送信前の確認の後に追加質問は出ません。</p>
+    </section>
+
+    <section>
+      <h2>CSV保存に使うタブ</h2>
+      <p>Googleフォームの回答シートは、後から追加した項目が末尾に残る場合があります。その場合は、列順を整えた <code>InfoM取込用CSV</code> タブをCSV保存して管理画面へ読み込んでください。</p>
     </section>
 
     <section>

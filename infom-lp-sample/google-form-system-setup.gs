@@ -13,47 +13,38 @@ const INFOM_REQUIRED_FORM_ITEMS = [
   {
     title: "受検者ID",
     type: "TEXT",
-    helpText: "会社から案内された受検者IDまたは受検コードを入力してください。個人結果と名簿照合に使います。",
+    helpText: "案内文に記載されたIDを入力してください。例: SC-0001",
     required: true,
-  },
-  {
-    title: "氏名",
-    type: "TEXT",
-    helpText: "本人向け結果作成に使います。名簿補完で管理する場合は、フォームでは収集せず名簿補完テンプレートを使ってください。",
-    required: false,
-  },
-  {
-    title: "フリガナ",
-    type: "TEXT",
-    helpText: "本人確認・同姓同名確認に使います。名簿補完で管理する場合は未入力でも運用できます。",
-    required: false,
-  },
-  {
-    title: "生年月日",
-    type: "DATE",
-    helpText: "本人確認・同姓同名確認に使います。名簿補完で管理する場合は未入力でも運用できます。",
-    required: false,
   },
   {
     title: "性別",
     type: "MULTIPLE_CHOICE",
     choices: ["男性", "女性"],
-    helpText: "厚労省資料の素点換算表方式による本人向け結果作成に必要です。",
+    helpText: "結果作成に使用します。",
     required: true,
   },
   {
     title: "職場コード",
     type: "TEXT",
-    helpText: "集団分析の単位に使います。名簿補完で管理する場合は未入力でも運用できます。",
+    helpText: "案内文で指定されている場合のみ入力してください。",
     required: false,
   },
   {
     title: "職場名",
     type: "TEXT",
-    helpText: "集団分析の表示名に使います。名簿補完で管理する場合は未入力でも運用できます。",
+    helpText: "案内文で指定されている場合のみ入力してください。",
     required: false,
   },
 ];
+
+const INFOM_REMOVE_FORM_ITEM_TITLES = ["氏名", "フリガナ", "生年月日"];
+
+const INFOM_SECTION_DEFAULTS = {
+  A: { title: "A あなたの仕事について", helpText: "最もあてはまるものを一つ選んでください。", choices: ["1 そうだ", "2 まあそうだ", "3 ややちがう", "4 ちがう"] },
+  B: { title: "B 最近1か月間のあなたの状態について", helpText: "最もあてはまるものを一つ選んでください。", choices: ["1 ほとんどなかった", "2 ときどきあった", "3 しばしばあった", "4 ほとんどいつもあった"] },
+  C: { title: "C あなたの周りの方々について", helpText: "最もあてはまるものを一つ選んでください。", choices: ["1 非常に", "2 かなり", "3 多少", "4 全くない"] },
+  D: { title: "D 満足度について", helpText: "最もあてはまるものを一つ選んでください。", choices: ["1 満足", "2 まあ満足", "3 やや不満足", "4 不満足"] },
+};
 
 const INFOM_ROSTER_HEADERS = [
   "受検者ID",
@@ -102,17 +93,173 @@ function setupInfoMStressCheck() {
   form.setConfirmationMessage("回答ありがとうございました。個人結果は、実施者側の案内に従って通知されます。");
 
   ensureDescription(form);
+  removeUnnecessaryPersonalItems(form);
   ensureRequiredFormItems(form);
   createOrResetRosterSheet(ss);
   createOrResetOperationSheet(ss);
   createOrResetWordingLogSheet(ss);
   createOrResetSystemGuideSheet(ss);
+  createOrResetNormalizedImportSheet(ss);
+}
+
+function rebuildLinkedInfoMForm() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const formUrl = ss.getFormUrl();
+  if (!formUrl) {
+    throw new Error("このスプレッドシートにリンクされたGoogleフォームが見つかりません。フォーム回答シートから実行してください。");
+  }
+
+  const form = FormApp.openByUrl(formUrl);
+  const questionnaire = readQuestionnaireItems(form);
+  const questionCount = Object.values(questionnaire).reduce((sum, section) => sum + section.questions.length, 0);
+  if (questionCount !== 57) {
+    throw new Error(`57項目を読み取れませんでした。読み取り件数: ${questionCount}。先にフォームのA1〜D2が揃っているか確認してください。`);
+  }
+
+  deleteAllFormItems(form);
+  applyBaseFormSettings(form);
+  addCleanIntroItems(form);
+  addQuestionnaireItems(form, questionnaire);
+  addFinalConfirmationItems(form);
+  createOrResetRosterSheet(ss);
+  createOrResetOperationSheet(ss);
+  createOrResetWordingLogSheet(ss);
+  createOrResetSystemGuideSheet(ss);
+  createOrResetNormalizedImportSheet(ss);
+}
+
+function applyBaseFormSettings(form) {
+  form.setCollectEmail(false);
+  form.setAllowResponseEdits(false);
+  form.setConfirmationMessage("回答ありがとうございました。個人結果は、実施者側の案内に従って通知されます。");
+  ensureDescription(form);
+}
+
+function addCleanIntroItems(form) {
+  form.addSectionHeaderItem()
+    .setTitle("回答前の確認")
+    .setHelpText("案内文に記載された受検者IDで回答してください。氏名やメールアドレスは、このフォームでは原則として収集しません。");
+
+  INFOM_REQUIRED_FORM_ITEMS.forEach((spec) => {
+    applyItemSettings(createItem(form, spec), spec);
+  });
+
+  form.addTextItem()
+    .setTitle("会社名・事業所名")
+    .setHelpText("案内文で指定されている場合のみ入力してください。")
+    .setRequired(false);
+
+  form.addTextItem()
+    .setTitle("部署")
+    .setHelpText("案内文で指定されている場合のみ入力してください。")
+    .setRequired(false);
+
+  form.addCheckboxItem()
+    .setTitle("個人情報の扱いの確認")
+    .setHelpText("回答内容・点数・個人結果・高ストレス判定は、本人同意なしに会社担当者へ共有しません。")
+    .setChoiceValues(["確認しました"])
+    .setRequired(true);
+}
+
+function addQuestionnaireItems(form, questionnaire) {
+  ["A", "B", "C", "D"].forEach((key) => {
+    const section = questionnaire[key];
+    const defaults = INFOM_SECTION_DEFAULTS[key];
+    form.addSectionHeaderItem()
+      .setTitle(section.title || defaults.title)
+      .setHelpText(section.helpText || defaults.helpText);
+    section.questions
+      .sort((a, b) => a.order - b.order)
+      .forEach((question) => {
+        form.addMultipleChoiceItem()
+          .setTitle(question.title)
+          .setChoiceValues(question.choices.length ? question.choices : defaults.choices)
+          .setRequired(true);
+      });
+  });
+}
+
+function addFinalConfirmationItems(form) {
+  form.addSectionHeaderItem()
+    .setTitle("送信前の確認")
+    .setHelpText("すべての設問に、現在の状態に最も近い選択肢で回答してください。");
+
+  form.addCheckboxItem()
+    .setTitle("回答内容の確認")
+    .setChoiceValues(["すべての設問に回答しました"])
+    .setRequired(true);
+}
+
+function readQuestionnaireItems(form) {
+  const result = {
+    A: { ...INFOM_SECTION_DEFAULTS.A, questions: [] },
+    B: { ...INFOM_SECTION_DEFAULTS.B, questions: [] },
+    C: { ...INFOM_SECTION_DEFAULTS.C, questions: [] },
+    D: { ...INFOM_SECTION_DEFAULTS.D, questions: [] },
+  };
+  let currentSectionKey = "";
+  form.getItems().forEach((item) => {
+    const title = item.getTitle();
+    const sectionMatch = title.match(/^([ABCD])\s/);
+    if (sectionMatch && result[sectionMatch[1]]) {
+      currentSectionKey = sectionMatch[1];
+      result[currentSectionKey].title = title;
+      result[currentSectionKey].helpText = getItemHelpText(item) || result[currentSectionKey].helpText;
+      return;
+    }
+    const questionMatch = title.match(/^([ABCD])(\d+)[.．]/);
+    if (!questionMatch || !result[questionMatch[1]]) return;
+    const choices = getItemChoices(item);
+    result[questionMatch[1]].questions.push({
+      order: Number(questionMatch[2]),
+      title,
+      choices,
+    });
+  });
+  return result;
+}
+
+function getItemHelpText(item) {
+  try {
+    return item.getHelpText ? item.getHelpText() : "";
+  } catch (e) {
+    return "";
+  }
+}
+
+function getItemChoices(item) {
+  try {
+    const casted = item.getType() === FormApp.ItemType.LIST
+      ? castItemOrSelf(item, "asListItem")
+      : castItemOrSelf(item, "asMultipleChoiceItem");
+    return casted.getChoices().map((choice) => choice.getValue());
+  } catch (e) {
+    return [];
+  }
+}
+
+function deleteAllFormItems(form) {
+  const items = form.getItems();
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    form.deleteItem(index);
+  }
 }
 
 function ensureDescription(form) {
   const text =
-    "本フォームは、厚生労働省「職業性ストレス簡易調査票57項目」のA/B/C/D見出し、設問文、回答選択肢、順番を原文に沿って作成します。Googleフォームの仕様上、回答は選択肢をクリックして行ってください。回答内容、点数、個人結果、高ストレス判定は、本人同意なしに会社担当者へ共有しません。";
+    "このフォームはストレスチェック回答用です。案内文に記載された受検者IDで回答してください。氏名・メールアドレスは原則として収集しません。回答内容、点数、個人結果、高ストレス判定は、本人同意なしに会社担当者へ共有しません。個人結果は実施者から本人へ通知します。";
   form.setDescription(text);
+}
+
+function removeUnnecessaryPersonalItems(form) {
+  const items = form.getItems();
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+    const baseTitle = item.getTitle().replace(/（旧・型不一致）$/, "");
+    if (INFOM_REMOVE_FORM_ITEM_TITLES.includes(baseTitle)) {
+      form.deleteItem(index);
+    }
+  }
 }
 
 function ensureRequiredFormItems(form) {
@@ -202,7 +349,7 @@ function castItemOrSelf(item, methodName) {
 
 function findFirstQuestionIndex(form) {
   const items = form.getItems();
-  const idx = items.findIndex((item) => /^A1[.．]/.test(item.getTitle()));
+  const idx = items.findIndex((item) => /^A\s|^A　|^A1[.．]/.test(item.getTitle()));
   return idx >= 0 ? idx : Math.min(1, items.length);
 }
 
@@ -251,6 +398,41 @@ function createOrResetSystemGuideSheet(ss) {
   sheet.getRange(1, 1, rows.length, rows[0].length).setValues(rows);
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, rows[0].length);
+}
+
+function createOrResetNormalizedImportSheet(ss) {
+  const sourceSheet = ss.getSheets().find((sheet) => /^フォームの回答/.test(sheet.getName())) || ss.getSheets()[0];
+  const sourceName = sourceSheet.getName();
+  const sourceLastColumn = Math.max(sourceSheet.getLastColumn(), 1);
+  const sourceHeaders = sourceSheet.getRange(1, 1, 1, sourceLastColumn).getValues()[0].filter(Boolean);
+  const baseHeaders = ["タイムスタンプ", "受検者ID", "性別", "会社名・事業所名", "部署", "職場コード", "職場名", "個人情報の扱いの確認"];
+  const questionHeaders = sourceHeaders.filter((header) => /^[ABCD]\d+[.．]/.test(String(header)));
+  const tailHeaders = ["回答内容の確認"];
+  const headers = [...baseHeaders, ...questionHeaders, ...tailHeaders].filter((header, index, all) => all.indexOf(header) === index);
+  const sheet = getOrCreateSheet(ss, "InfoM取込用CSV");
+  sheet.clear();
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const escapedSourceName = sourceName.replace(/'/g, "''");
+  const formulas = [];
+  for (let row = 2; row <= 1001; row += 1) {
+    formulas.push(headers.map((_, colIndex) => {
+      const colLetter = columnLetter(colIndex + 1);
+      return `=IFERROR(INDEX('${escapedSourceName}'!$A:$ZZ,ROW(),MATCH(${colLetter}$1,'${escapedSourceName}'!$1:$1,0)),"")`;
+    }));
+  }
+  sheet.getRange(2, 1, formulas.length, headers.length).setFormulas(formulas);
+  sheet.setFrozenRows(1);
+  sheet.autoResizeColumns(1, headers.length);
+}
+
+function columnLetter(index) {
+  let value = "";
+  while (index > 0) {
+    const mod = (index - 1) % 26;
+    value = String.fromCharCode(65 + mod) + value;
+    index = Math.floor((index - mod) / 26);
+  }
+  return value;
 }
 
 function getOrCreateSheet(ss, name) {
