@@ -3006,9 +3006,9 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
   if (openIndividualAnalysisCsv) openIndividualAnalysisCsv.disabled = !rows.length;
   if (openDevIndividualAnalysis) openDevIndividualAnalysis.disabled = !rows.length;
-  if (openDevPersonalFeedback) openDevPersonalFeedback.disabled = !scoreableCount;
+  if (openDevPersonalFeedback) openDevPersonalFeedback.disabled = !rows.length;
   if (openDevGroupAnalysis) openDevGroupAnalysis.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
-  if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !scoreableCount;
+  if (downloadPersonalResultHtml) downloadPersonalResultHtml.disabled = !rows.length;
   if (downloadPersonalDeliveryCsv) downloadPersonalDeliveryCsv.disabled = !rows.length;
   if (downloadCompanyGroupHtml) downloadCompanyGroupHtml.disabled = !groupAnalysis.overall && !groupAnalysis.visibleGroups.length;
   if (downloadCompanyDisclosureCsv) downloadCompanyDisclosureCsv.disabled = !rows.length;
@@ -4028,7 +4028,12 @@ function handleOpenDevPersonalFeedback() {
   }
   const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
   if (!scoreableRows.length) {
-    setGoogleImportMessage("本人向けフィードバックを表示できる行がありません。57項目回答と性別を確認してください。", "error");
+    const reasons = Array.from(new Set(
+      googleImportRows
+        .map((row) => buildMhlwIndividualAnalysis(row).reason)
+        .filter(Boolean),
+    ));
+    setGoogleImportMessage(`本人向けフィードバックを表示できる行がありません。理由: ${reasons.slice(0, 3).join(" / ") || "57項目回答または性別を認識できません"}`, "error");
     return;
   }
   const opened = scoreableRows.length === 1
