@@ -3932,6 +3932,37 @@ textarea {
   gap: 8px;
 }
 
+.inline-result-preview {
+  margin-top: 18px;
+  border: 1px solid #c8dee2;
+  border-radius: 8px;
+  background: #f7fbfc;
+  overflow: hidden;
+}
+
+.inline-result-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #dbe8eb;
+  color: #102033;
+}
+
+.inline-result-preview-header span {
+  color: #536476;
+  font-size: 0.9rem;
+}
+
+.inline-result-preview iframe {
+  display: block;
+  width: 100%;
+  height: min(78vh, 920px);
+  border: 0;
+  background: #fff;
+}
+
 .suppressed-item {
   padding: 12px 14px;
   border-radius: 8px;

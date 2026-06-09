@@ -67,6 +67,7 @@ const completionChecklist = document.querySelector("#completionChecklist");
 const requirementsGuide = document.querySelector("#requirementsGuide");
 const googleImportPreview = document.querySelector("#googleImportPreview");
 const individualAnalysisPreview = document.querySelector("#individualAnalysisPreview");
+const devPersonalFeedbackPreview = document.querySelector("#devPersonalFeedbackPreview");
 const reloadStoredResponses = document.querySelector("#reloadStoredResponses");
 const downloadResponseAdminCsv = document.querySelector("#downloadResponseAdminCsv");
 const responseAdminMessage = document.querySelector("#responseAdminMessage");
@@ -2482,6 +2483,19 @@ function openHtmlDocument(content) {
   return Boolean(opened);
 }
 
+function renderInlineHtmlPreview(container, title, content) {
+  if (!container) return;
+  container.hidden = false;
+  container.innerHTML = `
+    <div class="inline-result-preview-header">
+      <strong>${escapeHtml(title)}</strong>
+      <span>画面内プレビュー</span>
+    </div>
+    <iframe title="${escapeHtml(title)}" sandbox="allow-same-origin" srcdoc="${escapeHtml(content)}"></iframe>
+  `;
+  container.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function groupKeyForGoogleRecord(record) {
   return cleanText(record.analysisVariable || record.workplaceName || record.workplaceCode || record.department || "未設定");
 }
@@ -2973,6 +2987,10 @@ function renderIndividualAnalysisPreview(rows) {
   updateOutputButtonLabels();
   if (!rows.length) {
     renderEmpty(individualAnalysisPreview, "CSVを確認すると、厚労省57項目の素点換算表方式に基づく個人分析を表示します。");
+    if (devPersonalFeedbackPreview) {
+      devPersonalFeedbackPreview.hidden = true;
+      devPersonalFeedbackPreview.innerHTML = "";
+    }
     renderCompletionChecklist([]);
     if (downloadFixListCsv) downloadFixListCsv.disabled = true;
     if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = true;
@@ -4036,11 +4054,13 @@ function handleOpenDevPersonalFeedback() {
     setGoogleImportMessage(`本人向けフィードバックを表示できる行がありません。理由: ${reasons.slice(0, 3).join(" / ") || "57項目回答または性別を認識できません"}`, "error");
     return;
   }
-  const opened = scoreableRows.length === 1
-    ? openHtmlDocument(buildPersonalResultHtml(scoreableRows[0]))
-    : openHtmlDocument(buildAllPersonalResultsHtml(scoreableRows));
-  setGoogleImportMessage(opened ? "開発用の本人向けフィードバックを開きました。本番配布には使わないでください。" : "ポップアップがブロックされました。ブラウザのポップアップ許可を確認してください。", opened ? "success" : "error");
-  if (opened) addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length });
+  const html = scoreableRows.length === 1
+    ? buildPersonalResultHtml(scoreableRows[0])
+    : buildAllPersonalResultsHtml(scoreableRows);
+  renderInlineHtmlPreview(devPersonalFeedbackPreview, "開発用：本人向けフィードバック", html);
+  const opened = openHtmlDocument(html);
+  setGoogleImportMessage(opened ? "開発用の本人向けフィードバックを画面内と別タブで表示しました。本番配布には使わないでください。" : "開発用の本人向けフィードバックを画面内に表示しました。別タブが開かない場合は、下のプレビューを確認してください。", "success");
+  addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length, inline: true, popup: opened });
 }
 
 function handleOpenDevGroupAnalysis() {
