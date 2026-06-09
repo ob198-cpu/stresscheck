@@ -4065,8 +4065,12 @@ function handleOpenDevPersonalFeedback() {
     addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length, inline: true, popup: opened });
   } catch (error) {
     setGoogleImportMessage(`本人向けフィードバックの作成中にエラーが出ました: ${error.message}`, "error");
+  } finally {
+    if (openDevPersonalFeedback) openDevPersonalFeedback.textContent = "開発用：本人向けフィードバックを見る";
   }
 }
+
+window.handleOpenDevPersonalFeedback = handleOpenDevPersonalFeedback;
 
 function handleOpenDevGroupAnalysis() {
   if (!googleImportRows.length) {
