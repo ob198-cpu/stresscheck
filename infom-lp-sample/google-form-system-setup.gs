@@ -128,6 +128,39 @@ function rebuildLinkedInfoMForm() {
   createOrResetNormalizedImportSheet(ss);
 }
 
+function deleteBrokenResponseSheetsAndRelink() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const formUrl = ss.getFormUrl();
+  if (!formUrl) {
+    throw new Error("このスプレッドシートにリンクされたGoogleフォームが見つかりません。回答スプレッドシート側から実行してください。");
+  }
+
+  const form = FormApp.openByUrl(formUrl);
+  try {
+    form.removeDestination();
+  } catch (e) {
+    // Destination may already be removed. Continue with cleanup.
+  }
+  SpreadsheetApp.flush();
+  Utilities.sleep(1200);
+
+  ss.getSheets().forEach((sheet) => {
+    const name = sheet.getName();
+    if (/^(フォームの回答|Form Responses)/.test(name) && ss.getSheets().length > 1) {
+      ss.deleteSheet(sheet);
+    }
+  });
+  SpreadsheetApp.flush();
+
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+  SpreadsheetApp.flush();
+  Utilities.sleep(2500);
+
+  createOrResetNormalizedImportSheet(ss);
+  createOrResetSystemGuideSheet(ss);
+  SpreadsheetApp.getUi().alert("壊れた回答タブを削除し、Googleフォームをこのスプレッドシートへ再リンクしました。新しいテスト回答を1件送信してから、InfoM取込用CSVタブをCSV保存してください。");
+}
+
 function applyBaseFormSettings(form) {
   form.setCollectEmail(false);
   form.setAllowResponseEdits(false);
@@ -401,7 +434,7 @@ function createOrResetSystemGuideSheet(ss) {
 }
 
 function createOrResetNormalizedImportSheet(ss) {
-  const sourceSheet = ss.getSheets().find((sheet) => /^フォームの回答/.test(sheet.getName())) || ss.getSheets()[0];
+  const sourceSheet = getResponseSheet(ss) || ss.getSheets()[0];
   const sourceLastColumn = Math.max(sourceSheet.getLastColumn(), 1);
   const sourceHeaders = sourceSheet.getRange(1, 1, 1, sourceLastColumn).getValues()[0].filter(Boolean);
   const baseHeaders = ["タイムスタンプ", "受検者ID", "性別", "会社名・事業所名", "部署", "職場コード", "職場名", "個人情報の扱いの確認"];
@@ -411,15 +444,34 @@ function createOrResetNormalizedImportSheet(ss) {
   const sheet = getOrCreateSheet(ss, "InfoM取込用CSV");
   sheet.clear();
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  sheet.getRange(2, 1, 1, Math.min(headers.length, 5)).setValues([[
-    "このタブは列順確認用です",
-    "有効回答が入った後はフォームの回答タブをCSV保存するか、管理画面へ直接読み込んでください",
-    "",
-    "",
-    "",
-  ].slice(0, Math.min(headers.length, 5))]);
+  if (headers.length && sourceSheet) {
+    const sourceName = sourceSheet.getName().replace(/'/g, "''");
+    const sourceEndColumn = columnLetter(sourceLastColumn);
+    const sourceRows = `'${sourceName}'!$A$2:$${sourceEndColumn}`;
+    const sourceHeaderRange = `'${sourceName}'!$A$1:$${sourceEndColumn}$1`;
+    const gateHeader = 'A1. 非常にたくさんの仕事をしなければならない';
+    const formulas = headers.map((_, index) => {
+      const targetHeaderCell = `${columnLetter(index + 1)}$1`;
+      return `=ARRAYFORMULA(BYROW(${sourceRows},LAMBDA(r,IFERROR(IF(INDEX(FILTER(r,${sourceHeaderRange}="${gateHeader}"),1)="","",INDEX(FILTER(r,${sourceHeaderRange}=${targetHeaderCell},r<>""),1)),""))))`;
+    });
+    sheet.getRange(2, 1, 1, headers.length).setFormulas([formulas]);
+  }
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, headers.length);
+}
+
+function getResponseSheet(ss) {
+  return ss.getSheets().find((sheet) => /^(フォームの回答|Form Responses)/.test(sheet.getName()));
+}
+
+function columnLetter(index) {
+  let value = "";
+  while (index > 0) {
+    const mod = (index - 1) % 26;
+    value = String.fromCharCode(65 + mod) + value;
+    index = Math.floor((index - mod) / 26);
+  }
+  return value;
 }
 
 function getOrCreateSheet(ss, name) {
