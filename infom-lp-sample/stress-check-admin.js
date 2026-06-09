@@ -4040,27 +4040,32 @@ function handleOpenDevIndividualAnalysis() {
 }
 
 function handleOpenDevPersonalFeedback() {
-  if (!googleImportRows.length) {
-    setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
-    return;
+  setGoogleImportMessage("本人向けフィードバックを作成しています。", "info");
+  try {
+    if (!googleImportRows.length) {
+      setGoogleImportMessage("先にCSVを確認してください。開発用プレビューは読み込み済みデータから表示します。", "error");
+      return;
+    }
+    const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
+    if (!scoreableRows.length) {
+      const reasons = Array.from(new Set(
+        googleImportRows
+          .map((row) => buildMhlwIndividualAnalysis(row).reason)
+          .filter(Boolean),
+      ));
+      setGoogleImportMessage(`本人向けフィードバックを表示できる行がありません。理由: ${reasons.slice(0, 3).join(" / ") || "57項目回答または性別を認識できません"}`, "error");
+      return;
+    }
+    const html = scoreableRows.length === 1
+      ? buildPersonalResultHtml(scoreableRows[0])
+      : buildAllPersonalResultsHtml(scoreableRows);
+    renderInlineHtmlPreview(devPersonalFeedbackPreview, "開発用：本人向けフィードバック", html);
+    const opened = openHtmlDocument(html);
+    setGoogleImportMessage(opened ? "開発用の本人向けフィードバックを画面内と別タブで表示しました。本番配布には使わないでください。" : "開発用の本人向けフィードバックを画面内に表示しました。別タブが開かない場合は、下のプレビューを確認してください。", "success");
+    addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length, inline: true, popup: opened });
+  } catch (error) {
+    setGoogleImportMessage(`本人向けフィードバックの作成中にエラーが出ました: ${error.message}`, "error");
   }
-  const scoreableRows = googleImportRows.filter((row) => buildMhlwIndividualAnalysis(row).canScore);
-  if (!scoreableRows.length) {
-    const reasons = Array.from(new Set(
-      googleImportRows
-        .map((row) => buildMhlwIndividualAnalysis(row).reason)
-        .filter(Boolean),
-    ));
-    setGoogleImportMessage(`本人向けフィードバックを表示できる行がありません。理由: ${reasons.slice(0, 3).join(" / ") || "57項目回答または性別を認識できません"}`, "error");
-    return;
-  }
-  const html = scoreableRows.length === 1
-    ? buildPersonalResultHtml(scoreableRows[0])
-    : buildAllPersonalResultsHtml(scoreableRows);
-  renderInlineHtmlPreview(devPersonalFeedbackPreview, "開発用：本人向けフィードバック", html);
-  const opened = openHtmlDocument(html);
-  setGoogleImportMessage(opened ? "開発用の本人向けフィードバックを画面内と別タブで表示しました。本番配布には使わないでください。" : "開発用の本人向けフィードバックを画面内に表示しました。別タブが開かない場合は、下のプレビューを確認してください。", "success");
-  addOperationLog("開発用本人向けフィードバック表示", { count: scoreableRows.length, inline: true, popup: opened });
 }
 
 function handleOpenDevGroupAnalysis() {
