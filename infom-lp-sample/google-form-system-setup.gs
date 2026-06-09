@@ -402,7 +402,6 @@ function createOrResetSystemGuideSheet(ss) {
 
 function createOrResetNormalizedImportSheet(ss) {
   const sourceSheet = ss.getSheets().find((sheet) => /^フォームの回答/.test(sheet.getName())) || ss.getSheets()[0];
-  const sourceName = sourceSheet.getName();
   const sourceLastColumn = Math.max(sourceSheet.getLastColumn(), 1);
   const sourceHeaders = sourceSheet.getRange(1, 1, 1, sourceLastColumn).getValues()[0].filter(Boolean);
   const baseHeaders = ["タイムスタンプ", "受検者ID", "性別", "会社名・事業所名", "部署", "職場コード", "職場名", "個人情報の扱いの確認"];
@@ -412,27 +411,15 @@ function createOrResetNormalizedImportSheet(ss) {
   const sheet = getOrCreateSheet(ss, "InfoM取込用CSV");
   sheet.clear();
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-  const escapedSourceName = sourceName.replace(/'/g, "''");
-  const formulas = [];
-  for (let row = 2; row <= 1001; row += 1) {
-    formulas.push(headers.map((_, colIndex) => {
-      const colLetter = columnLetter(colIndex + 1);
-      return `=IFERROR(INDEX('${escapedSourceName}'!$A:$ZZ,ROW(),MATCH(${colLetter}$1,'${escapedSourceName}'!$1:$1,0)),"")`;
-    }));
-  }
-  sheet.getRange(2, 1, formulas.length, headers.length).setFormulas(formulas);
+  sheet.getRange(2, 1, 1, Math.min(headers.length, 5)).setValues([[
+    "このタブは列順確認用です",
+    "有効回答が入った後はフォームの回答タブをCSV保存するか、管理画面へ直接読み込んでください",
+    "",
+    "",
+    "",
+  ].slice(0, Math.min(headers.length, 5))]);
   sheet.setFrozenRows(1);
   sheet.autoResizeColumns(1, headers.length);
-}
-
-function columnLetter(index) {
-  let value = "";
-  while (index > 0) {
-    const mod = (index - 1) % 26;
-    value = String.fromCharCode(65 + mod) + value;
-    index = Math.floor((index - mod) / 26);
-  }
-  return value;
 }
 
 function getOrCreateSheet(ss, name) {
