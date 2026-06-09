@@ -947,6 +947,7 @@ function buildRetentionManifestCsv(rows = googleImportRows) {
   const readiness = latestRequirementSnapshot?.readiness || {};
   const analyses = rows.map(buildMhlwIndividualAnalysis);
   const scoreableCount = analyses.filter((item) => item.canScore).length;
+  const firstScoreableRow = rows.find((row) => buildMhlwIndividualAnalysis(row).canScore);
   const highStressCount = analyses.filter((item) => item.highStress).length;
   const groupAnalysis = buildCompanyGroupAnalysis(rows);
   const settings = getImplementationSettings();
@@ -3035,6 +3036,22 @@ function renderIndividualAnalysisPreview(rows) {
   if (downloadRetentionManifestCsv) downloadRetentionManifestCsv.disabled = !rows.length;
   if (downloadCompletionPackageCsv) downloadCompletionPackageCsv.disabled = !rows.length;
   if (downloadLabourOfficeReportCsv) downloadLabourOfficeReportCsv.disabled = !rows.length;
+  if (devPersonalFeedbackPreview) {
+    if (firstScoreableRow) {
+      const html = buildPersonalResultHtml(firstScoreableRow);
+      devPersonalFeedbackPreview.hidden = false;
+      devPersonalFeedbackPreview.innerHTML = `
+        <div class="inline-result-preview-header">
+          <strong>開発用：本人向けフィードバック自動表示</strong>
+          <span>CSV確認後に最初の判定可能者を表示</span>
+        </div>
+        <iframe title="開発用：本人向けフィードバック自動表示" sandbox="allow-same-origin" srcdoc="${escapeHtml(html)}"></iframe>
+      `;
+    } else {
+      devPersonalFeedbackPreview.hidden = true;
+      devPersonalFeedbackPreview.innerHTML = "";
+    }
+  }
   renderCompletionChecklist(rows);
 
   individualAnalysisPreview.innerHTML = [
