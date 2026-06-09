@@ -2981,6 +2981,7 @@ function renderIndividualAnalysisPreview(rows) {
   const settings = getImplementationSettings();
   const missingGuidance = missingGuidanceLabels(settings);
   const fixListCount = rows.filter((row) => rowFixIssues(row).length).length;
+  const blockedReasons = Array.from(new Set(analyses.filter((item) => !item.canScore).map((item) => item.reason).filter(Boolean)));
   if (downloadFixListCsv) downloadFixListCsv.disabled = !fixListCount;
   if (downloadMhlwComparisonCsv) downloadMhlwComparisonCsv.disabled = !rows.length;
   if (downloadIndividualAnalysisCsv) downloadIndividualAnalysisCsv.disabled = !rows.length;
@@ -3001,7 +3002,7 @@ function renderIndividualAnalysisPreview(rows) {
 
   individualAnalysisPreview.innerHTML = [
     `<div class="suppressed-item"><strong>個人分析（厚労省57項目・素点換算表方式）</strong><span>判定可能 ${scoreableCount}件 / 高ストレス者判定該当 ${highStressCount}件 / 判定不可 ${analyses.length - scoreableCount}件。満足度Dは高ストレス者判定に含めていません。</span></div>`,
-    `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果を開く」で、判定可能な受検者の本人通知画面を開けます。" : "本人向け結果を出すには、57項目回答と性別が必要です。"}</span></div>`,
+    `<div class="suppressed-item"><strong>本人向け結果</strong><span>${scoreableCount ? "「本人向け結果を開く」で、判定可能な受検者の本人通知画面を開けます。" : `本人向け結果を出すには、57項目回答と性別が必要です。判定不可理由: ${blockedReasons.slice(0, 3).join(" / ") || "未確認"}`}</span></div>`,
     `<div class="suppressed-item"><strong>企業向け集団分析</strong><span>${groupAnalysis.overall || groupAnalysis.visibleGroups.length ? `会社全体または10人以上の集団を表示できます。表示集団 ${groupAnalysis.visibleGroups.length}件 / 非表示集団 ${groupAnalysis.suppressedGroups.length}件。` : "企業向け集団分析を出すには、判定可能な回答が10人以上必要です。"}</span></div>`,
     `<div class="suppressed-item"><strong>本人通知・面接指導案内</strong><span>${missingGuidance.length ? `未入力: ${missingGuidance.join("、")}。本人向け結果を出す前に入力してください。` : "実施者名・申出先・申出期限を本人向け結果に反映します。"}</span></div>`,
     `<div class="suppressed-item"><strong>法定運用メモ</strong><span>個人結果と高ストレス該当情報は実施者管理です。本人通知、面接指導の申出対応、会社側への本人同意なし非開示を前提に扱ってください。</span></div>`,
@@ -3027,7 +3028,6 @@ function importWarnings(record) {
     ["personName", "氏名"],
     ["kanaName", "フリガナ"],
     ["birthDate", "生年月日"],
-    ["gender", "性別"],
     ["workplaceCode", "職場コード"],
     ["workplaceName", "職場名"],
   ]) {
@@ -3043,12 +3043,7 @@ function googleImportKey(row) {
 function buildGoogleImportDiagnostics(headers, fields, records) {
   const requiredMetaFields = [
     ["respondentId", "受検者ID"],
-    ["personName", "氏名"],
-    ["kanaName", "フリガナ"],
-    ["birthDate", "生年月日"],
     ["gender", "性別"],
-    ["workplaceCode", "職場コード"],
-    ["workplaceName", "職場名"],
   ];
   const recognizedQuestions = Array.from(new Set(fields
     .filter((field) => field.startsWith("answer:"))
@@ -3155,7 +3150,7 @@ function renderGoogleImportPreview(rows) {
     `<div class="suppressed-item"><strong>実施ID</strong><span>${escapeHtml(currentRunId || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>CSV元照合</strong><span>${escapeHtml(currentCsvSourceName || "-")} / SHA-256 ${escapeHtml(currentCsvHash || "-")}</span></div>`,
     `<div class="suppressed-item"><strong>次にやること</strong><span>${escapeHtml(nextAction)}</span></div>`,
-    missingRequiredMetaFields.length ? `<div class="suppressed-item"><strong>個人シート作成に必要な列が不足</strong><span>${escapeHtml(missingRequiredMetaFields.join("、"))}。Googleフォームに項目を追加するか、基本情報補完CSVで補ってください。</span></div>` : `<div class="suppressed-item"><strong>個人シート作成に必要な列</strong><span>受検者ID・氏名・フリガナ・生年月日・性別・職場コード・職場名を認識しました。</span></div>`,
+    missingRequiredMetaFields.length ? `<div class="suppressed-item"><strong>本人向け結果に必要な列が不足</strong><span>${escapeHtml(missingRequiredMetaFields.join("、"))}。フォームに項目を追加するか、回答CSVの列を確認してください。</span></div>` : `<div class="suppressed-item"><strong>本人向け結果に必要な列</strong><span>受検者ID・性別を認識しました。氏名・フリガナ・生年月日は名簿補完または画面内補完で扱えます。</span></div>`,
     missingQuestionKeys.length ? `<div class="suppressed-item"><strong>不足している57項目の列</strong><span>${escapeHtml(missingQuestionKeys.slice(0, 20).join("、"))}${missingQuestionKeys.length > 20 ? " ほか" : ""}</span></div>` : `<div class="suppressed-item"><strong>57項目の列</strong><span>A1〜D2をすべて認識しました。</span></div>`,
     warningLabels.length ? `<div class="suppressed-item"><strong>不足している基本情報</strong><span>${escapeHtml(warningLabels.join("、"))}</span></div>` : `<div class="suppressed-item"><strong>不足している基本情報</strong><span>ありません</span></div>`,
     issueLabels.length || answerMissingRows ? `<div class="suppressed-item"><strong>保存不可の理由</strong><span>${escapeHtml(issueLabels.join("、") || "回答不足があります")}</span></div>` : `<div class="suppressed-item"><strong>保存不可の理由</strong><span>ありません</span></div>`,
