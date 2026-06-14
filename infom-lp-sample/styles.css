@@ -5974,12 +5974,16 @@ textarea {
 .studio-hero {
   position: relative;
   overflow: hidden;
-  padding: 92px 0 84px;
+  min-height: 92vh;
+  display: grid;
+  align-items: center;
+  padding: 104px 0 92px;
   color: #fff;
   background:
-    linear-gradient(135deg, rgba(79, 140, 255, 0.24), transparent 38%),
-    linear-gradient(225deg, rgba(141, 107, 255, 0.18), transparent 36%),
-    linear-gradient(180deg, #08111f 0%, #0d1b2e 100%);
+    radial-gradient(circle at 78% 18%, rgba(151, 117, 255, 0.28), transparent 28%),
+    radial-gradient(circle at 72% 70%, rgba(44, 212, 196, 0.16), transparent 28%),
+    radial-gradient(circle at 14% 22%, rgba(59, 130, 246, 0.22), transparent 34%),
+    linear-gradient(180deg, #030712 0%, #07111f 48%, #0c1a2e 100%);
 }
 
 .studio-hero::before {
@@ -5994,16 +5998,39 @@ textarea {
   mask-image: linear-gradient(180deg, #000, transparent 82%);
 }
 
+.studio-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -34% -10%;
+  height: 52%;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(125, 219, 213, 0.2), transparent 46%),
+    linear-gradient(90deg, transparent, rgba(141, 107, 255, 0.18), transparent);
+  filter: blur(10px);
+}
+
+.studio-particle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.95;
+}
+
 .studio-hero-grid {
   position: relative;
+  z-index: 1;
   display: grid;
   gap: 40px;
   align-items: center;
+  perspective: 1400px;
 }
 
 @media (min-width: 980px) {
   .studio-hero-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(420px, 0.82fr);
+    grid-template-columns: minmax(0, 0.94fr) minmax(440px, 0.92fr);
     gap: 58px;
   }
 }
@@ -6041,7 +6068,8 @@ textarea {
 
 .studio-copy h1 {
   max-width: 12ch;
-  font-size: 5.2rem;
+  font-size: clamp(3.2rem, 6vw, 6.25rem);
+  text-shadow: 0 24px 80px rgba(125, 219, 213, 0.08);
 }
 
 .system-detail-hero .studio-copy h1 {
@@ -6085,6 +6113,143 @@ textarea {
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.studio-stress-demo {
+  min-height: 650px;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at 50% -4%, rgba(125, 219, 213, 0.18), transparent 31%),
+    radial-gradient(circle at 78% 40%, rgba(187, 167, 255, 0.18), transparent 32%),
+    linear-gradient(145deg, rgba(12, 20, 39, 0.92), rgba(3, 7, 18, 0.86));
+  border-color: rgba(166, 190, 255, 0.28);
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.46),
+    0 0 80px rgba(125, 219, 213, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.studio-stress-demo::before {
+  content: "";
+  position: absolute;
+  inset: 76px 18px auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(125, 219, 213, 0.72), rgba(187, 167, 255, 0.58), transparent);
+  opacity: 0.65;
+}
+
+.studio-stress-demo .demo-title h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem);
+}
+
+.studio-stress-demo .demo-input {
+  min-height: 64px;
+  border-color: rgba(125, 219, 213, 0.34);
+  background:
+    linear-gradient(90deg, rgba(125, 219, 213, 0.12), rgba(187, 167, 255, 0.1)),
+    rgba(15, 23, 42, 0.76);
+}
+
+.studio-stress-demo .stress-result-card {
+  border-color: rgba(125, 219, 213, 0.22);
+  background:
+    radial-gradient(circle at 80% 20%, rgba(187, 167, 255, 0.14), transparent 30%),
+    rgba(15, 23, 42, 0.76);
+}
+
+.studio-result-card .mini-metrics div:nth-child(2) {
+  border-color: rgba(125, 219, 213, 0.24);
+  background: rgba(125, 219, 213, 0.08);
+}
+
+.studio-insight-marquee {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 0 40px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, #07111f, #08111f),
+    radial-gradient(circle at 20% 0%, rgba(125, 219, 213, 0.14), transparent 30%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.studio-insight-marquee::before,
+.studio-insight-marquee::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 14vw;
+  pointer-events: none;
+}
+
+.studio-insight-marquee::before {
+  left: 0;
+  background: linear-gradient(90deg, #07111f, transparent);
+}
+
+.studio-insight-marquee::after {
+  right: 0;
+  background: linear-gradient(270deg, #07111f, transparent);
+}
+
+.studio-insight-track {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  animation: studioInsightFlow 46s linear infinite;
+}
+
+.studio-insight-marquee:hover .studio-insight-track {
+  animation-play-state: paused;
+}
+
+.studio-insight-track article {
+  flex: 0 0 auto;
+  width: clamp(260px, 28vw, 380px);
+  min-height: 150px;
+  padding: 22px;
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.045)),
+    radial-gradient(circle at 88% 18%, rgba(187, 167, 255, 0.22), transparent 36%);
+  border: 1px solid rgba(166, 190, 255, 0.2);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.studio-insight-track span,
+.studio-insight-track strong,
+.studio-insight-track em {
+  display: block;
+}
+
+.studio-insight-track span {
+  color: #9ee8e4;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.studio-insight-track strong {
+  margin-top: 10px;
+  font-size: 1.35rem;
+  line-height: 1.22;
+}
+
+.studio-insight-track em {
+  margin-top: 12px;
+  color: rgba(226, 232, 240, 0.68);
+  font-style: normal;
+  font-weight: 700;
+}
+
+@keyframes studioInsightFlow {
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .workflow-showcase,
@@ -6654,6 +6819,7 @@ textarea {
 @media (max-width: 780px) {
   .studio-hero {
     padding: 70px 0 72px;
+    min-height: auto;
   }
 
   .studio-copy h1 {
@@ -6671,10 +6837,20 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .studio-stress-demo {
+    min-height: auto;
+  }
+
   .problem-chain i {
     width: 2px;
     height: 24px;
     justify-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-insight-track {
+    animation: none;
   }
 }
 
