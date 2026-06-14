@@ -6414,6 +6414,257 @@ textarea {
   line-height: 1.45;
 }
 
+.studio-orbit-section {
+  position: relative;
+  overflow: hidden;
+  padding: 84px 0;
+  color: #f8fbff;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(125, 219, 213, 0.18), transparent 30%),
+    radial-gradient(circle at 84% 36%, rgba(187, 167, 255, 0.2), transparent 32%),
+    linear-gradient(180deg, #08111f, #0a1324 60%, #07111f);
+}
+
+.studio-orbit-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(156, 205, 255, 0.36) 0 1px, transparent 2px),
+    radial-gradient(circle, rgba(125, 219, 213, 0.24) 0 1px, transparent 2px);
+  background-position: 0 0, 22px 28px;
+  background-size: 54px 54px, 86px 86px;
+  opacity: 0.35;
+  mask-image: linear-gradient(180deg, transparent, #000 18%, #000 78%, transparent);
+}
+
+.studio-orbit-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 38px;
+  align-items: center;
+}
+
+@media (min-width: 980px) {
+  .studio-orbit-grid {
+    grid-template-columns: minmax(0, 0.82fr) minmax(520px, 1fr);
+    gap: 62px;
+  }
+}
+
+.studio-orbit-copy h2 {
+  margin: 0;
+  max-width: 11ch;
+  font-size: clamp(2.4rem, 5vw, 5.1rem);
+  line-height: 1.05;
+}
+
+.studio-orbit-copy p:not(.studio-kicker) {
+  margin: 22px 0 0;
+  max-width: 58ch;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 1.04rem;
+  line-height: 1.95;
+}
+
+.operation-orbit {
+  position: relative;
+  min-height: 560px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(125, 219, 213, 0.18), transparent 24%),
+    radial-gradient(circle at 68% 28%, rgba(187, 167, 255, 0.16), transparent 28%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  border: 1px solid rgba(166, 190, 255, 0.18);
+  box-shadow: 0 32px 110px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.operation-orbit::before,
+.operation-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px solid rgba(125, 219, 213, 0.24);
+  border-radius: 50%;
+  animation: orbitRotate 24s linear infinite;
+}
+
+.operation-orbit::after {
+  inset: 23% 18%;
+  border-color: rgba(187, 167, 255, 0.2);
+  animation-duration: 30s;
+  animation-direction: reverse;
+}
+
+.orbit-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 210px;
+  aspect-ratio: 1;
+  padding: 28px;
+  text-align: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 28%, rgba(255, 255, 255, 0.16), transparent 30%),
+    linear-gradient(145deg, rgba(125, 219, 213, 0.2), rgba(75, 88, 255, 0.14)),
+    rgba(5, 9, 20, 0.92);
+  border: 1px solid rgba(166, 190, 255, 0.26);
+  box-shadow: 0 0 80px rgba(125, 219, 213, 0.18), inset 0 0 46px rgba(125, 219, 213, 0.08);
+  transform: translate(-50%, -50%);
+}
+
+.orbit-core span,
+.orbit-core strong,
+.orbit-core em,
+.orbit-node span,
+.orbit-node strong,
+.orbit-node em {
+  display: block;
+}
+
+.orbit-core span {
+  color: #9ee8e4;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.orbit-core strong {
+  margin-top: 8px;
+  font-size: 1.65rem;
+  line-height: 1.05;
+}
+
+.orbit-core em {
+  margin-top: 10px;
+  color: rgba(226, 232, 240, 0.7);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.orbit-node {
+  position: absolute;
+  z-index: 3;
+  width: min(230px, 44%);
+  padding: 18px;
+  border-radius: 20px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.052)),
+    rgba(6, 11, 24, 0.72);
+  border: 1px solid rgba(166, 190, 255, 0.22);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(16px);
+}
+
+.orbit-node::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(125, 219, 213, 0.36), transparent 40%, rgba(187, 167, 255, 0.28));
+  opacity: 0.45;
+}
+
+.orbit-node span {
+  color: #9ee8e4;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.orbit-node strong {
+  margin-top: 6px;
+  font-size: 1.22rem;
+}
+
+.orbit-node em {
+  margin-top: 7px;
+  color: rgba(226, 232, 240, 0.68);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.node-answer {
+  left: 7%;
+  top: 12%;
+}
+
+.node-notice {
+  right: 7%;
+  top: 16%;
+}
+
+.node-follow {
+  left: 8%;
+  bottom: 12%;
+}
+
+.node-report {
+  right: 7%;
+  bottom: 13%;
+}
+
+.operation-metrics {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+@media (min-width: 820px) {
+  .operation-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.operation-metrics article {
+  min-height: 150px;
+  padding: 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(166, 190, 255, 0.16);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.24);
+}
+
+.operation-metrics span,
+.operation-metrics strong,
+.operation-metrics em {
+  display: block;
+}
+
+.operation-metrics span {
+  color: #9ee8e4;
+  font-weight: 900;
+}
+
+.operation-metrics strong {
+  margin-top: 8px;
+  font-size: 1.7rem;
+  line-height: 1.12;
+}
+
+.operation-metrics em {
+  margin-top: 10px;
+  color: rgba(226, 232, 240, 0.68);
+  font-style: normal;
+  font-weight: 700;
+}
+
+@keyframes orbitRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .studio-section {
   padding: 76px 0;
   background: var(--studio-bg);
@@ -6841,6 +7092,32 @@ textarea {
     min-height: auto;
   }
 
+  .operation-orbit {
+    min-height: auto;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+  }
+
+  .operation-orbit::before,
+  .operation-orbit::after {
+    display: none;
+  }
+
+  .orbit-core,
+  .orbit-node {
+    position: relative;
+    inset: auto;
+    left: auto;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    aspect-ratio: auto;
+    transform: none;
+    border-radius: 20px;
+  }
+
   .problem-chain i {
     width: 2px;
     height: 24px;
@@ -6849,7 +7126,9 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .studio-insight-track {
+  .studio-insight-track,
+  .operation-orbit::before,
+  .operation-orbit::after {
     animation: none;
   }
 }
