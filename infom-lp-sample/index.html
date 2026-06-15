@@ -262,42 +262,52 @@
           </div>
         </div>
 
-        <div class="impact-console" aria-hidden="true">
+        <div class="impact-console ops-stream-lab" data-ops-stream aria-label="紙やExcelの情報が管理画面へ変換されるデモ">
+          <canvas class="ops-stream-canvas" data-ops-stream-canvas aria-hidden="true"></canvas>
           <div class="impact-console-top">
             <span></span><span></span><span></span>
-            <strong>Operation Shift</strong>
+            <strong>Operation Stream</strong>
           </div>
-          <div class="impact-compare">
-            <div class="impact-side impact-before">
-              <em>BEFORE</em>
-              <strong>紙・Excel・メール</strong>
-              <div class="messy-stack">
-                <i></i><i></i><i></i><i></i>
+
+          <div class="ops-stream-stage">
+            <div class="ops-lane ops-input-lane" aria-label="入力データ">
+              <div class="ops-lane-track">
+                <article class="ops-data-panel"><span>Excel</span><strong>未回答者一覧</strong><em>12名 / 期限前確認</em></article>
+                <article class="ops-data-panel"><span>Mail</span><strong>本人通知文</strong><em>送付前チェック</em></article>
+                <article class="ops-data-panel"><span>Form</span><strong>回答データ</strong><em>部署・対象者別</em></article>
+                <article class="ops-data-panel"><span>Paper</span><strong>面接申出</strong><em>案内・記録</em></article>
+                <article class="ops-data-panel" aria-hidden="true"><span>Excel</span><strong>未回答者一覧</strong><em>12名 / 期限前確認</em></article>
+                <article class="ops-data-panel" aria-hidden="true"><span>Mail</span><strong>本人通知文</strong><em>送付前チェック</em></article>
+                <article class="ops-data-panel" aria-hidden="true"><span>Form</span><strong>回答データ</strong><em>部署・対象者別</em></article>
+                <article class="ops-data-panel" aria-hidden="true"><span>Paper</span><strong>面接申出</strong><em>案内・記録</em></article>
               </div>
-              <p>担当者の確認に依存</p>
             </div>
-            <div class="impact-divider">
-              <b></b>
-              <span>整理</span>
+
+            <div class="ops-transform-core">
+              <i></i><i></i><i></i>
+              <strong>InfoM Core</strong>
+              <span>分離・整理・出力</span>
             </div>
-            <div class="impact-side impact-after">
-              <em>AFTER</em>
-              <strong>進捗が動く管理画面</strong>
-              <div class="clean-dashboard">
-                <i></i><i></i><i></i>
+
+            <div class="ops-lane ops-output-lane" aria-label="出力データ">
+              <div class="ops-lane-track">
+                <article class="ops-data-panel output"><span>Dashboard</span><strong>受検状況</strong><em>進捗・未回答管理</em></article>
+                <article class="ops-data-panel output"><span>Notice</span><strong>本人結果通知</strong><em>本人向けに返却</em></article>
+                <article class="ops-data-panel output"><span>Report</span><strong>会社向け集計</strong><em>部署別・期間別</em></article>
+                <article class="ops-data-panel output"><span>Export</span><strong>CSV / PDF</strong><em>提出・保存用</em></article>
+                <article class="ops-data-panel output" aria-hidden="true"><span>Dashboard</span><strong>受検状況</strong><em>進捗・未回答管理</em></article>
+                <article class="ops-data-panel output" aria-hidden="true"><span>Notice</span><strong>本人結果通知</strong><em>本人向けに返却</em></article>
+                <article class="ops-data-panel output" aria-hidden="true"><span>Report</span><strong>会社向け集計</strong><em>部署別・期間別</em></article>
+                <article class="ops-data-panel output" aria-hidden="true"><span>Export</span><strong>CSV / PDF</strong><em>提出・保存用</em></article>
               </div>
-              <p>次の行動がすぐ分かる</p>
             </div>
           </div>
 
-          <div class="impact-flow-board">
-            <article><span>01</span><strong>回答回収</strong><em>Web / CSV</em></article>
-            <i></i>
-            <article><span>02</span><strong>自動整理</strong><em>対象者別</em></article>
-            <i></i>
-            <article><span>03</span><strong>通知準備</strong><em>本人 / 会社</em></article>
-            <i></i>
-            <article><span>04</span><strong>報告出力</strong><em>PDF / CSV</em></article>
+          <div class="ops-result-grid">
+            <article><span>01</span><strong>回答回収</strong><em>Web / CSV</em><b></b></article>
+            <article><span>02</span><strong>自動整理</strong><em>対象者別</em><b></b></article>
+            <article><span>03</span><strong>通知準備</strong><em>本人 / 会社</em><b></b></article>
+            <article><span>04</span><strong>報告出力</strong><em>PDF / CSV</em><b></b></article>
           </div>
         </div>
       </div>

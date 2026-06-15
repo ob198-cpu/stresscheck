@@ -7066,6 +7066,409 @@ textarea {
   }
 }
 
+.ops-stream-lab {
+  --ops-a: rgba(67, 177, 255, 0.32);
+  --ops-b: rgba(255, 91, 190, 0.2);
+  --ops-c: rgba(125, 219, 213, 0.34);
+  --ops-dot: rgba(139, 190, 255, 0.76);
+  min-height: 690px;
+  padding: 22px;
+  border-color: rgba(166, 190, 255, 0.25);
+  background:
+    radial-gradient(circle at 22% 22%, var(--ops-a), transparent 30%),
+    radial-gradient(circle at 78% 72%, var(--ops-b), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.038));
+  isolation: isolate;
+}
+
+.ops-stream-lab::before {
+  inset: 68px 18px 122px;
+  border-radius: 30px;
+  background:
+    linear-gradient(rgba(136, 170, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(136, 170, 255, 0.08) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(125, 219, 213, 0.12), transparent 34%);
+  background-size: 38px 38px, 38px 38px, auto;
+  border: 1px solid rgba(166, 190, 255, 0.16);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95), transparent 92%);
+}
+
+.ops-stream-lab::after {
+  content: "";
+  position: absolute;
+  inset: -18% -8%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.78;
+  background:
+    radial-gradient(circle, var(--ops-dot) 0 1px, transparent 2px) 0 0 / 42px 42px,
+    radial-gradient(circle, rgba(255, 142, 218, 0.72) 0 1px, transparent 2px) 18px 24px / 58px 58px,
+    linear-gradient(105deg, transparent 0 42%, rgba(67, 177, 255, 0.28) 50%, transparent 59%);
+  filter: blur(0.1px);
+  transform: translate3d(-4%, -2%, 0);
+  animation: opsParticleDrift 14s ease-in-out infinite alternate;
+}
+
+.ops-stream-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.ops-stream-stage {
+  position: relative;
+  z-index: 2;
+  min-height: 440px;
+  margin-top: 24px;
+  overflow: hidden;
+  border-radius: 28px;
+  perspective: 1100px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(125, 219, 213, 0.12), transparent 24%),
+    linear-gradient(180deg, rgba(5, 9, 20, 0.3), rgba(5, 9, 20, 0.66));
+  border: 1px solid rgba(166, 190, 255, 0.14);
+}
+
+.ops-stream-stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  bottom: 8%;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, #7ddbd5 24%, #ff86ca 74%, transparent);
+  box-shadow: 0 0 44px rgba(125, 219, 213, 0.62);
+  transform: translateX(-50%);
+  animation: opsCoreBeam 3.2s ease-in-out infinite;
+}
+
+.ops-lane {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  height: 132px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+.ops-input-lane {
+  top: 34px;
+  transform: rotateX(8deg) translateZ(28px);
+}
+
+.ops-output-lane {
+  bottom: 34px;
+  transform: rotateX(-7deg) translateZ(22px);
+}
+
+.ops-lane-track {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  padding: 8px 0;
+  animation: opsPanelFlow 22s linear infinite;
+  will-change: transform;
+}
+
+.ops-output-lane .ops-lane-track {
+  animation-duration: 25s;
+  animation-direction: reverse;
+}
+
+.ops-stream-lab:hover .ops-lane-track {
+  animation-duration: 14s;
+}
+
+.ops-data-panel {
+  position: relative;
+  flex: 0 0 230px;
+  min-height: 112px;
+  padding: 16px;
+  overflow: hidden;
+  border-radius: 18px;
+  color: #fff;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.045)),
+    rgba(4, 8, 18, 0.72);
+  border: 1px solid rgba(166, 190, 255, 0.2);
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.32), 0 0 30px rgba(67, 177, 255, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.ops-data-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 0 36%, rgba(255, 255, 255, 0.16) 48%, transparent 60%);
+  transform: translateX(-120%);
+  animation: opsPanelSheen 4.8s ease-in-out infinite;
+}
+
+.ops-data-panel.output {
+  border-color: rgba(125, 219, 213, 0.28);
+  box-shadow: 0 22px 58px rgba(0, 0, 0, 0.34), 0 0 34px rgba(125, 219, 213, 0.12);
+}
+
+.ops-data-panel span,
+.ops-data-panel strong,
+.ops-data-panel em {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.ops-data-panel span {
+  color: #9ee8e4;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ops-data-panel strong {
+  margin-top: 10px;
+  font-size: 1.12rem;
+  line-height: 1.18;
+}
+
+.ops-data-panel em {
+  margin-top: 8px;
+  color: rgba(226, 232, 240, 0.68);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ops-transform-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 210px;
+  aspect-ratio: 1;
+  padding: 28px;
+  text-align: center;
+  border-radius: 50%;
+  color: #fff;
+  background:
+    radial-gradient(circle at 40% 28%, rgba(255, 255, 255, 0.18), transparent 30%),
+    rgba(4, 8, 18, 0.9);
+  border: 1px solid rgba(166, 190, 255, 0.28);
+  box-shadow: 0 0 80px rgba(125, 219, 213, 0.26), inset 0 0 46px rgba(125, 219, 213, 0.1);
+  transform: translate(-50%, -50%);
+}
+
+.ops-transform-core::before,
+.ops-transform-core::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  border: 1px solid rgba(125, 219, 213, 0.3);
+  animation: opsCoreSpin 10s linear infinite;
+}
+
+.ops-transform-core::after {
+  inset: -28px;
+  border-color: rgba(255, 134, 202, 0.22);
+  animation-duration: 14s;
+  animation-direction: reverse;
+}
+
+.ops-transform-core i {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ops-transform-core i:nth-child(1) {
+  inset: 18px;
+  background: conic-gradient(from 0deg, #7ddbd5, transparent, #ff86ca, transparent, #7ddbd5);
+  filter: blur(0.4px);
+  opacity: 0.5;
+  animation: opsCoreSpin 6.5s linear infinite;
+}
+
+.ops-transform-core i:nth-child(2) {
+  inset: 44px;
+  background: radial-gradient(circle, rgba(125, 219, 213, 0.24), transparent 62%);
+}
+
+.ops-transform-core i:nth-child(3) {
+  width: 12px;
+  height: 12px;
+  right: 42px;
+  top: 48px;
+  background: #ff86ca;
+  box-shadow: 0 0 22px rgba(255, 134, 202, 0.75);
+  animation: opsPulse 1.8s ease-in-out infinite;
+}
+
+.ops-transform-core strong,
+.ops-transform-core span {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.ops-transform-core strong {
+  font-size: 1.45rem;
+  line-height: 1.05;
+}
+
+.ops-transform-core span {
+  margin-top: 8px;
+  color: rgba(226, 232, 240, 0.68);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.ops-result-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (min-width: 760px) {
+  .ops-result-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.ops-result-grid article {
+  position: relative;
+  min-height: 120px;
+  padding: 16px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(166, 190, 255, 0.16);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24);
+}
+
+.ops-result-grid span,
+.ops-result-grid strong,
+.ops-result-grid em {
+  display: block;
+}
+
+.ops-result-grid span {
+  color: #ff86ca;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.ops-result-grid strong {
+  margin-top: 6px;
+  color: #fff;
+  font-size: 1.04rem;
+}
+
+.ops-result-grid em {
+  margin-top: 7px;
+  color: rgba(226, 232, 240, 0.66);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.ops-result-grid b {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7ddbd5, #ff86ca);
+  box-shadow: 0 0 18px rgba(125, 219, 213, 0.38);
+  animation: opsProgress 4.8s ease-in-out infinite;
+}
+
+@keyframes opsPanelFlow {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-50% - 8px), 0, 0);
+  }
+}
+
+@keyframes opsParticleDrift {
+  0% {
+    transform: translate3d(-4%, -2%, 0) rotate(0deg);
+    opacity: 0.44;
+  }
+  55% {
+    opacity: 0.84;
+  }
+  100% {
+    transform: translate3d(4%, 3%, 0) rotate(1.4deg);
+    opacity: 0.6;
+  }
+}
+
+@keyframes opsCoreBeam {
+  0%,
+  100% {
+    opacity: 0.38;
+    transform: translateX(-50%) scaleY(0.76);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
+
+@keyframes opsCoreSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes opsPulse {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.48;
+  }
+  50% {
+    transform: scale(1.24);
+    opacity: 1;
+  }
+}
+
+@keyframes opsPanelSheen {
+  0%,
+  46% {
+    transform: translateX(-120%);
+  }
+  74%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes opsProgress {
+  0%,
+  100% {
+    transform: scaleX(0.32);
+    transform-origin: left center;
+    opacity: 0.54;
+  }
+  55% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
 @keyframes impactScan {
   0%,
   100% {
@@ -8885,6 +9288,45 @@ textarea {
     height: 2px;
   }
 
+  .ops-stream-lab {
+    min-height: auto;
+  }
+
+  .ops-stream-stage {
+    min-height: 560px;
+    border-radius: 22px;
+  }
+
+  .ops-lane {
+    left: -28%;
+    right: -28%;
+    height: 118px;
+    mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  }
+
+  .ops-input-lane {
+    top: 22px;
+  }
+
+  .ops-output-lane {
+    bottom: 26px;
+  }
+
+  .ops-data-panel {
+    flex-basis: 210px;
+    min-height: 98px;
+    border-radius: 16px;
+  }
+
+  .ops-transform-core {
+    width: 172px;
+    padding: 22px;
+  }
+
+  .ops-transform-core strong {
+    font-size: 1.2rem;
+  }
+
   .studio-trust-section {
     padding: 72px 0;
   }
@@ -9057,7 +9499,14 @@ textarea {
   .delivery-phase,
   .pricing-meter i,
   .price-radar::after,
-  .output-lab::after {
+  .output-lab::after,
+  .ops-stream-lab::after,
+  .ops-lane-track,
+  .ops-transform-core::before,
+  .ops-transform-core::after,
+  .ops-transform-core i,
+  .ops-data-panel::before,
+  .ops-result-grid b {
     animation: none;
   }
 }
