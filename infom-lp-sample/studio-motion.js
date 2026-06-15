@@ -459,6 +459,119 @@
 })();
 
 (function () {
+  const demo = document.querySelector("[data-source-build]");
+  if (!demo) return;
+
+  const buttons = Array.from(demo.querySelectorAll("[data-source-stage]"));
+  const kicker = demo.querySelector("[data-source-kicker]");
+  const title = demo.querySelector("[data-source-title]");
+  const status = demo.querySelector("[data-source-status]");
+  const metrics = demo.querySelector("[data-source-metrics]");
+  const table = demo.querySelector("[data-source-table]");
+  const panelKicker = demo.querySelector("[data-source-panel-kicker]");
+  const panelTitle = demo.querySelector("[data-source-panel-title]");
+  const panelText = demo.querySelector("[data-source-panel-text]");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const autoPlay = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
+  let switchTimer = 0;
+  let autoIndex = 0;
+
+  const stages = {
+    intake: {
+      kicker: "INTAKE",
+      title: "回答データを取り込む",
+      status: "120名 / 84% 完了",
+      metrics: [
+        ["対象者", "120"],
+        ["回答済み", "101"],
+        ["未回答", "19"]
+      ],
+      rows: [
+        ["営業部", "完了"],
+        ["管理部", "通知準備"],
+        ["製造部", "未回答 6名"]
+      ],
+      panelKicker: "NEXT",
+      panelTitle: "未回答者を確認",
+      panelText: "期限前に催促が必要な対象者だけを抽出します。"
+    },
+    notice: {
+      kicker: "NOTICE",
+      title: "本人通知を準備する",
+      status: "送付前確認 18件",
+      metrics: [
+        ["送付対象", "101"],
+        ["確認待ち", "18"],
+        ["差戻し", "3"]
+      ],
+      rows: [
+        ["高ストレス判定", "個別確認"],
+        ["本人通知文", "送付前レビュー"],
+        ["面接指導申出", "案内作成"]
+      ],
+      panelKicker: "PERSONAL",
+      panelTitle: "本人向け情報だけを返す",
+      panelText: "会社へ渡す集計情報と、本人に返す結果通知を分けて確認できます。"
+    },
+    report: {
+      kicker: "REPORT",
+      title: "会社向け報告を出力する",
+      status: "PDF / CSV 準備完了",
+      metrics: [
+        ["部署集計", "8"],
+        ["PDF出力", "4"],
+        ["CSV保存", "12"]
+      ],
+      rows: [
+        ["部署別集計", "作成済み"],
+        ["期間比較", "確認済み"],
+        ["保存用CSV", "出力可"]
+      ],
+      panelKicker: "DELIVER",
+      panelTitle: "提出・保存用の形にする",
+      panelText: "部署別集計、受検状況、保存用CSVを毎回作り直さず出力します。"
+    }
+  };
+
+  function setStage(stage) {
+    const data = stages[stage] || stages.intake;
+    window.clearTimeout(switchTimer);
+    demo.classList.add("is-switching");
+    demo.dataset.stage = stage;
+    buttons.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.sourceStage === stage));
+    });
+    if (kicker) kicker.textContent = data.kicker;
+    if (title) title.textContent = data.title;
+    if (status) status.textContent = data.status;
+    if (metrics) {
+      metrics.innerHTML = data.metrics.map(([label, value]) => `<article><span>${label}</span><strong>${value}</strong></article>`).join("");
+    }
+    if (table) {
+      table.innerHTML = data.rows.map(([label, value]) => `<div><span>${label}</span><b>${value}</b><i></i></div>`).join("");
+    }
+    if (panelKicker) panelKicker.textContent = data.panelKicker;
+    if (panelTitle) panelTitle.textContent = data.panelTitle;
+    if (panelText) panelText.textContent = data.panelText;
+    switchTimer = window.setTimeout(() => demo.classList.remove("is-switching"), reduceMotion ? 0 : 260);
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => setStage(button.dataset.sourceStage));
+  });
+
+  if (!reduceMotion && autoPlay) {
+    const stageOrder = ["intake", "notice", "report"];
+    window.setInterval(() => {
+      autoIndex = (autoIndex + 1) % stageOrder.length;
+      setStage(stageOrder[autoIndex]);
+    }, 2800);
+  }
+
+  setStage(demo.dataset.stage || "intake");
+})();
+
+(function () {
   const hero = document.querySelector("[data-product-hero]");
   if (!hero) return;
 

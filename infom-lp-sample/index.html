@@ -218,52 +218,74 @@
     <section class="studio-impact-section" id="impact" aria-label="導入前後の業務変化">
       <div class="container studio-impact-grid">
         <div class="studio-impact-copy">
-          <p class="studio-kicker">Before / After Simulator</p>
-          <h2>散らばった確認作業を、判断できる画面へ変える。</h2>
+          <p class="studio-kicker">Source to Screen</p>
+          <h2>実際に使っている資料から、運用画面を組み立てる。</h2>
           <p>
             ストレスチェックや社内申請で本当に重いのは、回答後の確認、催促、通知、報告資料づくりです。
-            InfoMは既存のExcelやフォームを否定せず、必要な部分だけを整理し、毎月迷わず進められる運用画面に変えます。
+            まず今のExcel、CSV、通知文、報告様式を見せてもらい、どの情報を画面に出すべきかを整理します。
           </p>
           <div class="impact-proof-list">
-            <span>未回答者を探す時間を削減</span>
+            <span>既存ファイルを起点に設計</span>
             <span>本人通知と会社報告を分離</span>
             <span>集計・CSV・PDF出力まで見える化</span>
           </div>
         </div>
 
-        <div class="impact-console decision-product-panel" aria-label="導入前後の業務比較">
+        <div class="impact-console source-build-demo" data-source-build data-stage="intake" aria-label="既存資料から運用画面を作るデモ">
           <div class="impact-console-top">
             <span></span><span></span><span></span>
-            <strong>Operation Shift</strong>
+            <strong>Build From Real Files</strong>
           </div>
 
-          <div class="decision-shift-stage">
-            <article class="shift-side shift-before">
-              <small>BEFORE</small>
-              <h3>紙・Excel・メール</h3>
-              <p>担当者の確認に依存し、未回答者や通知準備が埋もれやすい状態。</p>
-              <div class="shift-stack" aria-hidden="true"><span></span><span></span><span></span></div>
-            </article>
-
-            <div class="shift-divider" aria-hidden="true"><span>整理</span></div>
-
-            <article class="shift-side shift-after">
-              <small>AFTER</small>
-              <h3>判断できる管理画面</h3>
-              <p>受検状況、本人通知、報告出力まで、次の作業が見える。</p>
-              <div class="shift-dashboard" aria-hidden="true">
-                <strong>84%</strong>
-                <span>受検完了</span>
-                <i></i><i></i><i></i>
+          <div class="source-build-stage">
+            <div class="source-input-tray">
+              <small>SOURCE FILES</small>
+              <h3>預かった資料</h3>
+              <div class="source-file-list" aria-hidden="true">
+                <div class="source-file file-excel"><span>XLSX</span><strong>対象者.xlsx</strong><em>部署・氏名</em></div>
+                <div class="source-file file-csv"><span>CSV</span><strong>回答.csv</strong><em>回答・判定</em></div>
+                <div class="source-file file-text"><span>TXT</span><strong>通知文.txt</strong><em>本人向け案内</em></div>
+                <div class="source-file file-pdf"><span>PDF</span><strong>報告様式.pdf</strong><em>提出・保存用</em></div>
               </div>
-            </article>
+            </div>
+
+            <div class="source-transfer" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <strong>整理</strong>
+            </div>
+
+            <div class="generated-operation-screen">
+              <div class="operation-browser-bar">
+                <span></span><span></span><span></span>
+                <strong>stress-check.ops</strong>
+              </div>
+              <div class="operation-screen-head">
+                <small data-source-kicker>INTAKE</small>
+                <h3 data-source-title>回答データを取り込む</h3>
+                <em data-source-status>120名 / 84% 完了</em>
+              </div>
+              <div class="operation-metrics" data-source-metrics>
+                <article><span>対象者</span><strong>120</strong></article>
+                <article><span>回答済み</span><strong>101</strong></article>
+                <article><span>未回答</span><strong>19</strong></article>
+              </div>
+              <div class="operation-table" data-source-table aria-hidden="true">
+                <div><span>営業部</span><b>完了</b><i></i></div>
+                <div><span>管理部</span><b>通知準備</b><i></i></div>
+                <div><span>製造部</span><b>未回答 6名</b><i></i></div>
+              </div>
+              <div class="operation-action-panel">
+                <span data-source-panel-kicker>NEXT</span>
+                <strong data-source-panel-title>未回答者を確認</strong>
+                <p data-source-panel-text>期限前に催促が必要な対象者だけを抽出します。</p>
+              </div>
+            </div>
           </div>
 
-          <div class="shift-result-grid">
-            <article><span>01</span><strong>回答回収</strong><em>Web / CSV</em><b></b></article>
-            <article><span>02</span><strong>自動整理</strong><em>対象者別</em><b></b></article>
-            <article><span>03</span><strong>通知準備</strong><em>本人 / 会社</em><b></b></article>
-            <article><span>04</span><strong>報告出力</strong><em>PDF / CSV</em><b></b></article>
+          <div class="source-stage-controls" aria-label="デモ切替">
+            <button type="button" data-source-stage="intake" aria-pressed="true"><span>01</span>取り込み</button>
+            <button type="button" data-source-stage="notice" aria-pressed="false"><span>02</span>通知準備</button>
+            <button type="button" data-source-stage="report" aria-pressed="false"><span>03</span>報告出力</button>
           </div>
         </div>
       </div>
