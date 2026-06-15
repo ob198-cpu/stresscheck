@@ -322,6 +322,11 @@
   const panelTitle = demo.querySelector("[data-dashboard-panel-title]");
   const panelText = demo.querySelector("[data-dashboard-panel-text]");
   const panelChip = demo.querySelector("[data-dashboard-panel-chip]");
+  const sourceTitle = demo.querySelector("[data-dashboard-source-title]");
+  const sourceText = demo.querySelector("[data-dashboard-source-text]");
+  const routeLabel = demo.querySelector("[data-dashboard-route-label]");
+  const routeTitle = demo.querySelector("[data-dashboard-route-title]");
+  const routeText = demo.querySelector("[data-dashboard-route-text]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const autoPlay = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
   let dragging = false;
@@ -345,7 +350,12 @@
       kicker: "NEXT ACTION",
       panelTitle: "未回答者を確認",
       text: "期限前に確認が必要な対象者だけを表示し、担当者が次に動ける状態にします。",
-      chip: "CSV / Web回答"
+      chip: "CSV / Web回答",
+      sourceTitle: "対象者リスト / 回答CSV",
+      sourceText: "今あるExcelを起点に整理",
+      routeLabel: "LIVE VIEW",
+      routeTitle: "受検状況を表示",
+      routeText: "未回答者と次の確認作業が分かる"
     },
     notice: {
       screenTitle: "本人通知準備",
@@ -365,7 +375,12 @@
       kicker: "PERSONAL NOTICE",
       panelTitle: "本人結果通知を準備",
       text: "本人に返す情報と会社向けの集計情報を分け、送付前に確認できます。",
-      chip: "本人向け"
+      chip: "本人向け",
+      sourceTitle: "本人通知文 / 判定データ",
+      sourceText: "送る相手ごとに内容を分離",
+      routeLabel: "NOTICE",
+      routeTitle: "本人通知を準備",
+      routeText: "会社向け集計と本人結果を混ぜない"
     },
     report: {
       screenTitle: "会社向け報告",
@@ -385,7 +400,12 @@
       kicker: "COMPANY REPORT",
       panelTitle: "会社向け資料を出力",
       text: "部署別集計、受検状況、保存用CSVを、毎回作り直さず出力します。",
-      chip: "PDF / CSV"
+      chip: "PDF / CSV",
+      sourceTitle: "報告様式 / 集計CSV",
+      sourceText: "提出・保存に使う形へ整える",
+      routeLabel: "REPORT",
+      routeTitle: "会社報告を出力",
+      routeText: "部署別集計とPDF/CSVを準備"
     }
   };
 
@@ -410,6 +430,11 @@
     if (panelTitle) panelTitle.textContent = data.panelTitle;
     if (panelText) panelText.textContent = data.text;
     if (panelChip) panelChip.textContent = data.chip;
+    if (sourceTitle) sourceTitle.textContent = data.sourceTitle;
+    if (sourceText) sourceText.textContent = data.sourceText;
+    if (routeLabel) routeLabel.textContent = data.routeLabel;
+    if (routeTitle) routeTitle.textContent = data.routeTitle;
+    if (routeText) routeText.textContent = data.routeText;
     switchTimer = window.setTimeout(() => demo.classList.remove("is-switching"), reduceMotion ? 0 : 220);
   }
 
