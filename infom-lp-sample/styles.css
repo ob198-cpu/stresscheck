@@ -8001,41 +8001,321 @@ textarea {
   }
 }
 
-.pricing-table-lite {
-  display: grid;
-  gap: 1px;
+.studio-pricing-section {
+  position: relative;
   overflow: hidden;
-  border-radius: 8px;
-  background: var(--studio-line);
-  border: 1px solid var(--studio-line);
+  padding: 92px 0;
+  color: #fff;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(187, 167, 255, 0.2), transparent 32%),
+    radial-gradient(circle at 82% 82%, rgba(125, 219, 213, 0.16), transparent 30%),
+    linear-gradient(180deg, #07111f 0%, #050914 60%, #08111f 100%);
 }
 
-@media (min-width: 820px) {
-  .pricing-table-lite {
+.studio-pricing-section::before,
+.studio-pricing-section::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.studio-pricing-section::before {
+  inset: 0;
+  background:
+    linear-gradient(rgba(166, 190, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 190, 255, 0.08) 1px, transparent 1px);
+  background-size: 52px 52px;
+  opacity: 0.2;
+  mask-image: radial-gradient(circle at 60% 50%, #000, transparent 70%);
+}
+
+.studio-pricing-section::after {
+  width: 54vw;
+  height: 54vw;
+  right: -22vw;
+  top: -28vw;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 134, 202, 0.18), transparent 62%);
+  filter: blur(12px);
+}
+
+.pricing-command-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 38px;
+  align-items: center;
+}
+
+@media (min-width: 980px) {
+  .pricing-command-grid {
+    grid-template-columns: minmax(0, 0.82fr) minmax(590px, 1fr);
+    gap: 64px;
+  }
+}
+
+.pricing-copy h2 {
+  margin: 0;
+  max-width: 12ch;
+  color: #fff;
+  font-size: clamp(2.35rem, 4.8vw, 4.9rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.pricing-copy p:not(.studio-kicker) {
+  margin: 22px 0 0;
+  max-width: 58ch;
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 1.04rem;
+  line-height: 1.95;
+}
+
+.pricing-meter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 28px;
+  max-width: 560px;
+  color: rgba(248, 250, 252, 0.84);
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pricing-meter b {
+  position: relative;
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(166, 190, 255, 0.18);
+}
+
+.pricing-meter i {
+  position: absolute;
+  inset: 0;
+  width: 62%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7ddbd5, #bba7ff, #ff86ca);
+  box-shadow: 0 0 24px rgba(125, 219, 213, 0.42);
+  animation: meterFlow 4.2s ease-in-out infinite;
+}
+
+.pricing-orb-panel {
+  position: relative;
+  overflow: hidden;
+  min-height: 640px;
+  padding: 22px;
+  border-radius: 34px;
+  border: 1px solid rgba(166, 190, 255, 0.22);
+  background:
+    radial-gradient(circle at 50% 24%, rgba(187, 167, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 86% 70%, rgba(125, 219, 213, 0.12), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.04));
+  box-shadow: 0 34px 118px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+}
+
+.pricing-orb-panel::before {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border-radius: 28px;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(166, 190, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(166, 190, 255, 0.08) 1px, transparent 1px);
+  background-size: 38px 38px;
+  border: 1px solid rgba(166, 190, 255, 0.12);
+}
+
+.price-radar {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: min(280px, 72vw);
+  aspect-ratio: 1;
+  margin: 6px auto 22px;
+  text-align: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(125, 219, 213, 0.18), transparent 36%),
+    conic-gradient(from 0deg, rgba(125, 219, 213, 0.42), rgba(187, 167, 255, 0.12), rgba(255, 134, 202, 0.36), rgba(125, 219, 213, 0.42));
+  box-shadow: 0 0 80px rgba(125, 219, 213, 0.16);
+}
+
+.price-radar::before,
+.price-radar::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+
+.price-radar::before {
+  inset: 12px;
+  background: rgba(5, 9, 20, 0.9);
+  border: 1px solid rgba(166, 190, 255, 0.2);
+}
+
+.price-radar::after {
+  inset: 36px;
+  border: 1px solid rgba(125, 219, 213, 0.32);
+  border-top-color: rgba(255, 134, 202, 0.9);
+  animation: radarSpin 9s linear infinite;
+}
+
+.price-radar span,
+.price-radar strong,
+.price-radar em {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.price-radar span {
+  color: #9ee8e4;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.price-radar strong {
+  margin-top: 8px;
+  color: #fff;
+  font-size: 2.3rem;
+  line-height: 1;
+}
+
+.price-radar em {
+  margin-top: 8px;
+  color: rgba(226, 232, 240, 0.68);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.pricing-card-grid {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 760px) {
+  .pricing-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-.pricing-table-lite div {
+.pricing-plan {
   display: grid;
-  gap: 8px;
-  padding: 24px;
-  background: #fff;
+  align-content: start;
+  min-height: 230px;
+  padding: 20px;
+  border-radius: 22px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(166, 190, 255, 0.16);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
 }
 
-.pricing-table-lite span {
-  color: var(--studio-teal);
+.pricing-plan.featured {
+  border-color: rgba(125, 219, 213, 0.34);
+  background:
+    linear-gradient(145deg, rgba(125, 219, 213, 0.16), rgba(187, 167, 255, 0.1)),
+    rgba(255, 255, 255, 0.075);
+  box-shadow: 0 0 44px rgba(125, 219, 213, 0.12), 0 22px 58px rgba(0, 0, 0, 0.3);
+}
+
+.pricing-plan span,
+.pricing-plan h3,
+.pricing-plan strong,
+.pricing-plan p {
+  display: block;
+}
+
+.pricing-plan span {
+  color: #9ee8e4;
+  font-size: 0.72rem;
   font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.pricing-table-lite strong {
-  font-size: 1.75rem;
+.pricing-plan h3 {
+  margin: 16px 0 0;
+  font-size: 1.25rem;
+}
+
+.pricing-plan strong {
+  margin-top: 10px;
+  font-size: 1.65rem;
   line-height: 1.15;
 }
 
-.pricing-table-lite em {
-  color: var(--studio-muted);
+.pricing-plan p {
+  margin: 12px 0 0;
+  color: rgba(226, 232, 240, 0.7);
+  font-weight: 800;
+}
+
+.pricing-option-strip {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.075);
+  border: 1px solid rgba(255, 134, 202, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pricing-option-strip span,
+.pricing-option-strip strong,
+.pricing-option-strip em {
+  display: block;
+}
+
+.pricing-option-strip span {
+  color: #ff9bd2;
+  font-weight: 900;
+}
+
+.pricing-option-strip strong {
+  color: #fff;
+  font-size: 1.3rem;
+}
+
+.pricing-option-strip em {
+  color: rgba(226, 232, 240, 0.68);
   font-style: normal;
+  font-weight: 800;
+}
+
+@keyframes meterFlow {
+  0%,
+  100% {
+    width: 42%;
+    filter: brightness(0.9);
+  }
+
+  50% {
+    width: 82%;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes radarSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .studio-cta {
@@ -8332,6 +8612,35 @@ textarea {
     border-radius: 18px;
   }
 
+  .studio-pricing-section {
+    padding: 72px 0;
+  }
+
+  .pricing-copy h2 {
+    font-size: 2.55rem;
+    max-width: 12ch;
+  }
+
+  .pricing-orb-panel {
+    min-height: auto;
+    padding: 16px;
+    border-radius: 26px;
+  }
+
+  .pricing-orb-panel::before {
+    inset: 16px;
+    border-radius: 22px;
+  }
+
+  .price-radar {
+    width: min(230px, 70vw);
+  }
+
+  .pricing-plan {
+    min-height: auto;
+    border-radius: 18px;
+  }
+
   .problem-chain i {
     width: 2px;
     height: 24px;
@@ -8352,7 +8661,9 @@ textarea {
   .vault-stream::before,
   .vault-gate b,
   .delivery-console::after,
-  .delivery-phase {
+  .delivery-phase,
+  .pricing-meter i,
+  .price-radar::after {
     animation: none;
   }
 }
