@@ -313,31 +313,77 @@
   if (!demo) return;
 
   const buttons = Array.from(demo.querySelectorAll("[data-dashboard-view]"));
+  const title = demo.querySelector("[data-dashboard-title]");
   const status = demo.querySelector("[data-dashboard-status]");
+  const kpis = demo.querySelector("[data-dashboard-kpis]");
+  const progress = demo.querySelector("[data-dashboard-progress]");
+  const table = demo.querySelector("[data-dashboard-table]");
   const panelKicker = demo.querySelector("[data-dashboard-panel-kicker]");
   const panelTitle = demo.querySelector("[data-dashboard-panel-title]");
   const panelText = demo.querySelector("[data-dashboard-panel-text]");
   const panelChip = demo.querySelector("[data-dashboard-panel-chip]");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const autoPlay = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
+  let dragging = false;
+  let switchTimer = 0;
   const views = {
     overview: {
+      screenTitle: "受検状況管理",
       status: "84% 完了",
+      progress: 84,
+      kpis: [
+        ["対象者", "120"],
+        ["回答済み", "101"],
+        ["未回答", "19"]
+      ],
+      rows: [
+        ["営業部", "完了"],
+        ["管理部", "通知準備"],
+        ["製造部", "未回答 6名"],
+        ["札幌支店", "報告待ち"]
+      ],
       kicker: "NEXT ACTION",
-      title: "未回答者を確認",
+      panelTitle: "未回答者を確認",
       text: "期限前に確認が必要な対象者だけを表示し、担当者が次に動ける状態にします。",
       chip: "CSV / Web回答"
     },
     notice: {
+      screenTitle: "本人通知準備",
       status: "通知 18件",
+      progress: 62,
+      kpis: [
+        ["送付対象", "101"],
+        ["確認待ち", "18"],
+        ["差戻し", "3"]
+      ],
+      rows: [
+        ["高ストレス判定", "個別確認"],
+        ["本人通知文", "送付前確認"],
+        ["会社向け集計", "分離済み"],
+        ["面接指導申出", "案内作成"]
+      ],
       kicker: "PERSONAL NOTICE",
-      title: "本人結果通知を準備",
+      panelTitle: "本人結果通知を準備",
       text: "本人に返す情報と会社向けの集計情報を分け、送付前に確認できます。",
       chip: "本人向け"
     },
     report: {
+      screenTitle: "会社向け報告",
       status: "報告準備中",
+      progress: 74,
+      kpis: [
+        ["部署集計", "8"],
+        ["PDF出力", "4"],
+        ["CSV保存", "12"]
+      ],
+      rows: [
+        ["部署別集計", "作成中"],
+        ["期間比較", "確認済み"],
+        ["保存用CSV", "出力可"],
+        ["提出資料", "レビュー待ち"]
+      ],
       kicker: "COMPANY REPORT",
-      title: "会社向け資料を出力",
+      panelTitle: "会社向け資料を出力",
       text: "部署別集計、受検状況、保存用CSVを、毎回作り直さず出力します。",
       chip: "PDF / CSV"
     }
@@ -345,15 +391,26 @@
 
   function setView(view) {
     const data = views[view] || views.overview;
+    window.clearTimeout(switchTimer);
+    demo.classList.add("is-switching");
     demo.dataset.view = view;
     buttons.forEach((button) => {
       button.setAttribute("aria-pressed", String(button.dataset.dashboardView === view));
     });
+    if (title) title.textContent = data.screenTitle;
     if (status) status.textContent = data.status;
+    if (progress) progress.style.setProperty("--w", `${data.progress}%`);
+    if (kpis) {
+      kpis.innerHTML = data.kpis.map(([label, value]) => `<article><span>${label}</span><strong>${value}</strong></article>`).join("");
+    }
+    if (table) {
+      table.innerHTML = data.rows.map(([label, value]) => `<div><span>${label}</span><b>${value}</b><i></i></div>`).join("");
+    }
     if (panelKicker) panelKicker.textContent = data.kicker;
-    if (panelTitle) panelTitle.textContent = data.title;
+    if (panelTitle) panelTitle.textContent = data.panelTitle;
     if (panelText) panelText.textContent = data.text;
     if (panelChip) panelChip.textContent = data.chip;
+    switchTimer = window.setTimeout(() => demo.classList.remove("is-switching"), reduceMotion ? 0 : 220);
   }
 
   buttons.forEach((button) => {
@@ -361,7 +418,6 @@
   });
 
   if (!reduceMotion) {
-    let dragging = false;
     const viewOrder = ["overview", "notice", "report"];
     const setFromPointer = (event) => {
       const rect = demo.getBoundingClientRect();
@@ -388,6 +444,15 @@
     demo.addEventListener("pointerleave", () => {
       dragging = false;
     });
+
+    if (autoPlay) {
+      let index = 0;
+      window.setInterval(() => {
+        if (dragging) return;
+        index = (index + 1) % viewOrder.length;
+        setView(viewOrder[index]);
+      }, 2600);
+    }
   }
 
   setView(demo.dataset.view || "overview");

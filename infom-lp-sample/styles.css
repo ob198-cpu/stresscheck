@@ -6871,6 +6871,23 @@ textarea {
     rgba(4, 9, 20, 0.78);
   border: 1px solid rgba(166, 190, 255, 0.2);
   box-shadow: 0 28px 86px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 0.24s ease, box-shadow 0.24s ease, background 0.24s ease;
+}
+
+.stress-dashboard-showcase[data-view="notice"] .dashboard-product-window {
+  border-color: rgba(187, 167, 255, 0.36);
+  background:
+    radial-gradient(circle at 78% 16%, rgba(187, 167, 255, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
+    rgba(4, 9, 20, 0.78);
+}
+
+.stress-dashboard-showcase[data-view="report"] .dashboard-product-window {
+  border-color: rgba(236, 112, 188, 0.34);
+  background:
+    radial-gradient(circle at 75% 18%, rgba(236, 112, 188, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
+    rgba(4, 9, 20, 0.78);
 }
 
 .dashboard-sidebar {
@@ -6904,6 +6921,12 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   padding: 20px;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.stress-dashboard-showcase.is-switching .dashboard-main {
+  opacity: 0.74;
+  transform: translateY(5px) scale(0.992);
 }
 
 .dashboard-main-head {
@@ -6955,6 +6978,15 @@ textarea {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.075);
   border: 1px solid rgba(166, 190, 255, 0.14);
+  animation: dashboardReveal 0.28s ease both;
+}
+
+.dashboard-kpis article:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.dashboard-kpis article:nth-child(3) {
+  animation-delay: 0.08s;
 }
 
 .dashboard-kpis span,
@@ -6993,6 +7025,7 @@ textarea {
   border-radius: inherit;
   background: linear-gradient(90deg, #7ddbd5, #bba7ff, #f28ac2);
   box-shadow: 0 0 20px rgba(125, 219, 213, 0.44);
+  transition: width 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .dashboard-table {
@@ -7011,6 +7044,19 @@ textarea {
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(166, 190, 255, 0.12);
+  animation: dashboardReveal 0.3s ease both;
+}
+
+.dashboard-table div:nth-child(2) {
+  animation-delay: 0.04s;
+}
+
+.dashboard-table div:nth-child(3) {
+  animation-delay: 0.08s;
+}
+
+.dashboard-table div:nth-child(4) {
+  animation-delay: 0.12s;
 }
 
 .dashboard-table span,
@@ -7085,6 +7131,18 @@ textarea {
   color: rgba(226, 232, 240, 0.58);
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+@keyframes dashboardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .studio-product-section {
@@ -7281,6 +7339,19 @@ textarea {
 
   .wide-chart {
     min-height: 210px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stress-dashboard-showcase,
+  .stress-dashboard-showcase * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .stress-dashboard-showcase.is-switching .dashboard-main {
+    opacity: 1;
+    transform: none;
   }
 }
 
