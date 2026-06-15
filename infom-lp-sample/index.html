@@ -52,57 +52,64 @@
           </div>
         </div>
 
-        <aside class="interactive-stress-demo studio-stress-demo" data-stress-demo aria-label="ストレスチェックと業務整理のインタラクティブデモ">
-          <div class="demo-glow" aria-hidden="true"></div>
-          <div class="demo-header">
+        <aside class="stress-product-hero studio-stress-demo" data-product-hero aria-label="3Dで見るストレスチェック運用デモ">
+          <div class="product-ambient" aria-hidden="true"></div>
+          <div class="product-topbar">
             <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <strong>Stress Insight Lab</strong>
+            <strong>Stress 3D Operations</strong>
           </div>
 
-          <div class="demo-title">
-            <span>INTERACTIVE OPERATIONS</span>
-            <h2>回答と業務データが、判断できる画面になる</h2>
-            <p>TAP OR DRAG TO ANALYZE</p>
+          <div class="product-title">
+            <span>LIVE SYSTEM DEMO</span>
+            <h2>回答データが、動く管理画面に変わる。</h2>
+            <p>CLICK OR DRAG TO BUILD THE FLOW</p>
           </div>
 
-          <button type="button" class="demo-input" data-demo-trigger aria-label="分析デモを開始する">
-            <span>最近、眠りが浅く疲れが残る / 未回答者の確認も進めたい</span>
+          <button type="button" class="product-prompt" data-product-trigger aria-label="ストレスチェックの3Dデモを開始する">
+            <span>紙・Excel・メールの確認作業を、見える運用画面へ</span>
+            <i>Generate</i>
           </button>
 
-          <div class="demo-flow" aria-hidden="true">
-            <span class="flow-line"></span>
-            <span class="flow-particle particle-a"></span>
-            <span class="flow-particle particle-b"></span>
-            <span class="flow-particle particle-c"></span>
-          </div>
-
-          <div class="stress-result-card studio-result-card">
-            <div class="score-block">
-              <div class="score-meter" data-score-meter><span>72</span></div>
-              <div>
-                <p>Stress Balance Score</p>
-                <strong>睡眠・疲労・集中度のサインと、運用上の未対応を整理しました。</strong>
-                <em>本人には結果を分かりやすく、担当者には次の確認だけを表示します。</em>
+          <div class="product-stage" data-product-stage>
+            <canvas class="product-core-canvas" data-product-core-canvas aria-hidden="true"></canvas>
+            <div class="data-intake-stack" aria-hidden="true">
+              <span>Paper</span>
+              <span>Excel</span>
+              <span>Mail</span>
+            </div>
+            <div class="core-label">
+              <span>InfoM Core</span>
+              <strong>stress data</strong>
+            </div>
+            <div class="generated-dashboard">
+              <div class="dash-bar"><span></span><span></span><span></span></div>
+              <strong>Care Dashboard</strong>
+              <div class="dash-grid">
+                <i></i><i></i><i></i><i></i>
               </div>
+              <p>未回答 / 本人通知 / 集団分析 / 面接指導</p>
             </div>
-            <div class="mini-metrics">
-              <div><span>Sleep</span><strong>浅い</strong></div>
-              <div><span>Status</span><strong>未回答 12</strong></div>
-              <div><span>Report</span><strong>出力可</strong></div>
-            </div>
-            <a href="stress-check.html">ストレスチェック支援を見る</a>
+            <div class="flow-beam beam-a" aria-hidden="true"></div>
+            <div class="flow-beam beam-b" aria-hidden="true"></div>
+            <div class="flow-beam beam-c" aria-hidden="true"></div>
           </div>
 
-          <div class="demo-stage-track" aria-label="分析の進行">
-            <span data-stage-label>Answer</span>
-            <div><i data-stage-bar></i></div>
-            <span>Care Plan</span>
-          </div>
-
-          <div class="demo-step-grid">
-            <div class="demo-step active" data-demo-step="0"><span>01</span><strong>Answer</strong><em>回答を受け取る</em></div>
-            <div class="demo-step" data-demo-step="1"><span>02</span><strong>Analyze</strong><em>状態を整理する</em></div>
-            <div class="demo-step" data-demo-step="2"><span>03</span><strong>Care</strong><em>次の行動へつなぐ</em></div>
+          <div class="product-progress" aria-label="生成ステップ">
+            <article data-product-step="0">
+              <span>01</span>
+              <strong>Collect</strong>
+              <em>回答と確認作業を集める</em>
+            </article>
+            <article data-product-step="1">
+              <span>02</span>
+              <strong>Analyze</strong>
+              <em>リスクと未対応を整理</em>
+            </article>
+            <article data-product-step="2">
+              <span>03</span>
+              <strong>Launch</strong>
+              <em>運用画面として公開</em>
+            </article>
           </div>
         </aside>
       </div>

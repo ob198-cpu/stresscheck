@@ -309,6 +309,279 @@
 })();
 
 (function () {
+  const hero = document.querySelector("[data-product-hero]");
+  if (!hero) return;
+
+  const canvas = hero.querySelector("[data-product-core-canvas]");
+  const trigger = hero.querySelector("[data-product-trigger]");
+  const steps = Array.from(hero.querySelectorAll("[data-product-step]"));
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const autoPlay = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
+  const points = [];
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+  let rafId = 0;
+  let visible = true;
+  let progress = reduceMotion ? 1 : 0.08;
+  let targetProgress = progress;
+  let dragging = false;
+  let buildStart = 0;
+
+  function makePoint(index, total) {
+    const v = index / Math.max(total - 1, 1);
+    const band = Math.floor(v * 54);
+    const turn = v * Math.PI * 2 * 18;
+    const shell = Math.sin(v * Math.PI);
+    const groove = Math.sin(turn * 1.7 + band * 0.33) * 0.12;
+    return {
+      theta: turn,
+      phi: Math.acos(1 - 2 * v),
+      radius: 0.62 + shell * 0.42 + groove,
+      seed: Math.random(),
+      band
+    };
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    points.length = 0;
+    const count = width < 520 ? 520 : 860;
+    for (let i = 0; i < count; i += 1) points.push(makePoint(i, count));
+  }
+
+  function project(point, time) {
+    const morph = progress;
+    const theta = point.theta + time * (0.28 + morph * 0.18) + pointer.x * 0.35;
+    const phi = point.phi + Math.sin(time * 0.7 + point.seed * 8) * 0.02;
+    const wave = Math.sin(point.band * 0.74 + time * 2.2) * 0.055 * morph;
+    const radius = point.radius + wave;
+    let x = Math.sin(phi) * Math.cos(theta) * radius;
+    let y = Math.cos(phi) * radius * (0.78 + morph * 0.12);
+    let z = Math.sin(phi) * Math.sin(theta) * radius;
+
+    const rotY = -0.55 + pointer.x * 0.38 + morph * 0.28;
+    const rotX = 0.28 + pointer.y * 0.22;
+    const cy = Math.cos(rotY);
+    const sy = Math.sin(rotY);
+    const cx = Math.cos(rotX);
+    const sx = Math.sin(rotX);
+
+    [x, z] = [x * cy + z * sy, -x * sy + z * cy];
+    [y, z] = [y * cx - z * sx, y * sx + z * cx];
+
+    const depth = 2.2 + z;
+    const scale = Math.min(width, height) * (0.34 + morph * 0.045) / depth;
+    return {
+      x: width * 0.5 + x * scale,
+      y: height * 0.47 + y * scale,
+      z,
+      size: (1.05 + point.seed * 2.1) * (1 + morph * 0.45) / depth,
+      alpha: 0.2 + point.seed * 0.7,
+      seed: point.seed
+    };
+  }
+
+  function drawRings(time) {
+    const cx = width * 0.5;
+    const cy = height * 0.48;
+    const base = Math.min(width, height);
+    for (let i = 0; i < 4; i += 1) {
+      const phase = time * (0.34 + i * 0.05) + i * 0.8;
+      const rx = base * (0.29 + i * 0.055 + progress * 0.04);
+      const ry = base * (0.06 + i * 0.016);
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(phase + pointer.x * 0.18);
+      ctx.strokeStyle = i % 2 === 0 ? "rgba(125, 219, 213, 0.26)" : "rgba(236, 112, 188, 0.2)";
+      ctx.lineWidth = 1.2;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = i % 2 === 0 ? "rgba(125, 219, 213, 0.42)" : "rgba(236, 112, 188, 0.34)";
+      ctx.beginPath();
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawDataStreaks(time) {
+    const pulse = 0.55 + Math.sin(time * 3.1) * 0.45;
+    const routes = [
+      [width * 0.18, height * 0.38, width * 0.5, height * 0.48, "rgba(125, 219, 213,"],
+      [width * 0.22, height * 0.56, width * 0.5, height * 0.5, "rgba(187, 167, 255,"],
+      [width * 0.5, height * 0.52, width * 0.76, height * 0.66, "rgba(236, 112, 188,"]
+    ];
+    routes.forEach((route, index) => {
+      const [x1, y1, x2, y2, color] = route;
+      const active = Math.max(0, Math.min(1, progress * 1.4 - index * 0.22));
+      if (active <= 0) return;
+      const grad = ctx.createLinearGradient(x1, y1, x2, y2);
+      grad.addColorStop(0, `${color} 0)`);
+      grad.addColorStop(0.45, `${color} ${0.15 + pulse * 0.38 * active})`);
+      grad.addColorStop(1, `${color} 0)`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2 + active * 2;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = `${color} ${0.35 * active})`;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.bezierCurveTo(width * 0.36, y1 - 48, width * 0.44, y2 + 54, x2, y2);
+      ctx.stroke();
+    });
+    ctx.shadowBlur = 0;
+  }
+
+  function draw(now) {
+    rafId = 0;
+    if (!visible) return;
+    const time = now * 0.001;
+    if (!dragging && !reduceMotion) {
+      progress += (targetProgress - progress) * 0.045;
+      if (buildStart) {
+        const elapsed = Math.min(1, (now - buildStart) / 2300);
+        targetProgress = elapsed;
+        if (elapsed >= 1) buildStart = 0;
+      }
+    }
+    pointer.x += (pointer.tx - pointer.x) * 0.08;
+    pointer.y += (pointer.ty - pointer.y) * 0.08;
+
+    hero.style.setProperty("--product-progress", progress.toFixed(3));
+    hero.style.setProperty("--pointer-x", pointer.x.toFixed(3));
+    hero.style.setProperty("--pointer-y", pointer.y.toFixed(3));
+    const stage = progress < 0.28 ? 0 : progress < 0.62 ? 1 : progress < 0.92 ? 2 : 3;
+    hero.dataset.stage = String(stage);
+    steps.forEach((step, index) => step.classList.toggle("is-active", index <= Math.min(stage, 2)));
+
+    ctx.clearRect(0, 0, width, height);
+    const glow = ctx.createRadialGradient(width * 0.5, height * 0.48, 0, width * 0.5, height * 0.48, Math.min(width, height) * 0.48);
+    glow.addColorStop(0, `rgba(125, 219, 213, ${0.14 + progress * 0.14})`);
+    glow.addColorStop(0.38, `rgba(187, 167, 255, ${0.09 + progress * 0.08})`);
+    glow.addColorStop(1, "rgba(3, 7, 18, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+    drawDataStreaks(time);
+    drawRings(time);
+
+    const projected = points.map((point) => project(point, time)).sort((a, b) => a.z - b.z);
+    projected.forEach((point) => {
+      const mix = point.seed;
+      const r = Math.round(125 + mix * 115);
+      const g = Math.round(210 - mix * 64);
+      const b = Math.round(213 + mix * 42);
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${point.alpha * (0.34 + progress * 0.46)})`;
+      ctx.shadowBlur = 12 + progress * 8;
+      ctx.shadowColor = mix > 0.72 ? "rgba(236, 112, 188, 0.42)" : "rgba(125, 219, 213, 0.42)";
+      ctx.arc(point.x, point.y, Math.max(0.45, point.size * 2.8), 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.shadowBlur = 26;
+    ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.42 + progress * 0.32})`;
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.48, 6 + progress * 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    if (!reduceMotion) rafId = requestAnimationFrame(draw);
+  }
+
+  function schedule() {
+    if (!rafId && visible) rafId = requestAnimationFrame(draw);
+  }
+
+  function setProgressFromEvent(event) {
+    const rect = hero.getBoundingClientRect();
+    targetProgress = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    progress = targetProgress;
+    schedule();
+  }
+
+  resize();
+  if (reduceMotion) targetProgress = progress = 1;
+  schedule();
+
+  window.addEventListener("resize", () => {
+    resize();
+    schedule();
+  });
+
+  trigger?.addEventListener("click", () => {
+    hero.classList.add("is-building");
+    buildStart = performance.now();
+    targetProgress = 0;
+    progress = 0;
+    schedule();
+    window.setTimeout(() => hero.classList.remove("is-building"), reduceMotion ? 0 : 2500);
+  });
+
+  hero.addEventListener("pointerdown", (event) => {
+    dragging = true;
+    hero.setPointerCapture(event.pointerId);
+    setProgressFromEvent(event);
+  });
+
+  hero.addEventListener("pointermove", (event) => {
+    const rect = hero.getBoundingClientRect();
+    pointer.tx = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
+    pointer.ty = ((event.clientY - rect.top) / rect.height - 0.5) * -2;
+    if (dragging) setProgressFromEvent(event);
+    else schedule();
+  });
+
+  hero.addEventListener("pointerup", (event) => {
+    dragging = false;
+    try {
+      hero.releasePointerCapture(event.pointerId);
+    } catch (_) {
+      // Pointer capture may already be released.
+    }
+  });
+
+  hero.addEventListener("pointerleave", () => {
+    dragging = false;
+    pointer.tx = 0;
+    pointer.ty = 0;
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    visible = entries[0].isIntersecting && !document.hidden;
+    if (visible) schedule();
+  });
+  observer.observe(hero);
+
+  document.addEventListener("visibilitychange", () => {
+    visible = !document.hidden;
+    if (visible) schedule();
+  });
+
+  if (autoPlay && !reduceMotion) {
+    const values = [0.08, 0.36, 0.68, 1, 0.36];
+    let index = 0;
+    window.setInterval(() => {
+      if (!dragging) {
+        targetProgress = values[index % values.length];
+        index += 1;
+        schedule();
+      }
+    }, 1800);
+  }
+})();
+
+(function () {
   const canvases = document.querySelectorAll("[data-ops-stream-canvas]");
   if (!canvases.length) return;
 
