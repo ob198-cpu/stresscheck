@@ -1,120 +1,310 @@
 (function () {
-  const canvas = document.querySelector("[data-studio-particles]");
-  if (!canvas) return;
+  const hero = document.querySelector("[data-studio-hero]");
+  const canvas = document.querySelector("[data-studio-webgl]");
+  if (!hero || !canvas) return;
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const ctx = canvas.getContext("2d");
-  const hero = canvas.closest(".studio-hero");
-  const points = [];
-  const pointer = { x: 0.72, y: 0.34, active: false };
-  let width = 0;
-  let height = 0;
-  let dpr = 1;
-  let rafId = 0;
-  let visible = true;
-
-  function resize() {
-    const rect = hero.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    width = Math.max(1, Math.round(rect.width));
-    height = Math.max(1, Math.round(rect.height));
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    points.length = 0;
-    const count = width < 760 ? 90 : 150;
-    for (let i = 0; i < count; i += 1) {
-      points.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        z: Math.random(),
-        vx: (Math.random() - 0.5) * 0.16,
-        vy: (Math.random() - 0.5) * 0.12,
-        r: Math.random() * 1.8 + 0.5,
-        phase: Math.random() * Math.PI * 2
-      });
-    }
+  const gl = canvas.getContext("webgl", { antialias: false, alpha: true, powerPreference: "high-performance" });
+  if (!gl) {
+    hero.classList.add("hero-no-webgl");
+    return;
   }
 
-  function draw(now) {
+  const VERT = `
+    attribute vec3 aShapeA;
+    attribute vec3 aShapeB;
+    attribute vec3 aShapeC;
+    attribute vec4 aSeed;
+    uniform mat4 uProj;
+    uniform vec3 uWeights;
+    uniform float uTime;
+    uniform float uScatter;
+    uniform vec2 uRot;
+    uniform vec2 uMouse;
+    uniform float uMouseForce;
+    uniform vec2 uShift;
+    uniform float uCamZ;
+    uniform float uPointScale;
+    varying float vSeed;
+    varying float vDepth;
+    varying float vPush;
+
+    void main() {
+      vec3 pos = aShapeA * uWeights.x + aShapeB * uWeights.y + aShapeC * uWeights.z;
+      pos.y += uWeights.z * 0.14 * sin(aShapeC.x * 3.2 + uTime * 1.5);
+      pos += aSeed.xyz * uScatter * (0.36 + aSeed.w);
+      pos *= 1.0 + 0.035 * sin(uTime * 0.72 + aSeed.w * 6.2831);
+
+      float cy = cos(uRot.x);
+      float sy = sin(uRot.x);
+      pos = vec3(pos.x * cy + pos.z * sy, pos.y, -pos.x * sy + pos.z * cy);
+      float cx = cos(uRot.y);
+      float sx = sin(uRot.y);
+      pos = vec3(pos.x, pos.y * cx - pos.z * sx, pos.y * sx + pos.z * cx);
+
+      vec4 view = vec4(pos.x, pos.y, pos.z - uCamZ, 1.0);
+      vec4 clip = uProj * view;
+      vec2 ndc = clip.xy / clip.w + uShift;
+      vec2 toMouse = ndc - uMouse;
+      float dist = length(toMouse);
+      float push = smoothstep(0.42, 0.0, dist) * uMouseForce;
+      ndc += (toMouse / max(dist, 0.001)) * push * 0.17;
+      clip = vec4(ndc * clip.w, clip.z, clip.w);
+
+      gl_Position = clip;
+      vSeed = aSeed.w;
+      vDepth = clamp((view.z + uCamZ + 1.6) / 3.2, 0.0, 1.0);
+      vPush = push;
+      gl_PointSize = uPointScale * (0.5 + aSeed.w) * (1.0 + push * 2.4) / clip.w;
+    }
+  `;
+
+  const FRAG = `
+    precision highp float;
+    uniform float uTime;
+    varying float vSeed;
+    varying float vDepth;
+    varying float vPush;
+
+    void main() {
+      float d = length(gl_PointCoord - 0.5);
+      float alpha = smoothstep(0.5, 0.04, d);
+      float twinkle = 0.7 + 0.3 * sin(uTime * (1.2 + vSeed * 2.4) + vSeed * 43.0);
+      vec3 teal = vec3(0.48, 0.86, 0.84);
+      vec3 violet = vec3(0.56, 0.45, 1.0);
+      vec3 pink = vec3(1.0, 0.42, 0.78);
+      vec3 white = vec3(0.94, 0.98, 1.0);
+      vec3 color = mix(teal, violet, smoothstep(0.15, 0.72, vSeed));
+      color = mix(color, pink, smoothstep(0.72, 1.0, vSeed) * 0.52);
+      color = mix(color, white, step(0.965, vSeed));
+      color = mix(color, white, vPush * 0.7);
+      alpha *= twinkle * mix(0.35, 1.0, vDepth);
+      gl_FragColor = vec4(color * alpha, alpha);
+    }
+  `;
+
+  function compile(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    return shader;
+  }
+
+  const program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, VERT));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAG));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    hero.classList.add("hero-no-webgl");
+    return;
+  }
+  gl.useProgram(program);
+
+  const isMobile = window.matchMedia("(max-width: 820px)").matches;
+  const COUNT = isMobile ? 8000 : 15000;
+  const shapeA = new Float32Array(COUNT * 3);
+  const shapeB = new Float32Array(COUNT * 3);
+  const shapeC = new Float32Array(COUNT * 3);
+  const seeds = new Float32Array(COUNT * 4);
+  const gridW = Math.ceil(Math.sqrt(COUNT * 1.5));
+  const gridH = Math.ceil(COUNT / gridW);
+
+  for (let i = 0; i < COUNT; i += 1) {
+    const t = Math.random() * Math.PI * 2;
+    const knotR = 2 + Math.cos(3 * t);
+    const tube = 0.16 * Math.cbrt(Math.random());
+    const tubeAngle = Math.random() * Math.PI * 2;
+    shapeA[i * 3] = knotR * Math.cos(2 * t) * 0.42 + Math.cos(tubeAngle) * tube;
+    shapeA[i * 3 + 1] = knotR * Math.sin(2 * t) * 0.42 + Math.sin(tubeAngle) * tube;
+    shapeA[i * 3 + 2] = Math.sin(3 * t) * 0.5 + (Math.random() - 0.5) * 0.12;
+
+    const k = i + 0.5;
+    const phi = Math.acos(1 - (2 * k) / COUNT);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * k;
+    const radius = 1.1 + (Math.random() - 0.5) * 0.08;
+    shapeB[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    shapeB[i * 3 + 1] = radius * Math.cos(phi);
+    shapeB[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+
+    const col = i % gridW;
+    const row = Math.floor(i / gridW);
+    const gx = ((col / (gridW - 1)) * 2 - 1) * 1.85;
+    const gz = ((row / Math.max(gridH - 1, 1)) * 2 - 1) * 1.18;
+    shapeC[i * 3] = gx;
+    shapeC[i * 3 + 1] = 0.18 * Math.sin(gx * 2.8) + 0.14 * Math.cos(gz * 3.1);
+    shapeC[i * 3 + 2] = gz;
+
+    const sx = Math.random() * 2 - 1;
+    const sy = Math.random() * 2 - 1;
+    const sz = Math.random() * 2 - 1;
+    const len = Math.max(Math.hypot(sx, sy, sz), 0.001);
+    seeds[i * 4] = sx / len;
+    seeds[i * 4 + 1] = sy / len;
+    seeds[i * 4 + 2] = sz / len;
+    seeds[i * 4 + 3] = Math.random();
+  }
+
+  function bindAttribute(name, data, size) {
+    const buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    const location = gl.getAttribLocation(program, name);
+    gl.enableVertexAttribArray(location);
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, 0, 0);
+  }
+
+  bindAttribute("aShapeA", shapeA, 3);
+  bindAttribute("aShapeB", shapeB, 3);
+  bindAttribute("aShapeC", shapeC, 3);
+  bindAttribute("aSeed", seeds, 4);
+
+  const uniforms = {};
+  ["uProj", "uWeights", "uTime", "uScatter", "uRot", "uMouse", "uMouseForce", "uShift", "uCamZ", "uPointScale"].forEach((name) => {
+    uniforms[name] = gl.getUniformLocation(program, name);
+  });
+
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.clearColor(0, 0, 0, 0);
+
+  const proj = new Float32Array(16);
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = hero.clientWidth;
+    const height = hero.clientHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    const aspect = canvas.width / Math.max(canvas.height, 1);
+    const f = 1 / Math.tan((50 * Math.PI) / 360);
+    const near = 0.1;
+    const far = 12;
+    proj.fill(0);
+    proj[0] = f / aspect;
+    proj[5] = f;
+    proj[10] = -(far + near) / (far - near);
+    proj[11] = -1;
+    proj[14] = -(2 * far * near) / (far - near);
+    gl.uniformMatrix4fv(uniforms.uProj, false, proj);
+    gl.uniform1f(uniforms.uPointScale, canvas.height * 0.011);
+    gl.uniform1f(uniforms.uCamZ, width < 880 ? 3.9 : 2.95);
+    gl.uniform2f(uniforms.uShift, width < 880 ? 0 : 0.36, 0);
+  }
+
+  const ease = (x) => x * x * (3 - 2 * x);
+  const HOLD = 4.0;
+  const MORPH = 1.5;
+  const CYCLE = HOLD + MORPH;
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0, force: 0, targetForce: 0 };
+  let drag = 0;
+  let dragVel = 0;
+  let dragging = false;
+  let dragLastX = 0;
+  let scrollFactor = 0;
+  let rafId = 0;
+  let visible = true;
+  const startTime = performance.now();
+
+  function frame(now) {
     rafId = 0;
     if (!visible) return;
+    const time = (now - startTime) * 0.001;
+    const cycleT = (time / CYCLE) % 3;
+    const index = Math.floor(cycleT);
+    const frac = cycleT - index;
+    const holdPortion = HOLD / CYCLE;
+    const morph = frac < holdPortion ? 0 : ease((frac - holdPortion) / (1 - holdPortion));
+    const weights = [0, 0, 0];
+    weights[index] = 1 - morph;
+    weights[(index + 1) % 3] = morph;
 
-    const time = now * 0.001;
-    ctx.clearRect(0, 0, width, height);
-
-    const gradient = ctx.createRadialGradient(width * pointer.x, height * pointer.y, 0, width * pointer.x, height * pointer.y, Math.max(width, height) * 0.7);
-    gradient.addColorStop(0, "rgba(126, 219, 213, 0.16)");
-    gradient.addColorStop(0.42, "rgba(122, 112, 255, 0.08)");
-    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    for (let i = 0; i < points.length; i += 1) {
-      const p = points[i];
-      if (!reduceMotion) {
-        p.x += p.vx * (0.55 + p.z);
-        p.y += p.vy * (0.55 + p.z) + Math.sin(time + p.phase) * 0.025;
-      }
-
-      if (p.x < -20) p.x = width + 20;
-      if (p.x > width + 20) p.x = -20;
-      if (p.y < -20) p.y = height + 20;
-      if (p.y > height + 20) p.y = -20;
-
-      const dx = p.x - width * pointer.x;
-      const dy = p.y - height * pointer.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const glow = Math.max(0, 1 - distance / 360);
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(${120 + glow * 90}, ${180 + glow * 55}, 255, ${0.22 + p.z * 0.45})`;
-      ctx.arc(p.x, p.y, p.r + glow * 1.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (glow > 0.62 && i % 4 === 0) {
-        ctx.strokeStyle = `rgba(157, 220, 255, ${(glow - 0.62) * 0.22})`;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(width * pointer.x, height * pointer.y);
-        ctx.stroke();
-      }
+    mouse.x += (mouse.tx - mouse.x) * 0.07;
+    mouse.y += (mouse.ty - mouse.y) * 0.07;
+    mouse.force += (mouse.targetForce - mouse.force) * 0.06;
+    if (!dragging) {
+      drag += dragVel;
+      dragVel *= 0.95;
     }
 
-    if (!reduceMotion) rafId = requestAnimationFrame(draw);
+    const burst = Math.sin(morph * Math.PI) * 0.55;
+    gl.uniform3f(uniforms.uWeights, weights[0], weights[1], weights[2]);
+    gl.uniform1f(uniforms.uTime, time);
+    gl.uniform1f(uniforms.uScatter, burst + scrollFactor * 1.55);
+    gl.uniform2f(uniforms.uRot, time * 0.13 + drag + mouse.x * 0.24, -0.16 + mouse.y * 0.2 + scrollFactor * 0.55);
+    gl.uniform2f(uniforms.uMouse, mouse.x, mouse.y);
+    gl.uniform1f(uniforms.uMouseForce, mouse.force);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+    rafId = requestAnimationFrame(frame);
   }
 
   function schedule() {
-    if (!rafId && visible) rafId = requestAnimationFrame(draw);
+    if (!rafId && visible) rafId = requestAnimationFrame(frame);
   }
 
+  resize();
+
+  if (reduceMotion) {
+    gl.uniform3f(uniforms.uWeights, 1, 0, 0);
+    gl.uniform1f(uniforms.uTime, 4);
+    gl.uniform1f(uniforms.uScatter, 0);
+    gl.uniform2f(uniforms.uRot, 0.7, -0.16);
+    gl.uniform2f(uniforms.uMouse, 10, 10);
+    gl.uniform1f(uniforms.uMouseForce, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.POINTS, 0, COUNT);
+    window.addEventListener("resize", () => {
+      resize();
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.POINTS, 0, COUNT);
+    });
+    return;
+  }
+
+  window.addEventListener("resize", resize);
   hero.addEventListener("pointermove", (event) => {
     const rect = hero.getBoundingClientRect();
-    pointer.x = (event.clientX - rect.left) / rect.width;
-    pointer.y = (event.clientY - rect.top) / rect.height;
-    pointer.active = true;
-    schedule();
+    mouse.tx = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.ty = -(((event.clientY - rect.top) / rect.height) * 2 - 1);
+    if (dragging) {
+      const dx = event.clientX - dragLastX;
+      dragLastX = event.clientX;
+      drag += dx * 0.006;
+      dragVel = dx * 0.0024;
+    }
   });
-
-  window.addEventListener("resize", () => {
-    resize();
-    schedule();
+  hero.addEventListener("pointerenter", () => {
+    mouse.targetForce = 1;
   });
+  hero.addEventListener("pointerleave", () => {
+    mouse.targetForce = 0;
+    dragging = false;
+    hero.classList.remove("is-dragging");
+  });
+  canvas.addEventListener("pointerdown", (event) => {
+    dragging = true;
+    dragLastX = event.clientX;
+    hero.classList.add("is-dragging");
+    canvas.setPointerCapture(event.pointerId);
+  });
+  window.addEventListener("pointerup", () => {
+    dragging = false;
+    hero.classList.remove("is-dragging");
+  });
+  window.addEventListener("scroll", () => {
+    scrollFactor = Math.min(1, window.scrollY / Math.max(hero.offsetHeight * 0.92, 1));
+  }, { passive: true });
 
   const observer = new IntersectionObserver((entries) => {
     visible = entries[0].isIntersecting && !document.hidden;
     if (visible) schedule();
   });
   observer.observe(hero);
-
   document.addEventListener("visibilitychange", () => {
     visible = !document.hidden;
     if (visible) schedule();
   });
-
-  resize();
   schedule();
 })();
 
