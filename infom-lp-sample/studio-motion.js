@@ -309,6 +309,91 @@
 })();
 
 (function () {
+  const demo = document.querySelector("[data-dashboard-showcase]");
+  if (!demo) return;
+
+  const buttons = Array.from(demo.querySelectorAll("[data-dashboard-view]"));
+  const status = demo.querySelector("[data-dashboard-status]");
+  const panelKicker = demo.querySelector("[data-dashboard-panel-kicker]");
+  const panelTitle = demo.querySelector("[data-dashboard-panel-title]");
+  const panelText = demo.querySelector("[data-dashboard-panel-text]");
+  const panelChip = demo.querySelector("[data-dashboard-panel-chip]");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const views = {
+    overview: {
+      status: "84% 完了",
+      kicker: "NEXT ACTION",
+      title: "未回答者を確認",
+      text: "期限前に確認が必要な対象者だけを表示し、担当者が次に動ける状態にします。",
+      chip: "CSV / Web回答"
+    },
+    notice: {
+      status: "通知 18件",
+      kicker: "PERSONAL NOTICE",
+      title: "本人結果通知を準備",
+      text: "本人に返す情報と会社向けの集計情報を分け、送付前に確認できます。",
+      chip: "本人向け"
+    },
+    report: {
+      status: "報告準備中",
+      kicker: "COMPANY REPORT",
+      title: "会社向け資料を出力",
+      text: "部署別集計、受検状況、保存用CSVを、毎回作り直さず出力します。",
+      chip: "PDF / CSV"
+    }
+  };
+
+  function setView(view) {
+    const data = views[view] || views.overview;
+    demo.dataset.view = view;
+    buttons.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.dashboardView === view));
+    });
+    if (status) status.textContent = data.status;
+    if (panelKicker) panelKicker.textContent = data.kicker;
+    if (panelTitle) panelTitle.textContent = data.title;
+    if (panelText) panelText.textContent = data.text;
+    if (panelChip) panelChip.textContent = data.chip;
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => setView(button.dataset.dashboardView));
+  });
+
+  if (!reduceMotion) {
+    let dragging = false;
+    const viewOrder = ["overview", "notice", "report"];
+    const setFromPointer = (event) => {
+      const rect = demo.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(0.999, (event.clientX - rect.left) / Math.max(rect.width, 1)));
+      setView(viewOrder[Math.floor(ratio * viewOrder.length)]);
+    };
+    demo.addEventListener("pointerdown", (event) => {
+      if (event.target.closest("[data-dashboard-view]")) return;
+      dragging = true;
+      demo.setPointerCapture(event.pointerId);
+      setFromPointer(event);
+    });
+    demo.addEventListener("pointermove", (event) => {
+      if (dragging) setFromPointer(event);
+    });
+    demo.addEventListener("pointerup", (event) => {
+      dragging = false;
+      try {
+        demo.releasePointerCapture(event.pointerId);
+      } catch (_) {
+        // Browser may release pointer capture before this handler runs.
+      }
+    });
+    demo.addEventListener("pointerleave", () => {
+      dragging = false;
+    });
+  }
+
+  setView(demo.dataset.view || "overview");
+})();
+
+(function () {
   const hero = document.querySelector("[data-product-hero]");
   if (!hero) return;
 
