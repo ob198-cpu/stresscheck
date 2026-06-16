@@ -148,25 +148,71 @@
       <div class="container studio-product-grid">
         <div class="studio-product-copy">
           <p class="studio-kicker">Product View</p>
-          <h2>抽象的な説明ではなく、担当者が使う画面を先に見せます。</h2>
+          <h2>使う画面を、先に見せます。</h2>
           <p>
             回答受付、未回答者の確認、本人通知、会社向け報告を、別々の資料ではなく同じ画面の中で確認できます。
             余計な演出よりも、導入後に何が楽になるかが見えることを重視します。
           </p>
         </div>
 
-        <div class="wide-dashboard-panel" aria-hidden="true">
-          <div class="wide-dashboard-head">
-            <span>Stress Check 2026</span>
-            <strong>運用ステータス</strong>
-            <em>報告準備中</em>
+        <div class="operation-workbench" aria-hidden="true">
+          <div class="workbench-top">
+            <div class="demo-dots"><span></span><span></span><span></span></div>
+            <strong>Stress Check Workbench</strong>
+            <em>2026 / 報告準備中</em>
           </div>
-          <div class="wide-dashboard-body">
-            <div class="wide-chart"><i style="--h: 72%"></i><i style="--h: 86%"></i><i style="--h: 64%"></i><i style="--h: 91%"></i></div>
-            <div class="wide-tasks">
-              <div><b>本人通知</b><span>送付前確認 18件</span></div>
-              <div><b>未回答者</b><span>期限前フォロー 19件</span></div>
-              <div><b>会社報告</b><span>部署別集計を作成</span></div>
+
+          <div class="workbench-layout">
+            <div class="workbench-queue">
+              <span>Task Queue</span>
+              <article class="is-current">
+                <small>01</small>
+                <strong>本人通知</strong>
+                <em>送付前確認 18件</em>
+              </article>
+              <article>
+                <small>02</small>
+                <strong>未回答フォロー</strong>
+                <em>期限前確認 19名</em>
+              </article>
+              <article>
+                <small>03</small>
+                <strong>面接指導申出</strong>
+                <em>案内文を確認 3件</em>
+              </article>
+              <article>
+                <small>04</small>
+                <strong>会社報告</strong>
+                <em>部署別集計を出力</em>
+              </article>
+            </div>
+
+            <div class="workbench-detail">
+              <div class="workbench-detail-head">
+                <span>Selected Operation</span>
+                <h3>本人通知と会社報告を分けて確認。</h3>
+                <p>個人へ返す結果と、会社へ渡す集計情報を同じ画面で確認します。</p>
+              </div>
+
+              <div class="notice-review">
+                <div class="notice-list">
+                  <div><span>営業部</span><strong>本人通知 ready</strong></div>
+                  <div><span>管理部</span><strong>確認待ち 4件</strong></div>
+                  <div><span>製造部</span><strong>高ストレス確認</strong></div>
+                </div>
+                <div class="notice-preview">
+                  <span>Personal Notice</span>
+                  <strong>結果通知プレビュー</strong>
+                  <p>本人に返す情報だけを表示。会社向け集計には個人情報を混ぜません。</p>
+                  <i></i><i></i><i></i>
+                </div>
+              </div>
+
+              <div class="workbench-actions">
+                <div><span>本人へ通知</span><strong>101名分を確認</strong></div>
+                <div><span>会社報告</span><strong>部署別PDFを生成</strong></div>
+                <div><span>保存</span><strong>CSV / PDF</strong></div>
+              </div>
             </div>
           </div>
         </div>
