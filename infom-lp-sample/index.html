@@ -53,64 +53,38 @@
           </div>
         </div>
 
-        <aside class="stress-generation-stage" data-generation-stage aria-label="参考動画と素材からLPヒーローを生成するデモ">
-          <canvas class="generation-particle-canvas" data-generation-particles aria-hidden="true"></canvas>
-          <div class="generation-shell">
-            <div class="generation-topbar">
-              <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-              <strong>Hero Motion Builder</strong>
-            </div>
+        <aside class="motion-synthesis-stage" data-generation-stage aria-label="参考動画と素材からLPヒーローを生成する映像デモ">
+          <canvas class="generation-particle-canvas synthesis-particles" data-generation-particles aria-hidden="true"></canvas>
+          <div class="synthesis-source-line" aria-label="AIに渡す入力素材">
+            <button type="button" data-generation-input="prompt" aria-pressed="true">PROMPT TXT</button>
+            <button type="button" data-generation-input="video" aria-pressed="false">REFERENCE MP4</button>
+            <button type="button" data-generation-input="url" aria-pressed="false">REFERENCE URL</button>
+            <button type="button" data-generation-input="material" aria-pressed="false">PRODUCT / PERSON</button>
+          </div>
 
-            <div class="generation-prompt">
-              <span>PROMPT.TXT</span>
-              <strong>ストレスチェック案内LPを、動画のように信頼感あるヒーローへ。</strong>
-            </div>
+          <div class="synthesis-prompt-line">
+            <span>PROMPT.TXT</span>
+            <strong>ストレスチェック案内LPを、信頼感のある動画風ヒーローへ。</strong>
+          </div>
 
-            <div class="generation-materials" aria-label="AIに渡す入力素材">
-              <button type="button" data-generation-input="prompt" aria-pressed="true">Prompt TXT</button>
-              <button type="button" data-generation-input="video" aria-pressed="false">Reference MP4</button>
-              <button type="button" data-generation-input="url" aria-pressed="false">Reference URL</button>
-              <button type="button" data-generation-input="material" aria-pressed="false">Product Assets</button>
-            </div>
+          <div class="synthesis-field" aria-hidden="true">
+            <span class="synthesis-beam beam-a"></span>
+            <span class="synthesis-beam beam-b"></span>
+            <span class="synthesis-beam beam-c"></span>
+            <span class="synthesis-ring ring-a"></span>
+            <span class="synthesis-ring ring-b"></span>
+          </div>
 
-            <div class="generation-scene">
-              <div class="source-cluster" aria-hidden="true">
-                <span class="source-token token-prompt">prompt.txt</span>
-                <span class="source-token token-video">reference.mp4</span>
-                <span class="source-token token-url">sample-site.url</span>
-                <span class="source-token token-material">forms / csv / copy</span>
-              </div>
+          <div class="synthesis-output">
+            <small>GENERATED HERO</small>
+            <h2>Stress Check 2026</h2>
+            <p>受検案内、回答導線、本人通知まで、迷わず進めるオンライン導線へ。</p>
+            <a href="stress-check.html">案内ページを見る</a>
+          </div>
 
-              <div class="beam-field" aria-hidden="true">
-                <span></span><span></span><span></span><span></span>
-              </div>
-
-              <div class="generated-hero-preview">
-                <div class="preview-browser">
-                  <span></span><span></span><span></span>
-                  <strong>stresscheck-hero.ai</strong>
-                </div>
-                <div class="preview-hero-body">
-                  <small>GENERATED LP HERO</small>
-                  <h2>Stress Check 2026</h2>
-                  <p>受検案内、回答導線、本人通知まで、迷わず進めるオンライン導線へ。</p>
-                  <a href="stress-check.html">案内ページを見る</a>
-                  <div class="preview-motion-object" aria-hidden="true">
-                    <i></i><i></i><i></i>
-                  </div>
-                </div>
-                <div class="preview-rail" aria-hidden="true">
-                  <span>Web Form</span>
-                  <span>Notice</span>
-                  <span>Report</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="generation-footer">
-              <span data-generation-status>Prompt + MP4 + URL + 素材からヒーロー演出を生成</span>
-              <button type="button" data-generation-trigger>Generate Hero</button>
-            </div>
+          <div class="synthesis-status">
+            <span data-generation-status>Prompt + MP4 + URL + 素材からヒーロー演出を生成</span>
+            <button type="button" data-generation-trigger>生成を進める</button>
           </div>
         </aside>
       </div>
