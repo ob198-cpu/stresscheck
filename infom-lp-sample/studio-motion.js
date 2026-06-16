@@ -309,6 +309,252 @@
 })();
 
 (function () {
+  const stage = document.querySelector("[data-generation-stage]");
+  if (!stage) return;
+
+  const canvas = stage.querySelector("[data-generation-particles]");
+  const buttons = Array.from(stage.querySelectorAll("[data-generation-input]"));
+  const trigger = stage.querySelector("[data-generation-trigger]");
+  const status = stage.querySelector("[data-generation-status]");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const autoPlay = window.matchMedia("(pointer: coarse), (max-width: 760px)").matches;
+  const modes = ["prompt", "video", "url", "material"];
+  const messages = {
+    prompt: "Prompt TXTからLPの構成とコピーを抽出",
+    video: "Reference MP4から動きのテンポと光の方向を抽出",
+    url: "Reference URLから余白、階層、信頼感の見せ方を抽出",
+    material: "素材と既存資料をLPヒーローの見せ場へ統合"
+  };
+  const colors = {
+    prompt: ["rgba(125, 219, 213,", "rgba(187, 167, 255,"],
+    video: ["rgba(187, 167, 255,", "rgba(236, 112, 188,"],
+    url: ["rgba(236, 112, 188,", "rgba(79, 140, 255,"],
+    material: ["rgba(79, 140, 255,", "rgba(125, 219, 213,"]
+  };
+
+  const particles = [];
+  const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+  let activeMode = "prompt";
+  let progress = reduceMotion ? 1 : 0.35;
+  let targetProgress = progress;
+  let rafId = 0;
+  let visible = true;
+  let dragging = false;
+  let buildTimer = 0;
+
+  function makeParticle(index) {
+    return {
+      lane: index % 4,
+      speed: 0.0028 + Math.random() * 0.0036,
+      offset: Math.random(),
+      drift: Math.random() * Math.PI * 2,
+      size: 0.8 + Math.random() * 2.2,
+      alpha: 0.36 + Math.random() * 0.52
+    };
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = Math.max(1, Math.round(rect.width));
+    height = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    particles.length = 0;
+    const count = width < 520 ? 92 : 180;
+    for (let i = 0; i < count; i += 1) particles.push(makeParticle(i));
+  }
+
+  function pointForLane(lane, time) {
+    const sources = [
+      [width * 0.16, height * 0.28],
+      [width * 0.12, height * 0.43],
+      [width * 0.15, height * 0.58],
+      [width * 0.18, height * 0.72]
+    ];
+    const target = [
+      width * (0.64 + Math.sin(time * 0.4) * 0.02),
+      height * (0.54 + Math.cos(time * 0.36) * 0.025)
+    ];
+    return { source: sources[lane] || sources[0], target };
+  }
+
+  function bezier(a, b, c, t) {
+    const mt = 1 - t;
+    return mt * mt * a + 2 * mt * t * b + t * t * c;
+  }
+
+  function draw(now) {
+    rafId = 0;
+    if (!visible) return;
+    const time = now * 0.001;
+    ctx.clearRect(0, 0, width, height);
+
+    progress += (targetProgress - progress) * 0.055;
+    pointer.x += (pointer.tx - pointer.x) * 0.08;
+    pointer.y += (pointer.ty - pointer.y) * 0.08;
+
+    const palette = colors[activeMode] || colors.prompt;
+    const centerX = width * (0.62 + pointer.x * 0.025);
+    const centerY = height * (0.56 + pointer.y * 0.025);
+    const halo = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, Math.min(width, height) * 0.42);
+    halo.addColorStop(0, `${palette[0]} ${0.08 + progress * 0.18})`);
+    halo.addColorStop(0.34, `${palette[1]} ${0.06 + progress * 0.11})`);
+    halo.addColorStop(1, "rgba(3, 7, 18, 0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.globalCompositeOperation = "lighter";
+    particles.forEach((particle) => {
+      const route = pointForLane(particle.lane, time);
+      let t = (particle.offset + time * particle.speed * (120 + progress * 180)) % 1;
+      if (reduceMotion) t = particle.offset;
+      const curveX = width * (0.38 + Math.sin(particle.drift) * 0.05);
+      const curveY = height * (0.28 + particle.lane * 0.12 + Math.cos(time + particle.drift) * 0.035);
+      const wave = Math.sin(time * 2.2 + particle.drift) * 10 * progress;
+      const x = bezier(route.source[0], curveX, route.target[0], t) + wave;
+      const y = bezier(route.source[1], curveY, route.target[1], t) - wave * 0.35;
+      const fade = Math.sin(t * Math.PI);
+      const alpha = particle.alpha * fade * (0.38 + progress * 0.92);
+
+      ctx.beginPath();
+      ctx.fillStyle = `${palette[particle.lane % 2]} ${alpha})`;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = `${palette[particle.lane % 2]} ${alpha})`;
+      ctx.arc(x, y, particle.size * (0.8 + progress * 0.8), 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    for (let i = 0; i < 4; i += 1) {
+      const route = pointForLane(i, time);
+      const grad = ctx.createLinearGradient(route.source[0], route.source[1], route.target[0], route.target[1]);
+      grad.addColorStop(0, `${palette[i % 2]} 0)`);
+      grad.addColorStop(0.54, `${palette[i % 2]} ${0.08 + progress * 0.18})`);
+      grad.addColorStop(1, `${palette[(i + 1) % 2]} 0)`);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.2 + progress * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(route.source[0], route.source[1]);
+      ctx.bezierCurveTo(width * 0.32, height * (0.28 + i * 0.12), width * 0.48, height * 0.2, route.target[0], route.target[1]);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "source-over";
+    ctx.shadowBlur = 0;
+
+    rafId = requestAnimationFrame(draw);
+  }
+
+  function schedule() {
+    if (!rafId && visible) rafId = requestAnimationFrame(draw);
+  }
+
+  function setMode(mode, shouldBuild) {
+    activeMode = modes.includes(mode) ? mode : "prompt";
+    stage.dataset.mode = activeMode;
+    buttons.forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.generationInput === activeMode));
+    });
+    if (status) status.textContent = messages[activeMode];
+    targetProgress = shouldBuild ? 1 : 0.62;
+    stage.classList.toggle("is-building", Boolean(shouldBuild));
+    window.clearTimeout(buildTimer);
+    if (shouldBuild && !reduceMotion) {
+      buildTimer = window.setTimeout(() => {
+        stage.classList.remove("is-building");
+        targetProgress = 0.72;
+      }, 2400);
+    }
+  }
+
+  resize();
+  setMode("prompt", true);
+
+  if (reduceMotion) {
+    draw(performance.now());
+    window.addEventListener("resize", () => {
+      resize();
+      draw(performance.now());
+    });
+    return;
+  }
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => setMode(button.dataset.generationInput, true));
+  });
+
+  trigger?.addEventListener("click", () => {
+    const nextIndex = (modes.indexOf(activeMode) + 1) % modes.length;
+    setMode(modes[nextIndex], true);
+  });
+
+  stage.addEventListener("pointermove", (event) => {
+    const rect = stage.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
+    const y = ((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2 - 1;
+    pointer.tx = x;
+    pointer.ty = y;
+    stage.style.setProperty("--gen-x", x.toFixed(3));
+    stage.style.setProperty("--gen-y", y.toFixed(3));
+    if (dragging) {
+      const ratio = Math.max(0, Math.min(0.999, (event.clientX - rect.left) / Math.max(rect.width, 1)));
+      setMode(modes[Math.floor(ratio * modes.length)], true);
+    }
+  });
+
+  stage.addEventListener("pointerleave", () => {
+    pointer.tx = 0;
+    pointer.ty = 0;
+    dragging = false;
+    stage.style.setProperty("--gen-x", "0");
+    stage.style.setProperty("--gen-y", "0");
+  });
+
+  stage.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button, a")) return;
+    dragging = true;
+    stage.setPointerCapture(event.pointerId);
+    targetProgress = 1;
+    stage.classList.add("is-building");
+  });
+
+  stage.addEventListener("pointerup", (event) => {
+    dragging = false;
+    try {
+      stage.releasePointerCapture(event.pointerId);
+    } catch (_) {
+      // Some browsers release capture automatically.
+    }
+  });
+
+  if (autoPlay) {
+    let index = 0;
+    window.setInterval(() => {
+      index = (index + 1) % modes.length;
+      setMode(modes[index], true);
+    }, 2600);
+  }
+
+  window.addEventListener("resize", resize);
+  const observer = new IntersectionObserver((entries) => {
+    visible = entries[0].isIntersecting && !document.hidden;
+    if (visible) schedule();
+  });
+  observer.observe(stage);
+  document.addEventListener("visibilitychange", () => {
+    visible = !document.hidden;
+    if (visible) schedule();
+  });
+  schedule();
+})();
+
+(function () {
   const demo = document.querySelector("[data-dashboard-showcase]");
   if (!demo) return;
 

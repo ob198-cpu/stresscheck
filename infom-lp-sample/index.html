@@ -34,95 +34,84 @@
       <div class="container studio-hero-grid">
         <div class="studio-copy">
           <p class="studio-kicker">Web system / stress check / workplace support</p>
-          <h1><span>紙・Excelを、</span><span>管理画面へ。</span></h1>
+          <h1><span>資料と参考動画から、</span><span>動く案内LPへ。</span></h1>
           <p class="studio-lead">
-            InfoMは、紙・Excel・メールで回している業務を整理し、必要なところだけWebシステム化します。
-            ストレスチェックや講義も、実施して終わりではなく、受検状況、本人通知、面接指導申出の案内まで業務として回る形にします。
+            プロンプトTXT、参考動画MP4、参考サイトURL、商品・人物素材をもとに、
+            ストレスチェック案内LPのヒーロー演出まで設計します。
+            紙やExcelの導線も、見た人が次に進める画面へ変えます。
           </p>
           <div class="studio-actions">
             <a class="btn btn-primary btn-lg" href="system-development.html">システム開発を相談する</a>
             <a class="btn btn-outline btn-lg" href="stress-check.html">ストレスチェック支援を見る</a>
           </div>
           <div class="decision-tags" aria-label="相談できること">
-            <span>Excelの整理</span>
-            <span>専用Webフォーム</span>
-            <span>管理画面</span>
-            <span>受検状況管理</span>
-            <span>AI・システムで事務効率化</span>
+            <span>Prompt TXT</span>
+            <span>Reference MP4</span>
+            <span>参考サイトURL</span>
+            <span>素材・既存資料</span>
+            <span>動くLPヒーロー</span>
           </div>
         </div>
 
-        <aside class="stress-dashboard-showcase" data-dashboard-showcase data-view="overview" aria-label="ストレスチェック管理画面デモ">
-          <div class="dashboard-topbar">
-            <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
-            <strong>InfoM Stress Check Console</strong>
-          </div>
-
-          <div class="dashboard-tabs" aria-label="デモ切替">
-            <button type="button" data-dashboard-view="overview" aria-pressed="true">進捗</button>
-            <button type="button" data-dashboard-view="notice" aria-pressed="false">通知</button>
-            <button type="button" data-dashboard-view="report" aria-pressed="false">報告</button>
-          </div>
-
-          <div class="dashboard-build-strip" aria-label="入力素材から運用画面へ">
-            <div class="dashboard-build-source">
-              <span>INPUT</span>
-              <strong data-dashboard-source-title>対象者リスト / 回答CSV</strong>
-              <em data-dashboard-source-text>今あるExcelを起点に整理</em>
-            </div>
-            <i aria-hidden="true"></i>
-            <div class="dashboard-build-result">
-              <span data-dashboard-route-label>LIVE VIEW</span>
-              <strong data-dashboard-route-title>受検状況を表示</strong>
-              <em data-dashboard-route-text>未回答者と次の確認作業が分かる</em>
-            </div>
-          </div>
-
-          <div class="dashboard-product-window">
-            <div class="dashboard-sidebar">
-              <strong>2026</strong>
-              <span>対象者</span>
-              <span>回答状況</span>
-              <span>本人通知</span>
-              <span>会社報告</span>
+        <aside class="stress-generation-stage" data-generation-stage aria-label="参考動画と素材からLPヒーローを生成するデモ">
+          <canvas class="generation-particle-canvas" data-generation-particles aria-hidden="true"></canvas>
+          <div class="generation-shell">
+            <div class="generation-topbar">
+              <div class="demo-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+              <strong>Hero Motion Builder</strong>
             </div>
 
-            <div class="dashboard-main">
-              <div class="dashboard-main-head">
-                <div>
-                  <small>STRESS CHECK OPERATION</small>
-                  <h2 data-dashboard-title>受検状況管理</h2>
+            <div class="generation-prompt">
+              <span>PROMPT.TXT</span>
+              <strong>ストレスチェック案内LPを、動画のように信頼感あるヒーローへ。</strong>
+            </div>
+
+            <div class="generation-materials" aria-label="AIに渡す入力素材">
+              <button type="button" data-generation-input="prompt" aria-pressed="true">Prompt TXT</button>
+              <button type="button" data-generation-input="video" aria-pressed="false">Reference MP4</button>
+              <button type="button" data-generation-input="url" aria-pressed="false">Reference URL</button>
+              <button type="button" data-generation-input="material" aria-pressed="false">Product Assets</button>
+            </div>
+
+            <div class="generation-scene">
+              <div class="source-cluster" aria-hidden="true">
+                <span class="source-token token-prompt">prompt.txt</span>
+                <span class="source-token token-video">reference.mp4</span>
+                <span class="source-token token-url">sample-site.url</span>
+                <span class="source-token token-material">forms / csv / copy</span>
+              </div>
+
+              <div class="beam-field" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </div>
+
+              <div class="generated-hero-preview">
+                <div class="preview-browser">
+                  <span></span><span></span><span></span>
+                  <strong>stresscheck-hero.ai</strong>
                 </div>
-                <em data-dashboard-status>84% 完了</em>
-              </div>
-
-              <div class="dashboard-kpis" data-dashboard-kpis>
-                <article><span>対象者</span><strong>120</strong></article>
-                <article><span>回答済み</span><strong>101</strong></article>
-                <article><span>未回答</span><strong>19</strong></article>
-              </div>
-
-              <div class="dashboard-progress">
-                <span data-dashboard-progress style="--w: 84%"></span>
-              </div>
-
-              <div class="dashboard-table" data-dashboard-table aria-hidden="true">
-                <div><span>営業部</span><b>完了</b><i></i></div>
-                <div><span>管理部</span><b>通知準備</b><i></i></div>
-                <div><span>製造部</span><b>未回答 6名</b><i></i></div>
-                <div><span>札幌支店</span><b>報告待ち</b><i></i></div>
-              </div>
-
-              <div class="dashboard-side-panel">
-                <small data-dashboard-panel-kicker>NEXT ACTION</small>
-                <strong data-dashboard-panel-title>未回答者を確認</strong>
-                <p data-dashboard-panel-text>期限前に確認が必要な対象者だけを表示し、担当者が次に動ける状態にします。</p>
-                <span data-dashboard-panel-chip>CSV / Web回答</span>
+                <div class="preview-hero-body">
+                  <small>GENERATED LP HERO</small>
+                  <h2>Stress Check 2026</h2>
+                  <p>受検案内、回答導線、本人通知まで、迷わず進めるオンライン導線へ。</p>
+                  <a href="stress-check.html">案内ページを見る</a>
+                  <div class="preview-motion-object" aria-hidden="true">
+                    <i></i><i></i><i></i>
+                  </div>
+                </div>
+                <div class="preview-rail" aria-hidden="true">
+                  <span>Web Form</span>
+                  <span>Notice</span>
+                  <span>Report</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <p class="dashboard-note">クリックまたはドラッグで、取り込んだ資料が「進捗・通知・報告」の運用ビューに切り替わります。</p>
+            <div class="generation-footer">
+              <span data-generation-status>Prompt + MP4 + URL + 素材からヒーロー演出を生成</span>
+              <button type="button" data-generation-trigger>Generate Hero</button>
+            </div>
+          </div>
         </aside>
       </div>
     </section>
@@ -140,81 +129,6 @@
         <div>
           <span>最初に決めること</span>
           <strong>作るもの、後で足すもの、作らないもの。</strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="studio-product-section" aria-label="管理画面でできること">
-      <div class="container studio-product-grid">
-        <div class="studio-product-copy">
-          <p class="studio-kicker">Product View</p>
-          <h2>使う画面を、先に見せます。</h2>
-          <p>
-            回答受付、未回答者の確認、本人通知、会社向け報告を、別々の資料ではなく同じ画面の中で確認できます。
-            余計な演出よりも、導入後に何が楽になるかが見えることを重視します。
-          </p>
-        </div>
-
-        <div class="operation-workbench" aria-hidden="true">
-          <div class="workbench-top">
-            <div class="demo-dots"><span></span><span></span><span></span></div>
-            <strong>Stress Check Workbench</strong>
-            <em>2026 / 報告準備中</em>
-          </div>
-
-          <div class="workbench-layout">
-            <div class="workbench-queue">
-              <span>Task Queue</span>
-              <article class="is-current">
-                <small>01</small>
-                <strong>本人通知</strong>
-                <em>送付前確認 18件</em>
-              </article>
-              <article>
-                <small>02</small>
-                <strong>未回答フォロー</strong>
-                <em>期限前確認 19名</em>
-              </article>
-              <article>
-                <small>03</small>
-                <strong>面接指導申出</strong>
-                <em>案内文を確認 3件</em>
-              </article>
-              <article>
-                <small>04</small>
-                <strong>会社報告</strong>
-                <em>部署別集計を出力</em>
-              </article>
-            </div>
-
-            <div class="workbench-detail">
-              <div class="workbench-detail-head">
-                <span>Selected Operation</span>
-                <h3>本人通知と会社報告を分けて確認。</h3>
-                <p>個人へ返す結果と、会社へ渡す集計情報を同じ画面で確認します。</p>
-              </div>
-
-              <div class="notice-review">
-                <div class="notice-list">
-                  <div><span>営業部</span><strong>本人通知 ready</strong></div>
-                  <div><span>管理部</span><strong>確認待ち 4件</strong></div>
-                  <div><span>製造部</span><strong>高ストレス確認</strong></div>
-                </div>
-                <div class="notice-preview">
-                  <span>Personal Notice</span>
-                  <strong>結果通知プレビュー</strong>
-                  <p>本人に返す情報だけを表示。会社向け集計には個人情報を混ぜません。</p>
-                  <i></i><i></i><i></i>
-                </div>
-              </div>
-
-              <div class="workbench-actions">
-                <div><span>本人へ通知</span><strong>101名分を確認</strong></div>
-                <div><span>会社報告</span><strong>部署別PDFを生成</strong></div>
-                <div><span>保存</span><strong>CSV / PDF</strong></div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -271,82 +185,6 @@
             <h3>権限、履歴、個人情報、継続運用がある</h3>
             <p>誰に何を見せるか、記録をどう残すかまで設計して開発します。</p>
           </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="studio-impact-section" id="impact" aria-label="導入前後の業務変化">
-      <div class="container studio-impact-grid">
-        <div class="studio-impact-copy">
-          <p class="studio-kicker">Source to Screen</p>
-          <h2>実際に使っている資料から、運用画面を組み立てる。</h2>
-          <p>
-            ストレスチェックや社内申請で本当に重いのは、回答後の確認、催促、通知、報告資料づくりです。
-            まず今のExcel、CSV、通知文、報告様式を見せてもらい、どの情報を画面に出すべきかを整理します。
-          </p>
-          <div class="impact-proof-list">
-            <span>既存ファイルを起点に設計</span>
-            <span>本人通知と会社報告を分離</span>
-            <span>集計・CSV・PDF出力まで見える化</span>
-          </div>
-        </div>
-
-        <div class="impact-console source-build-demo" data-source-build data-stage="intake" aria-label="既存資料から運用画面を作るデモ">
-          <div class="impact-console-top">
-            <span></span><span></span><span></span>
-            <strong>Build From Real Files</strong>
-          </div>
-
-          <div class="source-build-stage">
-            <div class="source-input-tray">
-              <small>SOURCE FILES</small>
-              <h3>預かった資料</h3>
-              <div class="source-file-list" aria-hidden="true">
-                <div class="source-file file-excel"><span>XLSX</span><strong>対象者.xlsx</strong><em>部署・氏名</em></div>
-                <div class="source-file file-csv"><span>CSV</span><strong>回答.csv</strong><em>回答・判定</em></div>
-                <div class="source-file file-text"><span>TXT</span><strong>通知文.txt</strong><em>本人向け案内</em></div>
-                <div class="source-file file-pdf"><span>PDF</span><strong>報告様式.pdf</strong><em>提出・保存用</em></div>
-              </div>
-            </div>
-
-            <div class="source-transfer" aria-hidden="true">
-              <span></span><span></span><span></span>
-              <strong>整理</strong>
-            </div>
-
-            <div class="generated-operation-screen">
-              <div class="operation-browser-bar">
-                <span></span><span></span><span></span>
-                <strong>stress-check.ops</strong>
-              </div>
-              <div class="operation-screen-head">
-                <small data-source-kicker>INTAKE</small>
-                <h3 data-source-title>回答データを取り込む</h3>
-                <em data-source-status>120名 / 84% 完了</em>
-              </div>
-              <div class="operation-metrics" data-source-metrics>
-                <article><span>対象者</span><strong>120</strong></article>
-                <article><span>回答済み</span><strong>101</strong></article>
-                <article><span>未回答</span><strong>19</strong></article>
-              </div>
-              <div class="operation-table" data-source-table aria-hidden="true">
-                <div><span>営業部</span><b>完了</b><i></i></div>
-                <div><span>管理部</span><b>通知準備</b><i></i></div>
-                <div><span>製造部</span><b>未回答 6名</b><i></i></div>
-              </div>
-              <div class="operation-action-panel">
-                <span data-source-panel-kicker>NEXT</span>
-                <strong data-source-panel-title>未回答者を確認</strong>
-                <p data-source-panel-text>期限前に催促が必要な対象者だけを抽出します。</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="source-stage-controls" aria-label="デモ切替">
-            <button type="button" data-source-stage="intake" aria-pressed="true"><span>01</span>取り込み</button>
-            <button type="button" data-source-stage="notice" aria-pressed="false"><span>02</span>通知準備</button>
-            <button type="button" data-source-stage="report" aria-pressed="false"><span>03</span>報告出力</button>
-          </div>
         </div>
       </div>
     </section>
